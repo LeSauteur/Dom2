@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Куда собрался?</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(to right, #ff6b6b, #4ecdc4);
+            text-align: center;
+            padding: 50px;
+            color: #333;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .option {
+            display: inline-block;
+            margin: 15px;
+            padding: 15px 30px;
+            background: #fff;
+            border: 3px solid #ffcc00;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .option:hover {
+            transform: scale(1.05);
+            background: #ffcc00;
+        }
+        #result {
+            margin-top: 40px;
+            font-size: 1.8em;
+            padding: 20px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 20px;
+            display: none;
+            animation: fadeIn 1s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .boss-mode {
+            background: #ff6b6b !important;
+            color: white !important;
+            font-weight: bold;
+            animation: pulse 1s infinite;
+        }
+        .legend-mode {
+            background: #6a0dad !important;
+            color: gold !important;
+            font-weight: bold;
+            animation: glow 1.5s infinite alternate;
+            text-shadow: 0 0 10px rgba(255,215,0,0.7);
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        @keyframes glow {
+            from { box-shadow: 0 0 5px gold; }
+            to { box-shadow: 0 0 20px gold, 0 0 30px #ffcc00; }
+        }
+        .escape {
+            font-size: 0.8em;
+            margin-top: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔥 Ты куда? 🔥</h1>
+
+    <div class="option" onclick="chooseOption(1)">По застройщикам</div>
+    <div class="option" onclick="chooseOption(2)">Счета отвозить</div>
+    <div class="option" onclick="chooseOption(3)">Я Андросова, иду без повода</div>
+    <div class="option" onclick="chooseOption(4)">Домой</div>
+    <div class="option" onclick="chooseOption(5)">Я Смелый, меня сегодня не было на работе</div>
+
+    <div id="result"></div>
+
+    <script>
+        function chooseOption(option) {
+            const result = document.getElementById('result');
+            result.style.display = 'block';
+            result.classList.remove('boss-mode', 'legend-mode');
+
+            switch(option) {
+                case 1:
+                case 2:
+                case 3:
+                    result.innerHTML = "✅ Хорошего отдыха! (Ну, почти...)";
+                    break;
+                case 4:
+                    askWorkDone();
+                    break;
+                case 5:
+                    result.innerHTML = "🔥 Ну заебись, ЧО! 👑 Ты легенда офиса!";
+                    result.classList.add('legend-mode');
+                    break;
+            }
+        }
+
+        function askWorkDone() {
+            const result = document.getElementById('result');
+            const answer = confirm("Ты всю работу сделал?");
+
+            if (!answer) {
+                result.innerHTML = "❌ Сиди работай! И не высовывайся!";
+                result.classList.add('boss-mode');
+            } else {
+                askTime();
+            }
+        }
+
+        function askTime() {
+            const result = document.getElementById('result');
+            const currentTime = new Date().getHours();
+            const userTime = prompt("Сколько сейчас времени? (введите часы: 0-23)", currentTime);
+
+            if (userTime === null) {
+                result.innerHTML = "❓ Ответ не принят. Считаем, что ты врешь. Сиди работай!";
+                result.classList.add('boss-mode');
+                return;
+            }
+
+            const hour = parseInt(userTime);
+            if (isNaN(hour) || hour < 0 || hour > 23) {
+                result.innerHTML = "🕒 Ты часы-то правильно введи! Сиди работай!";
+                result.classList.add('boss-mode');
+                return;
+            }
+
+            if (hour < 19) {
+                result.innerHTML = `⏰ Сейчас ${hour}:00? До 19:00? Сиди работай!`;
+                result.classList.add('boss-mode');
+            } else {
+                result.innerHTML = "🌙 После 19:00? К сожалению... до завтра! (Завтра тоже работай 😉)";
+            }
+        }
+    </script>
+
+    <div class="escape">
+        P.S. Бесите 😇<br>
+        P.P.S. Смелый особенно 👑
+    </div>
+</body>
+</html>
