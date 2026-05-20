@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Домиан Квартал — калькулятор прибыльности бизнеса</title>
+  <style>
+    :root {
+      --primary: #d91016;
+      --primary-dark: #aa0c10;
+      --ink: #222;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --soft: #f8fafc;
+      --soft-red: #fff1f2;
+      --green: #0f8a3b;
+      --red: #c1121f;
+      --orange: #b45309;
+      --blue: #1d4ed8;
+      --shadow: 0 10px 30px rgba(15, 23, 42, .08);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(180deg, #ffffff 0%, #f6f7fb 100%);
+      color: var(--ink);
+      line-height: 1.45;
+    }
+
+    .page {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: #fff;
+      padding: 28px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 22px;
+    }
+
+    header h1 {
+      margin: 0 0 8px;
+      font-size: clamp(24px, 4vw, 38px);
+    }
+
+    header p {
+      margin: 0;
+      max-width: 980px;
+      opacity: .92;
+    }
+
+    .notice {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--primary);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-bottom: 22px;
+      color: #374151;
+      box-shadow: var(--shadow);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(360px, .85fr);
+      gap: 22px;
+      align-items: start;
+    }
+
+    @media (max-width: 1100px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+      margin-bottom: 22px;
+    }
+
+    .card h2 {
+      margin: 0 0 16px;
+      color: var(--primary);
+      font-size: 22px;
+    }
+
+    .card h3 {
+      margin: 24px 0 12px;
+      color: #374151;
+      font-size: 17px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 12px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: #4b5563;
+      margin-bottom: 6px;
+    }
+
+    input, select {
+      width: 100%;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      padding: 11px 12px;
+      font-size: 15px;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(217, 16, 22, .1);
+    }
+
+    .span-2 { grid-column: span 2; }
+    .span-3 { grid-column: span 3; }
+    .span-4 { grid-column: span 4; }
+    .span-5 { grid-column: span 5; }
+    .span-6 { grid-column: span 6; }
+    .span-7 { grid-column: span 7; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+
+    @media (max-width: 760px) {
+      .row { grid-template-columns: 1fr; }
+      .span-2, .span-3, .span-4, .span-5, .span-6, .span-7, .span-8, .span-12 { grid-column: auto; }
+      .page { padding: 14px; }
+      header, .card { padding: 18px; }
+    }
+
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 11px 16px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+
+    .btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(217, 16, 22, .24);
+    }
+
+    .btn.secondary {
+      background: #111827;
+    }
+
+    .btn.ghost {
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    .btn.small {
+      padding: 9px 12px;
+      font-size: 13px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: middle;
+      font-size: 14px;
+    }
+
+    th {
+      background: #f9fafb;
+      color: #374151;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    td input, td select { padding: 9px 10px; font-size: 14px; }
+    tr:last-child td { border-bottom: none; }
+
+    .right { text-align: right; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .danger { color: var(--red); }
+    .good { color: var(--green); }
+    .orange { color: var(--orange); }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    @media (max-width: 760px) {
+      .metrics { grid-template-columns: 1fr; }
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      background: var(--soft);
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 7px;
+    }
+
+    .metric .value {
+      font-size: 24px;
+      font-weight: 800;
+      color: #111827;
+    }
+
+    .metric.positive { background: #ecfdf3; border-color: #bbf7d0; }
+    .metric.positive .value { color: var(--green); }
+    .metric.negative { background: #fff1f2; border-color: #fecdd3; }
+    .metric.negative .value { color: var(--red); }
+    .metric.warning { background: #fffbeb; border-color: #fde68a; }
+    .metric.warning .value { color: var(--orange); }
+
+    .summary-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      border-bottom: 1px dashed var(--line);
+      padding: 10px 0;
+    }
+
+    .summary-line strong { white-space: nowrap; }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f3f4f6;
+      color: #374151;
+      font-weight: 700;
+      font-size: 12px;
+      margin: 4px 4px 0 0;
+    }
+
+    .analysis-box {
+      border-radius: 16px;
+      padding: 16px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      margin-top: 14px;
+    }
+
+    .analysis-box.good { background: #ecfdf3; border-color: #bbf7d0; }
+    .analysis-box.bad { background: #fff1f2; border-color: #fecdd3; }
+    .analysis-box.warn { background: #fffbeb; border-color: #fde68a; }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .print-only { display: none; }
+
+    @media print {
+      body { background: #fff; }
+      .btn, .actions, .delete-col, input, select { print-color-adjust: exact; }
+      .card, header, .notice { box-shadow: none; }
+      .no-print { display: none !important; }
+      .print-only { display: block; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>Домиан Квартал — калькулятор прибыльности бизнеса</h1>
+      <p>Управленческий счетчик: сделки, личные сделки собственника, агентские выплаты, стипендии, постоянные расходы, точка безубыточности и рентабельность офиса.</p>
+    </header>
+
+    <div class="notice">
+      <strong>Важно:</strong> исходные данные собственника неполные. Поэтому часть строк оставлена как «Прочие», квартальные платежи приведены к месяцу, а налоги/роялти можно заменить фактическими значениями. Это не бухгалтерская отчетность, а рабочая модель для управленческого решения.
+    </div>
+
+    <div class="grid">
+      <main>
+        <section class="card">
+          <h2>1. Сделки и валовая комиссия</h2>
+          <p class="muted">Сделка агента: из комиссии выплачивается процент агенту. Личная сделка: вся комиссия остается собственнику до вычета расходов.</p>
+          <table id="dealsTable">
+            <thead>
+              <tr>
+                <th>Категория</th>
+                <th>Кол-во / мес</th>
+                <th>Средняя комиссия</th>
+                <th>% агенту</th>
+                <th>Валовая комиссия</th>
+                <th>Выплата агенту</th>
+                <th>Остается офису</th>
+                <th class="delete-col no-print"></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <div class="actions no-print">
+            <button class="btn small" onclick="addDealRow()">+ Добавить строку сделок</button>
+            <button class="btn ghost small" onclick="resetDealRows()">Сбросить сделки</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>2. Постоянные и условно-постоянные расходы</h2>
+          <p class="muted">Значения ниже заполнены по данным собственника. Квартальные расходы автоматически пересчитаны в месяц.</p>
+          <table id="expensesTable">
+            <thead>
+              <tr>
+                <th>Расход</th>
+                <th>Сумма</th>
+                <th>Период</th>
+                <th>В месяц</th>
+                <th class="delete-col no-print"></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <div class="actions no-print">
+            <button class="btn small" onclick="addExpenseRow('Прочие расходы', 0, 'month')">+ Добавить расход</button>
+            <button class="btn ghost small" onclick="resetExpenseRows()">Сбросить расходы</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>3. Стипендии и мотивация агентов</h2>
+          <p class="muted">По логике уровня агента: при квартальном доходе от 600 000 ₽ появляется стипендия. Здесь она считается как ежемесячный расход собственника.</p>
+          <div class="row">
+            <div class="span-2">
+              <label>Уровень 3<br><span class="muted">3 000 ₽</span></label>
+              <input id="stipend3000" type="number" min="0" step="1" value="0" oninput="calculateAll()">
+            </div>
+            <div class="span-2">
+              <label>Уровень 4<br><span class="muted">4 000 ₽</span></label>
+              <input id="stipend4000" type="number" min="0" step="1" value="0" oninput="calculateAll()">
+            </div>
+            <div class="span-2">
+              <label>Уровень 5<br><span class="muted">5 000 ₽</span></label>
+              <input id="stipend5000" type="number" min="0" step="1" value="0" oninput="calculateAll()">
+            </div>
+            <div class="span-2">
+              <label>Уровень 6<br><span class="muted">6 000 ₽</span></label>
+              <input id="stipend6000" type="number" min="0" step="1" value="0" oninput="calculateAll()">
+            </div>
+            <div class="span-2">
+              <label>Уровень 7<br><span class="muted">7 000 ₽</span></label>
+              <input id="stipend7000" type="number" min="0" step="1" value="0" oninput="calculateAll()">
+            </div>
+            <div class="span-2">
+              <label>Прочая мотивация</label>
+              <input id="otherMotivation" type="number" min="0" step="1000" value="0" oninput="calculateAll()">
+            </div>
+          </div>
+
+          <h3>Подсказка по стипендии для одного агента</h3>
+          <div class="row">
+            <div class="span-4">
+              <label>Доход агента за квартал</label>
+              <input id="quarterAgentIncome" type="number" min="0" step="10000" value="0" oninput="calculateStipendHint()">
+            </div>
+            <div class="span-8">
+              <label>Результат</label>
+              <div class="analysis-box" id="stipendHint">Введите квартальный доход агента, чтобы увидеть уровень и стипендию.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>4. Расширенная экономика агента</h2>
+          <p class="muted">Блок нужен, чтобы понять, сколько в среднем стоит один агент с учетом масштаба офиса. Да, агент не бесплатный. Удивительная новость для бизнеса.</p>
+          <div class="row">
+            <div class="span-3">
+              <label>Агентов в офисе</label>
+              <input id="agentsCount" type="number" min="1" step="1" value="8" oninput="calculateAll()">
+            </div>
+            <div class="span-3">
+              <label>Коэффициент масштаба</label>
+              <input id="scaleFactor" type="number" min="0.5" max="1" step="0.05" value="0.90" oninput="calculateAll()">
+            </div>
+            <div class="span-3">
+              <label>Целевая прибыль с агента</label>
+              <input id="targetProfitPerAgent" type="number" min="0" step="10000" value="100000" oninput="calculateAll()">
+            </div>
+            <div class="span-3">
+              <label>Средний оборот агента</label>
+              <input id="singleAgentTurnover" type="number" min="0" step="10000" value="300000" oninput="calculateAll()">
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <aside>
+        <section class="card">
+          <h2>Итог месяца</h2>
+          <div class="metrics">
+            <div class="metric" id="grossMetric">
+              <div class="label">Валовая комиссия</div>
+              <div class="value" id="grossCommission">0 ₽</div>
+            </div>
+            <div class="metric" id="profitMetric">
+              <div class="label">Чистая прибыль</div>
+              <div class="value" id="netProfit">0 ₽</div>
+            </div>
+            <div class="metric">
+              <div class="label">Остается офису до расходов</div>
+              <div class="value" id="officeIncome">0 ₽</div>
+            </div>
+            <div class="metric">
+              <div class="label">Все расходы</div>
+              <div class="value" id="totalExpenses">0 ₽</div>
+            </div>
+          </div>
+
+          <div class="analysis-box" id="mainConclusion"></div>
+
+          <div class="summary-line"><span>Выплаты агентам</span><strong id="agentPayouts">0 ₽</strong></div>
+          <div class="summary-line"><span>Постоянные расходы</span><strong id="fixedExpenses">0 ₽</strong></div>
+          <div class="summary-line"><span>Стипендии и мотивация</span><strong id="motivationExpenses">0 ₽</strong></div>
+          <div class="summary-line"><span>Рентабельность от валовой комиссии</span><strong id="profitabilityGross">0%</strong></div>
+          <div class="summary-line"><span>Рентабельность от дохода офиса</span><strong id="profitabilityOffice">0%</strong></div>
+        </section>
+
+        <section class="card">
+          <h2>Точка безубыточности</h2>
+          <div class="summary-line"><span>Средний вклад одной сделки в офис</span><strong id="avgContribution">0 ₽</strong></div>
+          <div class="summary-line"><span>Нужно сделок в месяц</span><strong id="breakEvenDeals">0</strong></div>
+          <div class="summary-line"><span>Запас / дефицит сделок</span><strong id="dealGap">0</strong></div>
+          <div class="analysis-box" id="breakEvenText"></div>
+        </section>
+
+        <section class="card">
+          <h2>Себестоимость агента</h2>
+          <div class="summary-line"><span>Расходы офиса на агента</span><strong id="fixedCostPerAgent">0 ₽</strong></div>
+          <div class="summary-line"><span>Средняя мотивация на агента</span><strong id="motivationPerAgent">0 ₽</strong></div>
+          <div class="summary-line"><span>Полная себестоимость агента</span><strong id="fullAgentCost">0 ₽</strong></div>
+          <div class="summary-line"><span>Точка безубыточности агента</span><strong id="agentBreakEven">0 ₽</strong></div>
+          <div class="summary-line"><span>Целевой оборот агента</span><strong id="agentTargetTurnover">0 ₽</strong></div>
+          <div class="analysis-box" id="agentEconomyText"></div>
+        </section>
+
+        <section class="card">
+          <h2>Сценарии</h2>
+          <div id="scenarios"></div>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+<script>
+const defaultDeals = [
+  { type: 'Сделка агента — стажер 30%', count: 0, avg: 100000, agentPercent: 30 },
+  { type: 'Сделка агента — стажер 35%', count: 0, avg: 100000, agentPercent: 35 },
+  { type: 'Сделка агента — стажер 40%', count: 0, avg: 100000, agentPercent: 40 },
+  { type: 'Сделка агента — партнер старт 45%', count: 0, avg: 100000, agentPercent: 45 },
+  { type: 'Личная сделка собственника', count: 0, avg: 100000, agentPercent: 0 }
+];
+
+const defaultExpenses = [
+  { name: 'Аренда с коммуналкой', amount: 30000, period: 'month' },
+  { name: 'Интернет', amount: 3000, period: 'month' },
+  { name: 'Связь', amount: 3000, period: 'month' },
+  { name: 'Расходы офиса', amount: 3000, period: 'month' },
+  { name: 'ЗП администратор', amount: 30000, period: 'month' },
+  { name: 'Адаптолог', amount: 40000, period: 'month' },
+  { name: 'Сайт', amount: 15000, period: 'month' },
+  { name: 'Аренда офис доп.', amount: 10000, period: 'month' },
+  { name: 'Циан', amount: 56000, period: 'month' },
+  { name: 'Авито', amount: 80000, period: 'month' },
+  { name: 'Домклик', amount: 18000, period: 'month' },
+  { name: 'Роялти', amount: 70700, period: 'month' },
+  { name: 'Росфинмониторинг', amount: 6000, period: 'quarter' },
+  { name: 'Налоги за 1 кв. 2026', amount: 80000, period: 'quarter' },
+  { name: 'Бухгалтер', amount: 5000, period: 'quarter' },
+  { name: 'Прочие расходы 1', amount: 0, period: 'month' },
+  { name: 'Прочие расходы 2', amount: 0, period: 'month' },
+  { name: 'Прочие расходы 3', amount: 0, period: 'month' }
+];
+
+let deals = JSON.parse(JSON.stringify(defaultDeals));
+let expenses = JSON.parse(JSON.stringify(defaultExpenses));
+
+function money(value) {
+  const rounded = Math.round((Number(value) || 0) * 100) / 100;
+  return new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(rounded) + ' ₽';
+}
+
+function percent(value) {
+  return (Number.isFinite(value) ? value : 0).toFixed(1).replace('.', ',') + '%';
+}
+
+function numberValue(id) {
+  return Number(document.getElementById(id)?.value || 0);
+}
+
+function monthlyAmount(amount, period) {
+  if (period === 'quarter') return amount / 3;
+  if (period === 'year') return amount / 12;
+  return amount;
+}
+
+function renderDeals() {
+  const tbody = document.querySelector('#dealsTable tbody');
+  tbody.innerHTML = '';
+  deals.forEach((row, index) => {
+    const gross = row.count * row.avg;
+    const payout = gross * row.agentPercent / 100;
+    const office = gross - payout;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input value="${row.type}" oninput="deals[${index}].type=this.value; calculateAll();"></td>
+      <td><input type="number" min="0" step="1" value="${row.count}" oninput="deals[${index}].count=Number(this.value)||0; calculateAll();"></td>
+      <td><input type="number" min="0" step="1000" value="${row.avg}" oninput="deals[${index}].avg=Number(this.value)||0; calculateAll();"></td>
+      <td><input type="number" min="0" max="100" step="0.1" value="${row.agentPercent}" oninput="deals[${index}].agentPercent=Number(this.value)||0; calculateAll();"></td>
+      <td class="right">${money(gross)}</td>
+      <td class="right danger">${money(payout)}</td>
+      <td class="right good">${money(office)}</td>
+      <td class="delete-col no-print"><button class="btn ghost small" onclick="deleteDealRow(${index})">×</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderExpenses() {
+  const tbody = document.querySelector('#expensesTable tbody');
+  tbody.innerHTML = '';
+  expenses.forEach((row, index) => {
+    const monthly = monthlyAmount(row.amount, row.period);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input value="${row.name}" oninput="expenses[${index}].name=this.value; calculateAll();"></td>
+      <td><input type="number" min="0" step="100" value="${row.amount}" oninput="expenses[${index}].amount=Number(this.value)||0; calculateAll();"></td>
+      <td>
+        <select onchange="expenses[${index}].period=this.value; calculateAll();">
+          <option value="month" ${row.period === 'month' ? 'selected' : ''}>месяц</option>
+          <option value="quarter" ${row.period === 'quarter' ? 'selected' : ''}>квартал</option>
+          <option value="year" ${row.period === 'year' ? 'selected' : ''}>год</option>
+        </select>
+      </td>
+      <td class="right">${money(monthly)}</td>
+      <td class="delete-col no-print"><button class="btn ghost small" onclick="deleteExpenseRow(${index})">×</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function addDealRow() {
+  deals.push({ type: 'Новая категория сделок', count: 0, avg: 100000, agentPercent: 40 });
+  renderDeals();
+  calculateAll();
+}
+
+function deleteDealRow(index) {
+  deals.splice(index, 1);
+  renderDeals();
+  calculateAll();
+}
+
+function resetDealRows() {
+  deals = JSON.parse(JSON.stringify(defaultDeals));
+  renderDeals();
+  calculateAll();
+}
+
+function addExpenseRow(name = 'Прочие расходы', amount = 0, period = 'month') {
+  expenses.push({ name, amount, period });
+  renderExpenses();
+  calculateAll();
+}
+
+function deleteExpenseRow(index) {
+  expenses.splice(index, 1);
+  renderExpenses();
+  calculateAll();
+}
+
+function resetExpenseRows() {
+  expenses = JSON.parse(JSON.stringify(defaultExpenses));
+  renderExpenses();
+  calculateAll();
+}
+
+function getStipendTotal() {
+  return numberValue('stipend3000') * 3000 +
+         numberValue('stipend4000') * 4000 +
+         numberValue('stipend5000') * 5000 +
+         numberValue('stipend6000') * 6000 +
+         numberValue('stipend7000') * 7000 +
+         numberValue('otherMotivation');
+}
+
+function stipendByQuarterIncome(income) {
+  if (income < 600000) return { level: 'Стандарт / без уровня стипендии', stipend: 0 };
+  if (income < 800000) return { level: 'Уровень 3', stipend: 3000 };
+  if (income < 1000000) return { level: 'Уровень 4', stipend: 4000 };
+  if (income < 1200000) return { level: 'Уровень 5', stipend: 5000 };
+  if (income < 1500000) return { level: 'Уровень 6', stipend: 6000 };
+  return { level: 'Уровень 7', stipend: 7000 };
+}
+
+function calculateStipendHint() {
+  const income = numberValue('quarterAgentIncome');
+  const res = stipendByQuarterIncome(income);
+  const el = document.getElementById('stipendHint');
+  el.innerHTML = `<strong>${res.level}</strong><br>Стипендия: <strong>${money(res.stipend)} / мес.</strong>`;
+  el.className = 'analysis-box ' + (res.stipend > 0 ? 'good' : 'warn');
+}
+
+function calculateAll() {
+  let gross = 0;
+  let agentPayouts = 0;
+  let officeIncome = 0;
+  let totalDeals = 0;
+  let weightedContribution = 0;
+
+  deals.forEach(row => {
+    const rowGross = row.count * row.avg;
+    const rowPayout = rowGross * row.agentPercent / 100;
+    const rowOffice = rowGross - rowPayout;
+    gross += rowGross;
+    agentPayouts += rowPayout;
+    officeIncome += rowOffice;
+    totalDeals += row.count;
+    weightedContribution += rowOffice;
+  });
+
+  const fixedExpenses = expenses.reduce((sum, row) => sum + monthlyAmount(Number(row.amount) || 0, row.period), 0);
+  const motivation = getStipendTotal();
+  const totalExpenses = agentPayouts + fixedExpenses + motivation;
+  const netProfit = gross - totalExpenses;
+  const profitabilityGross = gross > 0 ? netProfit / gross * 100 : 0;
+  const profitabilityOffice = officeIncome > 0 ? netProfit / officeIncome * 100 : 0;
+  const avgContribution = totalDeals > 0 ? weightedContribution / totalDeals : 0;
+  const breakEvenDeals = avgContribution > 0 ? Math.ceil((fixedExpenses + motivation) / avgContribution) : 0;
+  const dealGap = totalDeals - breakEvenDeals;
+
+  document.getElementById('grossCommission').textContent = money(gross);
+  document.getElementById('netProfit').textContent = money(netProfit);
+  document.getElementById('officeIncome').textContent = money(officeIncome);
+  document.getElementById('totalExpenses').textContent = money(totalExpenses);
+  document.getElementById('agentPayouts').textContent = money(agentPayouts);
+  document.getElementById('fixedExpenses').textContent = money(fixedExpenses);
+  document.getElementById('motivationExpenses').textContent = money(motivation);
+  document.getElementById('profitabilityGross').textContent = percent(profitabilityGross);
+  document.getElementById('profitabilityOffice').textContent = percent(profitabilityOffice);
+  document.getElementById('avgContribution').textContent = money(avgContribution);
+  document.getElementById('breakEvenDeals').textContent = breakEvenDeals;
+  document.getElementById('dealGap').textContent = dealGap;
+
+  const profitMetric = document.getElementById('profitMetric');
+  profitMetric.className = 'metric ' + (netProfit >= 0 ? (profitabilityOffice >= 20 ? 'positive' : 'warning') : 'negative');
+
+  const grossMetric = document.getElementById('grossMetric');
+  grossMetric.className = 'metric ' + (gross > 0 ? '' : 'warning');
+
+  const conclusion = document.getElementById('mainConclusion');
+  if (gross === 0) {
+    conclusion.className = 'analysis-box warn';
+    conclusion.innerHTML = '<strong>Нет сделок.</strong> Сейчас калькулятор показывает только расходную часть. Бизнес без сделок, как ни странно, денег не печатает.';
+  } else if (netProfit < 0) {
+    conclusion.className = 'analysis-box bad';
+    conclusion.innerHTML = `<strong>Убыток:</strong> ${money(Math.abs(netProfit))} в месяц. Нужно добавить минимум ${Math.abs(dealGap)} сделок до безубыточности или резать расходы.`;
+  } else if (profitabilityOffice < 15) {
+    conclusion.className = 'analysis-box warn';
+    conclusion.innerHTML = `<strong>Прибыль есть, но запас слабый.</strong> Рентабельность от дохода офиса ${percent(profitabilityOffice)}. Любой провал по сделкам может съесть результат.`;
+  } else {
+    conclusion.className = 'analysis-box good';
+    conclusion.innerHTML = `<strong>Модель прибыльна.</strong> При текущих вводных офис зарабатывает ${money(netProfit)} в месяц. Запас к безубыточности: ${dealGap >= 0 ? dealGap : 0} сделок.`;
+  }
+
+  const breakEvenText = document.getElementById('breakEvenText');
+  breakEvenText.className = 'analysis-box ' + (dealGap >= 0 ? 'good' : 'bad');
+  breakEvenText.innerHTML = dealGap >= 0
+    ? `Текущий поток сделок выше точки безубыточности на <strong>${dealGap}</strong>. Это рабочая зона.`
+    : `Не хватает <strong>${Math.abs(dealGap)}</strong> сделок до безубыточности. Сокращение расходов поможет, но без роста сделок экономика всё равно будет хромать.`;
+
+  calculateAgentEconomy(fixedExpenses, motivation, officeIncome, gross, totalDeals);
+  renderScenarios();
+  renderDeals();
+  renderExpenses();
+}
+
+function calculateAgentEconomy(fixedExpenses, motivation, officeIncome, gross, totalDeals) {
+  const agentsCount = Math.max(1, numberValue('agentsCount'));
+  const scaleFactor = Math.min(1, Math.max(0.5, numberValue('scaleFactor') || 0.9));
+  const targetProfit = numberValue('targetProfitPerAgent');
+  const singleAgentTurnover = numberValue('singleAgentTurnover');
+  const avgOwnerShareRate = gross > 0 ? officeIncome / gross : 0.60;
+
+  const fixedCostPerAgent = fixedExpenses / Math.pow(agentsCount, scaleFactor);
+  const motivationPerAgent = motivation / agentsCount;
+  const fullAgentCost = fixedCostPerAgent + motivationPerAgent;
+  const agentBreakEven = avgOwnerShareRate > 0 ? fullAgentCost / avgOwnerShareRate : 0;
+  const agentTargetTurnover = avgOwnerShareRate > 0 ? (fullAgentCost + targetProfit) / avgOwnerShareRate : 0;
+
+  document.getElementById('fixedCostPerAgent').textContent = money(fixedCostPerAgent);
+  document.getElementById('motivationPerAgent').textContent = money(motivationPerAgent);
+  document.getElementById('fullAgentCost').textContent = money(fullAgentCost);
+  document.getElementById('agentBreakEven').textContent = money(agentBreakEven);
+  document.getElementById('agentTargetTurnover').textContent = money(agentTargetTurnover);
+
+  const text = document.getElementById('agentEconomyText');
+  if (singleAgentTurnover < agentBreakEven) {
+    text.className = 'analysis-box bad';
+    text.innerHTML = `Средний агент с оборотом ${money(singleAgentTurnover)} убыточен. Минимальный оборот для нуля: <strong>${money(agentBreakEven)}</strong>.`;
+  } else if (singleAgentTurnover < agentTargetTurnover) {
+    text.className = 'analysis-box warn';
+    text.innerHTML = `Агент проходит безубыточность, но не дает целевую прибыль ${money(targetProfit)}. Целевой оборот: <strong>${money(agentTargetTurnover)}</strong>.`;
+  } else {
+    text.className = 'analysis-box good';
+    text.innerHTML = `Средний агент покрывает себестоимость и целевую прибыль. Это уже экономика, а не вера в светлое будущее.`;
+  }
+}
+
+function renderScenarios() {
+  const savedDeals = JSON.parse(JSON.stringify(deals));
+  const baseExpenses = expenses.reduce((sum, row) => sum + monthlyAmount(Number(row.amount) || 0, row.period), 0) + getStipendTotal();
+  const avgCommission = (() => {
+    let count = 0, sum = 0;
+    deals.forEach(d => { count += d.count; sum += d.count * d.avg; });
+    return count > 0 ? sum / count : 100000;
+  })();
+
+  const scenarios = [
+    { name: 'Осторожный', agentDeals: 2, personalDeals: 1, agentPercent: 40 },
+    { name: 'Рабочий', agentDeals: 5, personalDeals: 2, agentPercent: 40 },
+    { name: 'Сильный', agentDeals: 9, personalDeals: 3, agentPercent: 45 }
+  ];
+
+  let html = '<table><thead><tr><th>Сценарий</th><th>Сделки</th><th>Комиссия</th><th>Прибыль</th><th>Вывод</th></tr></thead><tbody>';
+  scenarios.forEach(s => {
+    const gross = (s.agentDeals + s.personalDeals) * avgCommission;
+    const payout = s.agentDeals * avgCommission * s.agentPercent / 100;
+    const profit = gross - payout - baseExpenses;
+    const result = profit >= 0 ? 'плюс' : 'минус';
+    html += `<tr>
+      <td><strong>${s.name}</strong></td>
+      <td>${s.agentDeals + s.personalDeals}</td>
+      <td>${money(gross)}</td>
+      <td class="right ${profit >= 0 ? 'good' : 'danger'}">${money(profit)}</td>
+      <td>${result}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('scenarios').innerHTML = html;
+  deals = savedDeals;
+}
+
+function init() {
+  renderDeals();
+  renderExpenses();
+  calculateStipendHint();
+  calculateAll();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
