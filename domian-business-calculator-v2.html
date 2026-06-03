@@ -482,6 +482,29 @@
       width: auto;
     }
 
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      background: #111827;
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 14px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, .25);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease;
+      z-index: 9999;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
+    }
+
     .print-only {
       display: none;
     }
@@ -622,13 +645,13 @@
               <input id="calcYear" type="number" min="2024" max="2035" step="1" value="2026" oninput="calculateAll()">
             </div>
             <div class="span-4">
-              <label for="reserveMode">Как учитывать будущие стипендии</label>
+              <label for="reserveMode">Как учитывать стипендии, которые агенты заработали на следующий квартал?</label>
               <select id="reserveMode" onchange="calculateAll()">
-                <option value="quarter">Показывать обязательство за следующий квартал</option>
-                <option value="monthlyReserve">Резервировать 1 месяц будущей стипендии</option>
-                <option value="none">Не вычитать из безопасной прибыли</option>
+                <option value="quarter">Вычесть всю будущую стипендию за квартал</option>
+                <option value="monthlyReserve">Вычесть только 1 месяц будущей стипендии</option>
+                <option value="none">Только показать, не вычитать</option>
               </select>
-              <span class="field-note">Самый строгий режим — обязательство за следующий квартал.</span>
+              <span class="field-note">Выберите, насколько строго считать безопасную прибыль. Самый строгий вариант — вычесть весь следующий квартал.</span>
             </div>
           </div>
         </section>
@@ -736,7 +759,7 @@
 
         <section class="card">
           <h2>Будущие обязательства</h2>
-          <p class="hint">Это не текущий расход месяца. Это то, что агенты уже могут создать на следующий квартал, если подтверждают уровень.</p>
+          <p class="hint">Это не текущий расход месяца. Это будущая нагрузка по стипендиям, которую агенты могут создать на следующий квартал, если подтверждают уровень.</p>
           <div class="summary-line"><span>Будущие стипендии / месяц</span><strong id="futureStipendsMonthly">0 ₽</strong></div>
           <div class="summary-line"><span>Будущие стипендии / квартал</span><strong id="futureStipendsQuarter">0 ₽</strong></div>
           <div class="summary-line"><span>Ручной резерв</span><strong id="manualReserveOut">0 ₽</strong></div>
@@ -763,12 +786,18 @@
           <h2>Действия</h2>
           <div class="actions">
             <button class="btn secondary" onclick="window.print()">Печать / сохранить PDF</button>
-            <button class="btn ghost" onclick="loadDemo()">Загрузить демо</button>
+            <button class="btn ghost" onclick="loadDemo()">Вернуть пример заполнения</button>
+            <button class="btn danger" onclick="clearAll()">Очистить всё</button>
           </div>
-          <p class="hint" style="margin-top:14px;">Файл работает локально в браузере. Данные не отправляются никуда. Интернет для работы не нужен, что редкость в мире, где даже чайник хочет облачный аккаунт.</p>
+          <p class="hint" style="margin-top:14px;">
+            “Вернуть пример заполнения” заново подставляет демонстрационных агентов и расходы.
+            “Очистить всё” убирает агентов и обнуляет ручную мотивацию, чтобы начать расчёт с чистого листа.
+            Файл работает локально в браузере, данные никуда не отправляются.
+          </p>
         </section>
       </aside>
     </div>
+    <div id="toast" class="toast" aria-live="polite"></div>
   </div>
 
   <script>
@@ -1343,6 +1372,31 @@
       renderExpenses();
       renderAgents();
       calculateAll();
+      showToast('Пример заполнения восстановлен');
+    }
+
+    function clearAll() {
+      expenses = defaultExpenses.map(item => ({ ...item, amount: 0 }));
+      agents = [];
+      document.getElementById('currentStipends').value = 0;
+      document.getElementById('otherMotivation').value = 0;
+      document.getElementById('manualReserve').value = 0;
+      document.getElementById('reserveMode').value = 'quarter';
+      renderExpenses();
+      renderAgents();
+      calculateAll();
+      showToast('Калькулятор очищен');
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      if (!toast) return;
+      toast.textContent = message;
+      toast.classList.add('show');
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => {
+        toast.classList.remove('show');
+      }, 1800);
     }
 
     function calculateAll() {
