@@ -39,6 +39,14 @@
     };
   }
 
+  function createBlankExpense() {
+    return {
+      id: nextExpenseId(),
+      name: '',
+      amount: 0
+    };
+  }
+
   function createState() {
     var agents = clone(DEFAULT_AGENTS).map(function (agent) {
       agent.motivation = Object.assign(createMotivation(), agent.motivation || {});
@@ -57,6 +65,23 @@
         manualExpenseShare: 20000,
         motivationReserve: 0,
         manualRate: 75
+      }
+    };
+  }
+
+  function createBlankState() {
+    return {
+      expenses: [createBlankExpense()],
+      agents: [createAgent()],
+      ownerSales: 0,
+      schemeCheck: {
+        commission: 0,
+        dealCount: 1,
+        introduced: false,
+        expenseShareMode: 'manual',
+        manualExpenseShare: 0,
+        motivationReserve: 0,
+        manualRate: 80
       }
     };
   }
@@ -109,15 +134,15 @@
       + '</select><small>Стипендия — это будущая ежемесячная нагрузка по результатам квартала.</small></label>'
       + '<label class="field"><span>Результат агента за квартал, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="quarterlyResult" value="' + motivation.quarterlyResult + '"><small>Если оставить 0, берём комиссию агента за месяц × 3.</small></label>'
       + '<label class="field"><span>Стипендия вручную, ₽ в месяц</span><input type="number" min="0" step="500" data-agent-id="' + agent.id + '" data-motivation-field="manualStipendMonthly" value="' + motivation.manualStipendMonthly + '"></label>'
-      + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="mountainSeaEnabled"' + checked(motivation.mountainSeaEnabled) + '> Горы/Море</label>'
-      + '<label class="field"><span>Горы/Море, ₽ за поездку</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="mountainSeaPerTrip" value="' + motivation.mountainSeaPerTrip + '"></label>'
+      + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="mountainSeaEnabled"' + checked(motivation.mountainSeaEnabled) + '> Горы/Море <small>поездки по РФ</small></label>'
+      + '<label class="field"><span>Горы/Море, ₽ за поездку</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="mountainSeaPerTrip" value="' + motivation.mountainSeaPerTrip + '"><small>Обычно 2 поездки в год: Горы и Море.</small></label>'
       + '<label class="field"><span>Поездок в год</span><input type="number" min="0" step="1" data-agent-id="' + agent.id + '" data-motivation-field="mountainSeaTripsPerYear" value="' + motivation.mountainSeaTripsPerYear + '"></label>'
-      + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="travelEnabled"' + checked(motivation.travelEnabled) + '> Путешествие</label>'
-      + '<label class="field"><span>Путешествие, ₽ в год</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="travelPerYear" value="' + motivation.travelPerYear + '"></label>'
-      + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="corporateEnabled"' + checked(motivation.corporateEnabled) + '> Корпоративы</label>'
-      + '<label class="field"><span>Корпоративы, ₽ в год</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="corporatePerYear" value="' + motivation.corporatePerYear + '"></label>'
-      + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="congressEnabled"' + checked(motivation.congressEnabled) + '> Конгресс</label>'
-      + '<label class="field"><span>Конгресс, ₽ в год</span><input type="number" min="0" step="500" data-agent-id="' + agent.id + '" data-motivation-field="congressPerYear" value="' + motivation.congressPerYear + '"></label>'
+      + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="travelEnabled"' + checked(motivation.travelEnabled) + '> Заграница / Путешествие <small>2 поездки</small></label>'
+      + '<label class="field wide-field"><span>Заграница / Путешествие, ₽ в год</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="travelPerYear" value="' + motivation.travelPerYear + '"><small>2 поездки по 120 000 ₽ = 240 000 ₽ в год, или 20 000 ₽ в месяц.</small></label>'
+      + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="corporateEnabled"' + checked(motivation.corporateEnabled) + '> Корпоративы <small>мероприятия</small></label>'
+      + '<label class="field"><span>Корпоративы, ₽ в год</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="corporatePerYear" value="' + motivation.corporatePerYear + '"><small>Годовой резерв на мероприятия.</small></label>'
+      + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="congressEnabled"' + checked(motivation.congressEnabled) + '> Конгресс <small>участие</small></label>'
+      + '<label class="field"><span>Конгресс, ₽ в год</span><input type="number" min="0" step="500" data-agent-id="' + agent.id + '" data-motivation-field="congressPerYear" value="' + motivation.congressPerYear + '"><small>Годовой резерв на участие.</small></label>'
       + '</div>'
       + '</details>';
   }
@@ -306,6 +331,34 @@
         + '<td>' + variant.conclusion + '</td>'
         + '</tr>';
     }).join('');
+
+    renderSchemeAdvice(result.variants);
+  }
+
+  function renderSchemeAdvice(variants) {
+    var safeVariants = variants.filter(function (variant) {
+      return variant.contribution > 0;
+    }).sort(function (left, right) {
+      return right.contribution - left.contribution;
+    });
+    var riskyVariants = variants.filter(function (variant) {
+      return variant.contribution < 0;
+    });
+    var message = '';
+
+    if (safeVariants.length) {
+      message = 'Самый безопасный вариант сейчас: ' + safeVariants[0].label + ' — вклад ' + money(safeVariants[0].contribution) + '.';
+    } else {
+      message = 'При текущих вводных все варианты выглядят убыточными. Сначала проверьте оборот, расходы и мотивации.';
+    }
+
+    if (riskyVariants.length) {
+      message += ' Опасные или убыточные варианты: ' + riskyVariants.map(function (variant) {
+        return variant.label;
+      }).join(', ') + '.';
+    }
+
+    elements.schemeAdvice.textContent = message;
   }
 
   function renderWarnings(totals) {
@@ -497,6 +550,18 @@
       render();
     }
 
+    if (target.dataset.action === 'clear-all') {
+      state = createBlankState();
+      window.domianA4State = state;
+      render();
+    }
+
+    if (target.dataset.action === 'restore-example') {
+      state = createState();
+      window.domianA4State = state;
+      render();
+    }
+
     if (target.dataset.action === 'add-expense') {
       state.expenses.push({
         id: nextExpenseId(),
@@ -544,7 +609,8 @@
       'schemeMotivationReserve',
       'schemeManualRate',
       'schemeExpenseShare',
-      'schemeResults'
+      'schemeResults',
+      'schemeAdvice'
     ].forEach(function (id) {
       elements[id] = document.getElementById(id);
     });

@@ -42,7 +42,7 @@
     mountainSeaPerTrip: 15000,
     mountainSeaTripsPerYear: 2,
     travelEnabled: false,
-    travelPerYear: 120000,
+    travelPerYear: 240000,
     corporateEnabled: false,
     corporatePerYear: 20000,
     congressEnabled: false,

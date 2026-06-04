@@ -181,6 +181,18 @@ test('motivation reserve supports stipend and annual trip reserves', () => {
   closeTo(reserve.monthly, 21583.333333333332);
 });
 
+test('travel reserve defaults to two international trips per year', () => {
+  assert.equal(calculator.DEFAULT_MOTIVATION.travelPerYear, 240000);
+
+  const reserve = calculator.calculateMotivationReserve({
+    stipendMode: 'off',
+    travelEnabled: true
+  });
+
+  assert.equal(reserve.travelMonthly, 20000);
+  assert.equal(reserve.monthly, 20000);
+});
+
 test('office totals distinguish profit before and after reserves', () => {
   const totals = calculator.calculateOffice({
     expenses: [

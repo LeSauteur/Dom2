@@ -108,6 +108,13 @@ h3 {
   color: var(--orange);
 }
 
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 0 0;
+}
+
 .help-panel {
   margin: 18px 0;
   padding: 14px;
@@ -349,6 +356,7 @@ select:focus {
 
 .check-field {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
   min-height: 42px;
@@ -358,6 +366,13 @@ select:focus {
   background: #fff;
   font-size: 13px;
   font-weight: 800;
+}
+
+.check-field small {
+  flex-basis: 100%;
+  margin-left: 24px;
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .check-field input {
@@ -557,6 +572,19 @@ dd {
   font-weight: 900;
 }
 
+.scheme-hint {
+  margin-top: 12px;
+}
+
+.scheme-advice {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-weight: 900;
+}
+
 @media (max-width: 1120px) {
   .hero,
   .sheet-grid,
@@ -601,5 +629,10 @@ dd {
 
   .button {
     width: 100%;
+  }
+
+  .toolbar,
+  .section-actions {
+    flex-direction: column;
   }
 }

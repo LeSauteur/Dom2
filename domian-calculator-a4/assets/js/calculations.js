@@ -80,7 +80,7 @@
     var mountainSeaMonthly = source.mountainSeaEnabled
       ? positiveNumber(source.mountainSeaPerTrip || 15000) * positiveNumber(source.mountainSeaTripsPerYear || 2) / 12
       : 0;
-    var travelMonthly = source.travelEnabled ? positiveNumber(source.travelPerYear || 120000) / 12 : 0;
+    var travelMonthly = source.travelEnabled ? positiveNumber(source.travelPerYear || DEFAULT_MOTIVATION.travelPerYear) / 12 : 0;
     var corporateMonthly = source.corporateEnabled ? positiveNumber(source.corporatePerYear || 20000) / 12 : 0;
     var congressMonthly = source.congressEnabled ? positiveNumber(source.congressPerYear || 5000) / 12 : 0;
     var total = stipendMonthly + mountainSeaMonthly + travelMonthly + corporateMonthly + congressMonthly;

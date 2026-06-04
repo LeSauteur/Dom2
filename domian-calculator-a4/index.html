@@ -20,6 +20,11 @@
       </aside>
     </header>
 
+    <section class="toolbar" aria-label="Управление примером">
+      <button class="button ghost" type="button" data-action="clear-all">Очистить всё</button>
+      <button class="button primary" type="button" data-action="restore-example">Вернуть пример</button>
+    </section>
+
     <section class="steps" aria-label="Порядок работы">
       <div><span>1</span>Расходы офиса</div>
       <div><span>2</span>Агенты и условия</div>
@@ -94,7 +99,7 @@
               <span class="step-label">Шаг 5</span>
               <h2 id="profitabilityTitle">Кто окупает своё место</h2>
             </div>
-            <p class="hint">Доля расходов считается просто: расходы офиса делятся на активных обычных агентов. Роялти по агенту здесь показано как управленческая оценка.</p>
+            <p class="hint">Мотивационный резерв — деньги, которые офис должен учитывать заранее. Доля расходов считается просто: расходы офиса делятся на активных обычных агентов. Роялти по агенту здесь показано как управленческая оценка.</p>
           </div>
           <div id="profitabilityList" class="profitability-list"></div>
         </section>
@@ -164,6 +169,8 @@
               <tbody id="schemeResults"></tbody>
             </table>
           </div>
+          <p class="hint scheme-hint">Смотрите на колонку “Вклад”. Если вклад отрицательный, такие условия для офиса убыточны. Чем выше процент агенту, тем больше комиссии он должен приносить, чтобы окупать своё место. “Окупится от” — минимальная комиссия, с которой условия агента начинают окупаться.</p>
+          <div id="schemeAdvice" class="scheme-advice"></div>
         </section>
       </div>
 
