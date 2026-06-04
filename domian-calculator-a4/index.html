@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Домиан — лист А4 собственника</title>
+  <link rel="stylesheet" href="assets/css/a4-calculator.css">
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div>
+        <p class="small-label">Новая A4-версия</p>
+        <h1>Домиан — лист А4 собственника</h1>
+        <p class="lead">Пройдите сверху вниз и посмотрите, живёт ли офис как система или держится на личных продажах собственника.</p>
+      </div>
+      <aside class="hero-note">
+        <strong>Главное правило</strong>
+        <span>Роялти не добавляйте в расходы — калькулятор считает его автоматически.</span>
+      </aside>
+    </header>
+
+    <section class="steps" aria-label="Порядок работы">
+      <div><span>1</span>Введите расходы офиса</div>
+      <div><span>2</span>Добавьте агентов</div>
+      <div><span>3</span>Выберите условия выплаты</div>
+      <div><span>4</span>Укажите личные сделки</div>
+      <div><span>5</span>Посмотрите итог</div>
+      <div><span>6</span>Проверьте опасные места</div>
+    </section>
+
+    <section class="sheet-grid">
+      <div class="main-column">
+        <section class="section-card" aria-labelledby="expensesTitle">
+          <div class="section-head">
+            <div>
+              <span class="step-label">Шаг 1</span>
+              <h2 id="expensesTitle">Сколько офис съедает каждый месяц</h2>
+            </div>
+            <p class="hint">Введите обычные ежемесячные расходы. Роялти сюда не включайте.</p>
+          </div>
+          <div class="notice info">Роялти не добавляйте в расходы — калькулятор считает его автоматически.</div>
+          <div id="expensesList" class="expense-list"></div>
+        </section>
+
+        <section class="section-card" aria-labelledby="agentsTitle">
+          <div class="section-head split">
+            <div>
+              <span class="step-label">Шаги 2–3</span>
+              <h2 id="agentsTitle">Агенты и условия выплаты</h2>
+            </div>
+            <button class="button primary" id="addAgentBtn" type="button">Добавить агента</button>
+          </div>
+          <p class="hint">Комиссия агента — это вся комиссия, которую агент принёс за месяц. Если точных сделок нет, укажите примерное количество.</p>
+          <div id="agentsList" class="agents-list"></div>
+        </section>
+
+        <section class="section-card" aria-labelledby="ownerTitle">
+          <div class="section-head">
+            <div>
+              <span class="step-label">Шаг 4</span>
+              <h2 id="ownerTitle">Личные сделки собственника</h2>
+            </div>
+            <p class="hint">Сделки, которые сделал сам собственник. Агенту по ним ничего не платится, но роялти считается.</p>
+          </div>
+          <label class="field">
+            <span>Комиссия личных сделок за месяц</span>
+            <input id="ownerSalesInput" type="number" min="0" step="1000">
+          </label>
+        </section>
+      </div>
+
+      <aside class="result-column">
+        <section class="section-card result-card" aria-labelledby="resultTitle">
+          <div class="section-head">
+            <div>
+              <span class="step-label">Шаг 5</span>
+              <h2 id="resultTitle">Что осталось собственнику</h2>
+            </div>
+            <p class="hint">Итог без собственника показывает, живёт ли офис как система без личных продаж.</p>
+          </div>
+          <div id="resultStatus" class="result-status">Офис около нуля</div>
+          <dl class="totals">
+            <div><dt>Оборот агентов</dt><dd id="agentTurnover">0 ₽</dd></div>
+            <div><dt>Личные сделки собственника</dt><dd id="ownerSales">0 ₽</dd></div>
+            <div><dt>Общий оборот</dt><dd id="totalTurnover">0 ₽</dd></div>
+            <div><dt>Выплаты агентам</dt><dd id="agentPayouts">0 ₽</dd></div>
+            <div><dt>Рефералы</dt><dd id="referrals">0 ₽</dd></div>
+            <div><dt>Роялти</dt><dd id="royalty">0 ₽</dd></div>
+            <div><dt>Расходы офиса</dt><dd id="officeExpenses">0 ₽</dd></div>
+            <div><dt>Итог без личных сделок</dt><dd id="resultWithoutOwner">0 ₽</dd></div>
+            <div class="total-line"><dt>Итог с личными сделками</dt><dd id="resultWithOwner">0 ₽</dd></div>
+          </dl>
+        </section>
+
+        <section class="section-card warning-card" aria-labelledby="warningsTitle">
+          <div class="section-head">
+            <div>
+              <span class="step-label">Шаг 6</span>
+              <h2 id="warningsTitle">Опасные места</h2>
+            </div>
+          </div>
+          <div id="warningsList" class="warnings-list"></div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script src="assets/js/constants.js"></script>
+  <script src="assets/js/calculations.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
