@@ -574,6 +574,7 @@ select:focus {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: #fff;
+  align-content: start;
 }
 
 .motivation-card-toggle {
@@ -603,8 +604,13 @@ select:focus {
 
 .motivation-card-fields {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 10px;
+  align-items: start;
+}
+
+.motivation-card-fields .field span {
+  min-height: 18px;
 }
 
 .motivation-card-fields.single {
@@ -616,6 +622,7 @@ select:focus {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin: 0;
+  align-self: end;
 }
 
 .motivation-card-total div {
