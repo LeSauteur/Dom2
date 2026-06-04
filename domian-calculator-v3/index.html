@@ -66,17 +66,95 @@
         </div>
 
         <div class="mode-switch" role="group" aria-label="Режим интерфейса">
-          <button class="mode-button active" type="button" data-view="quick">Быстрая проверка</button>
+          <button class="mode-button active" type="button" data-view="simple">Простой расчёт</button>
+          <button class="mode-button" type="button" data-view="quick">Быстрая проверка</button>
           <button class="mode-button" type="button" data-view="cards">Карточки агентов</button>
           <button class="mode-button" type="button" data-view="table">Таблица офиса</button>
           <button class="mode-button" type="button" data-view="analytics">Аналитика и сценарии</button>
         </div>
-        <p class="tab-description user-hint" id="tabDescription">Прикинуть плюс или минус за 2 минуты.</p>
+        <p class="tab-description user-hint" id="tabDescription">Быстро понять, окупается ли офис как система.</p>
       </section>
 
       <section class="action-row" id="detailedActionRow">
         <button class="button button-primary" id="addAgentBtn" type="button">Добавить агента</button>
         <span id="toast" class="toast" role="status" aria-live="polite"></span>
+      </section>
+
+      <section id="simpleView" class="view-section">
+        <div class="simple-layout">
+          <article class="panel simple-intro">
+            <div class="panel-title">
+              <h2>Простой расчёт</h2>
+              <p>Это первый управленческий маршрут для собственника. Здесь используются текущие агенты и текущие расходы офиса без отдельного второго списка.</p>
+            </div>
+          </article>
+
+          <article class="panel simple-panel">
+            <div class="panel-title">
+              <h2>Шаг 1. Сколько офис съедает каждый месяц?</h2>
+              <p>Расходы берутся из текущего списка `state.expenses`. Роялти сюда вручную не добавляется, оно считается автоматически.</p>
+            </div>
+            <div class="notice-line warning user-hint">Роялти считается автоматически и не должен дублироваться в расходах.</div>
+            <div class="table-shell compact">
+              <table class="expense-table">
+                <thead>
+                  <tr>
+                    <th>Название</th>
+                    <th>Сумма</th>
+                    <th>Период</th>
+                    <th>Сумма в месяц</th>
+                  </tr>
+                </thead>
+                <tbody id="simpleExpensesBody"></tbody>
+                <tfoot>
+                  <tr>
+                    <th colspan="3">ОФИС СЪЕДАЕТ В МЕСЯЦ</th>
+                    <th id="simpleExpensesTotal">0 ₽</th>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </article>
+
+          <article class="panel simple-panel">
+            <div class="panel-title">
+              <h2>Шаг 2. Кто приносит деньги?</h2>
+              <p>Агенты берутся из текущего `state.agents`, но показаны здесь в упрощённом виде. Стипендии, квартальные бонусы и сложные сценарии в этом этапе не показываются.</p>
+            </div>
+            <div id="simpleAgents" class="simple-agent-list"></div>
+            <div class="simple-owner-box">
+              <div class="panel-title">
+                <h3>Личные сделки собственника</h3>
+                <p>По этим сделкам агентская выплата равна нулю. Роялти считается автоматически.</p>
+              </div>
+              <div class="field">
+                <label for="ownerSales">Комиссия личных сделок собственника за месяц</label>
+                <input id="ownerSales" type="number" min="0" step="1000">
+                <p class="field-hint">Эта сумма учитывается отдельно и не смешивается с обычными агентами.</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel simple-panel simple-result-panel">
+            <div class="panel-title">
+              <h2>Шаг 3. Что получилось?</h2>
+              <p>Итог показывает отдельно результат офиса как системы и результат с учётом личных сделок собственника.</p>
+            </div>
+            <dl class="metric-list">
+              <div><dt>Агенты продали</dt><dd id="simpleAgentSales">0 ₽</dd></div>
+              <div><dt>Личные сделки собственника</dt><dd id="simpleOwnerSales">0 ₽</dd></div>
+              <div><dt>Общий оборот</dt><dd id="simpleTotalSales">0 ₽</dd></div>
+              <div><dt>Выплаты агентам</dt><dd id="simpleAgentPayouts">0 ₽</dd></div>
+              <div><dt>Рефералы</dt><dd id="simpleReferrals">0 ₽</dd></div>
+              <div><dt>Роялти</dt><dd id="simpleRoyalty">0 ₽</dd></div>
+              <div><dt>Расходы офиса</dt><dd id="simpleOfficeExpenses">0 ₽</dd></div>
+              <div><dt>Итог без личных сделок собственника</dt><dd id="simpleResultWithoutOwnerSales">0 ₽</dd></div>
+              <div class="result"><dt>Итог с личными сделками собственника</dt><dd id="simpleResultWithOwnerSales">0 ₽</dd></div>
+            </dl>
+            <div id="simpleResultMessage" class="quick-result-message">Офис около нуля.</div>
+            <div id="simpleOwnerWarning" class="notice-line warning hidden"></div>
+          </article>
+        </div>
       </section>
 
       <section id="quickView" class="view-section">
@@ -312,6 +390,11 @@
         </article>
       </section>
     </main>
+
+    <footer class="footer">
+      <span>Домиан — калькулятор рентабельности офиса V3</span>
+      <a href="https://github.com/LeSauteur/Dom2" target="_blank" rel="noopener">github.com/LeSauteur/Dom2</a>
+    </footer>
   </div>
 
   <script src="assets/js/constants.js"></script>

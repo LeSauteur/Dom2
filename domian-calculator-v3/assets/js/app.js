@@ -7,6 +7,7 @@
   var elements = {};
 
   var TAB_DESCRIPTIONS = {
+    simple: 'Быстро понять, окупается ли офис как система.',
     quick: 'Прикинуть плюс или минус за 2 минуты.',
     cards: 'Подробно ввести агентов, сделки, условия и мотивацию.',
     table: 'Посмотреть всех агентов и итоги одной таблицей.',
@@ -27,6 +28,10 @@
     return Number.isFinite(numeric) ? numeric : 0;
   }
 
+  function rateToPercent(rate) {
+    return Math.round(numberValue(rate) * 10000) / 100;
+  }
+
   function createBlankAgent() {
     return {
       id: nextId('agent'),
@@ -34,7 +39,7 @@
       terms: 'standard',
       status: 'trainee',
       introduced: false,
-      boostedRates: clone(PAY_SCALES.boostedDefault).map(function (rate) { return rate * 100; }),
+      boostedRates: clone(PAY_SCALES.boostedDefault).map(rateToPercent),
       fixedRate: PAY_SCALES.fixedDefault * 100,
       quarterDeposits: 0,
       stipendMode: 'forecast',
@@ -54,7 +59,7 @@
       status: 'partner',
       specialType: 'fixed',
       fixedRate: 80,
-      boostedRates: clone(PAY_SCALES.boostedDefault).map(function (rate) { return rate * 100; }),
+      boostedRates: clone(PAY_SCALES.boostedDefault).map(rateToPercent),
       deals: [
         { id: nextId('quickDeal'), commission: 0 }
       ]
@@ -88,11 +93,12 @@
     return {
       month: now.getMonth(),
       year: now.getFullYear(),
-      view: 'quick',
+      view: 'simple',
       quickCheck: createQuickCheck(),
       scenarios: createDefaultScenarios(),
       agents: useDemo ? clone(DEMO_AGENTS) : [createBlankAgent()],
       expenses: clone(DEFAULT_EXPENSES),
+      ownerSales: 0,
       currentMotivation: 0,
       manualReserve: 0,
       stipendReserveMode: 'quarter'
@@ -146,12 +152,27 @@
     return 'Стандартные условия';
   }
 
+  function formatRateValue(value) {
+    var numeric = numberValue(value);
+    return Number.isInteger(numeric)
+      ? String(numeric)
+      : numeric.toLocaleString('ru-RU', { maximumFractionDigits: 2 });
+  }
+
+  function formatBoostedScheme(rates) {
+    var values = (rates || []).map(formatRateValue);
+    if (values[0] === values[1] && values[1] === values[2]) {
+      return '1–3 сделки: ' + values[0] + '%, 4+ сделки: ' + values[3] + '%';
+    }
+    return values.join(' / ') + '%';
+  }
+
   function statusLabel(agent) {
     if (agent.terms === 'fixed') {
-      return agent.fixedRate + '% всем сделкам';
+      return formatRateValue(agent.fixedRate) + '% всем сделкам';
     }
     if (agent.terms === 'boosted') {
-      return agent.boostedRates.join(' / ') + '%';
+      return formatBoostedScheme(agent.boostedRates);
     }
     return agent.status === 'partner' ? 'Партнёр' : 'Стажёр';
   }
@@ -161,6 +182,14 @@
       + '<label>' + label + '</label>'
       + '<input type="' + type + '" data-agent-id="' + agent.id + '" data-agent-field="' + field + '" value="'
       + escapeHtml(agent[field]) + '" ' + (attrs || '') + '>'
+      + '</div>';
+  }
+
+  function quarterDepositsField(agent) {
+    return '<div class="field">'
+      + '<label>Задатки за квартал</label>'
+      + '<input type="number" data-agent-id="' + agent.id + '" data-agent-field="quarterDeposits" value="' + escapeHtml(agent.quarterDeposits) + '" min="0" step="1000">'
+      + '<p class="field-hint">Порог партнёрских бонусов — 250 000 ₽ задатков за квартал. Это не комиссия по сделкам.</p>'
       + '</div>';
   }
 
@@ -224,7 +253,7 @@
         + option('false', 'Нет', String(agent.introduced))
         + option('true', 'Да', String(agent.introduced))
         + '</select></div>'
-        + agentField(agent, 'quarterDeposits', 'number', 'Задатки за квартал', 'min="0" step="1000"')
+        + quarterDepositsField(agent)
         + '</div>'
         + '<div class="deal-list">'
         + agent.deals.map(function (deal, index) { return renderDealRow(agent, deal, index); }).join('')
@@ -297,7 +326,7 @@
         + '<td data-table-calc="referral" data-agent-id="' + agent.id + '">' + money(result.referral) + '</td>'
         + '<td data-table-calc="royaltyShare" data-agent-id="' + agent.id + '">' + money(royaltyShare) + '</td>'
         + '<td data-table-calc="officeRest" data-agent-id="' + agent.id + '">' + money(officeRest) + '</td>'
-        + '<td><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="quarterDeposits" value="' + agent.quarterDeposits + '"></td>'
+        + '<td><input type="number" min="0" step="1000" title="Порог партнёрских бонусов — 250 000 ₽ задатков за квартал. Это не комиссия по сделкам." data-agent-id="' + agent.id + '" data-agent-field="quarterDeposits" value="' + agent.quarterDeposits + '"></td>'
         + '<td data-table-calc="stipendMonth" data-agent-id="' + agent.id + '">' + (result.stipend.enabled ? money(result.stipend.monthly) : 'Отключено') + '</td>'
         + '<td><button class="icon-button" type="button" title="Раскрыть сделки" data-action="toggle-agent" data-agent-id="' + agent.id + '">' + (agent.expanded ? '−' : '+') + '</button></td>'
         + '</tr>';
@@ -365,6 +394,16 @@
     return 'месяц';
   }
 
+  function expensePeriodLabel(period) {
+    if (period === 'quarter') {
+      return 'Квартал';
+    }
+    if (period === 'year') {
+      return 'Год';
+    }
+    return 'Месяц';
+  }
+
   function ensureQuickMonthTurnovers() {
     var months = getPeriodMonths(state.quickCheck.period);
     while (state.quickCheck.monthTurnovers.length < months) {
@@ -384,6 +423,59 @@
     renderQuickTurnoverFields();
     renderQuickAgents();
     updateQuickSummaries();
+  }
+
+  function renderSimpleView() {
+    var simple = calculateSimpleTotals(state);
+    elements.ownerSales.value = state.ownerSales;
+    elements.simpleExpensesBody.innerHTML = simple.expenseRows.map(function (expense) {
+      return '<tr>'
+        + '<td>' + escapeHtml(expense.name) + '</td>'
+        + '<td>' + money(expense.amount) + '</td>'
+        + '<td>' + expensePeriodLabel(expense.period) + '</td>'
+        + '<td>' + money(expense.monthlyAmount) + '</td>'
+        + '</tr>';
+    }).join('');
+
+    elements.simpleAgents.innerHTML = simple.agentRows.map(function (agent) {
+      return '<article class="quick-agent-card simple-agent-card">'
+        + '<div class="quick-agent-head">'
+        + '<h3>' + escapeHtml(agent.name || 'Агент') + '</h3>'
+        + '<span class="badge">' + escapeHtml(agent.termsLabel) + '</span>'
+        + '</div>'
+        + '<dl class="metric-list simple-agent-metrics">'
+        + '<div><dt>Комиссия за месяц</dt><dd>' + money(agent.gross) + '</dd></div>'
+        + '<div><dt>Тип условий</dt><dd>' + escapeHtml(agent.termsLabel) + '</dd></div>'
+        + '<div><dt>Процент / схема</dt><dd>' + escapeHtml(agent.schemeLabel) + '</dd></div>'
+        + '<div><dt>Приведённый агент</dt><dd>' + (agent.introduced ? 'Да' : 'Нет') + '</dd></div>'
+        + '<div><dt>Сколько получает агент</dt><dd>' + money(agent.payout) + '</dd></div>'
+        + '<div><dt>Остаётся офису до общих расходов</dt><dd>' + money(agent.officeBeforeExpenses) + '</dd></div>'
+        + '</dl>'
+        + '</article>';
+    }).join('');
+
+    updateSimpleSummaries(simple);
+  }
+
+  function updateSimpleSummaries(simpleTotals) {
+    var simple = simpleTotals || calculateSimpleTotals(state);
+    var outcome = calculateSimpleOutcomeMessage(simple);
+
+    setText('simpleExpensesTotal', money(simple.officeExpenses));
+    setText('simpleAgentSales', money(simple.agentSales));
+    setText('simpleOwnerSales', money(simple.ownerSales));
+    setText('simpleTotalSales', money(simple.totalSales));
+    setText('simpleAgentPayouts', money(simple.agentPayouts));
+    setText('simpleReferrals', money(simple.referralPayouts));
+    setText('simpleRoyalty', money(simple.royaltyAmount));
+    setText('simpleOfficeExpenses', money(simple.officeExpenses));
+    setText('simpleResultWithoutOwnerSales', money(simple.resultWithoutOwnerSales));
+    setText('simpleResultWithOwnerSales', money(simple.resultWithOwnerSales));
+
+    elements.simpleResultMessage.textContent = outcome.summaryText;
+    elements.simpleResultMessage.className = 'quick-result-message ' + outcome.summaryType;
+    elements.simpleOwnerWarning.textContent = outcome.ownerWarningText;
+    elements.simpleOwnerWarning.classList.toggle('hidden', !outcome.showOwnerWarning);
   }
 
   function renderQuickTurnoverFields() {
@@ -584,20 +676,23 @@
   function render() {
     elements.yearInput.value = state.year;
     renderMonthOptions();
+    elements.ownerSales.value = state.ownerSales;
     elements.currentMotivation.value = state.currentMotivation;
     elements.manualReserve.value = state.manualReserve;
     elements.stipendReserveMode.value = state.stipendReserveMode;
+    elements.simpleView.classList.toggle('hidden', state.view !== 'simple');
     elements.quickView.classList.toggle('hidden', state.view !== 'quick');
     elements.cardsView.classList.toggle('hidden', state.view !== 'cards');
     elements.tableView.classList.toggle('hidden', state.view !== 'table');
     elements.analyticsView.classList.toggle('hidden', state.view !== 'analytics');
-    elements.detailedPeriodPanel.classList.toggle('hidden', state.view === 'quick' || state.view === 'analytics');
-    elements.detailedActionRow.classList.toggle('hidden', state.view === 'quick' || state.view === 'analytics');
-    elements.detailedSummaryLayout.classList.toggle('hidden', state.view === 'quick' || state.view === 'analytics');
+    elements.detailedPeriodPanel.classList.toggle('hidden', state.view === 'simple' || state.view === 'quick' || state.view === 'analytics');
+    elements.detailedActionRow.classList.toggle('hidden', state.view === 'simple' || state.view === 'quick' || state.view === 'analytics');
+    elements.detailedSummaryLayout.classList.toggle('hidden', state.view === 'simple' || state.view === 'quick' || state.view === 'analytics');
     document.querySelectorAll('.mode-button').forEach(function (button) {
       button.classList.toggle('active', button.dataset.view === state.view);
     });
     elements.tabDescription.textContent = TAB_DESCRIPTIONS[state.view] || '';
+    renderSimpleView();
     renderQuickCheck();
     renderAnalytics();
     renderAgentCards();
@@ -664,6 +759,7 @@
 
   function updateSummaries() {
     var totals = calculateOfficeTotals(state);
+    updateSimpleSummaries();
     setText('grossCommission', money(totals.grossCommission));
     setText('royaltyRate', percent(totals.royaltyRate));
     setText('royaltyAmount', money(totals.royaltyAmount));
@@ -873,6 +969,9 @@
 
   function onInput(event) {
     var target = event.target;
+    if (event.type === 'input' && target.tagName === 'SELECT') {
+      return;
+    }
     if (target.dataset.scenarioId) {
       updateScenarioField(target);
       updateAnalytics();
@@ -1040,6 +1139,11 @@
       updateSummaries();
     });
 
+    elements.ownerSales.addEventListener('input', function () {
+      state.ownerSales = numberValue(elements.ownerSales.value);
+      updateSimpleSummaries();
+    });
+
     elements.hintsToggle.addEventListener('change', function () {
       document.body.classList.toggle('hints-hidden', !elements.hintsToggle.checked);
     });
@@ -1085,6 +1189,22 @@
       'detailedPeriodPanel',
       'detailedActionRow',
       'detailedSummaryLayout',
+      'simpleView',
+      'simpleExpensesBody',
+      'simpleExpensesTotal',
+      'simpleAgents',
+      'ownerSales',
+      'simpleAgentSales',
+      'simpleOwnerSales',
+      'simpleTotalSales',
+      'simpleAgentPayouts',
+      'simpleReferrals',
+      'simpleRoyalty',
+      'simpleOfficeExpenses',
+      'simpleResultWithoutOwnerSales',
+      'simpleResultWithOwnerSales',
+      'simpleResultMessage',
+      'simpleOwnerWarning',
       'quickView',
       'quickPeriod',
       'quickRoyaltyMode',

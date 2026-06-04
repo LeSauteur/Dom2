@@ -174,6 +174,106 @@
     };
   }
 
+  function calculateSimpleExpenseRows(expenses) {
+    return (expenses || []).map(function (expense) {
+      return {
+        id: expense.id,
+        name: expense.name,
+        amount: Math.max(0, toNumber(expense.amount)),
+        period: expense.period || 'month',
+        monthlyAmount: normalizeExpenseToMonth(expense)
+      };
+    });
+  }
+
+  function calculateSimpleAgentRows(agents) {
+    return (agents || []).map(function (agent) {
+      var result = calculateAgent(agent);
+      return {
+        id: agent.id,
+        name: agent.name,
+        gross: result.gross,
+        terms: agent.terms,
+        termsLabel: agent.terms === 'fixed'
+          ? 'Фиксированный процент'
+          : (agent.terms === 'boosted' ? 'Повышенная стартовая шкала' : 'Стандартные условия'),
+        schemeLabel: agent.terms === 'fixed'
+          ? Math.max(0, toNumber(agent.fixedRate)) + '%'
+          : (agent.terms === 'boosted'
+            ? (agent.boostedRates || []).map(function (rate) { return Math.max(0, toNumber(rate)) + '%'; }).join(' / ')
+            : (agent.status === 'partner' ? 'Партнёрская шкала' : 'Шкала стажёра')),
+        introduced: Boolean(agent.introduced),
+        payout: result.payout,
+        referral: result.referral,
+        officeBeforeExpenses: result.officeBeforeRoyalty
+      };
+    });
+  }
+
+  function calculateSimpleTotals(state) {
+    var agentRows = calculateSimpleAgentRows(state.agents || []);
+    var expenseRows = calculateSimpleExpenseRows(state.expenses || []);
+    var agentSales = agentRows.reduce(function (sum, agent) { return sum + agent.gross; }, 0);
+    var ownerSales = Math.max(0, toNumber(state.ownerSales));
+    var totalSales = agentSales + ownerSales;
+    var agentPayouts = agentRows.reduce(function (sum, agent) { return sum + agent.payout; }, 0);
+    var referralPayouts = agentRows.reduce(function (sum, agent) { return sum + agent.referral; }, 0);
+    var officeExpenses = expenseRows.reduce(function (sum, expense) { return sum + expense.monthlyAmount; }, 0);
+    var royaltyAmountWithoutOwnerSales = calculateRoyalty(agentSales);
+    var royaltyAmount = calculateRoyalty(totalSales);
+    var ownerRoyaltyAmount = Math.max(0, royaltyAmount - royaltyAmountWithoutOwnerSales);
+    var ownerNetAfterRoyalty = ownerSales - ownerRoyaltyAmount;
+    var resultWithoutOwnerSales = agentSales
+      - agentPayouts
+      - referralPayouts
+      - royaltyAmountWithoutOwnerSales
+      - officeExpenses;
+    var resultWithOwnerSales = totalSales
+      - agentPayouts
+      - referralPayouts
+      - royaltyAmount
+      - officeExpenses;
+
+    return {
+      expenseRows: expenseRows,
+      agentRows: agentRows,
+      agentSales: agentSales,
+      ownerSales: ownerSales,
+      totalSales: totalSales,
+      agentPayouts: agentPayouts,
+      referralPayouts: referralPayouts,
+      royaltyAmountWithoutOwnerSales: royaltyAmountWithoutOwnerSales,
+      royaltyAmount: royaltyAmount,
+      ownerRoyaltyAmount: ownerRoyaltyAmount,
+      ownerNetAfterRoyalty: ownerNetAfterRoyalty,
+      officeExpenses: officeExpenses,
+      resultWithoutOwnerSales: resultWithoutOwnerSales,
+      resultWithOwnerSales: resultWithOwnerSales
+    };
+  }
+
+  function calculateSimpleOutcomeMessage(totals) {
+    var summaryText = 'Офис около нуля.';
+    var summaryType = 'neutral';
+    if (totals.resultWithOwnerSales > 0.5) {
+      summaryText = 'Офис в плюсе на ' + money(totals.resultWithOwnerSales) + '.';
+      summaryType = 'positive';
+    } else if (totals.resultWithOwnerSales < -0.5) {
+      summaryText = 'Офис в минусе на ' + money(Math.abs(totals.resultWithOwnerSales)) + '.';
+      summaryType = 'negative';
+    }
+
+    var showOwnerWarning = totals.resultWithoutOwnerSales < -0.5 && totals.resultWithOwnerSales > 0.5;
+    return {
+      summaryType: summaryType,
+      summaryText: summaryText,
+      showOwnerWarning: showOwnerWarning,
+      ownerWarningText: showOwnerWarning
+        ? 'Офис выходит в плюс только за счёт личных продаж собственника. Как система офис пока не окупается сам.'
+        : ''
+    };
+  }
+
   function getPeriodMonths(period) {
     if (period === 'quarter') {
       return 3;
@@ -411,6 +511,10 @@
   window.calculateReferral = calculateReferral;
   window.calculateStipend = calculateStipend;
   window.calculateOfficeTotals = calculateOfficeTotals;
+  window.calculateSimpleExpenseRows = calculateSimpleExpenseRows;
+  window.calculateSimpleAgentRows = calculateSimpleAgentRows;
+  window.calculateSimpleTotals = calculateSimpleTotals;
+  window.calculateSimpleOutcomeMessage = calculateSimpleOutcomeMessage;
   window.getPeriodMonths = getPeriodMonths;
   window.calculateQuickRoyalty = calculateQuickRoyalty;
   window.calculateQuickCheck = calculateQuickCheck;

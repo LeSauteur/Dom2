@@ -301,8 +301,8 @@ button:focus-visible {
 
 .field-hint {
   margin: 5px 0 0;
-  color: var(--muted);
-  font-size: 12px;
+  color: #4b5563;
+  font-size: 12.5px;
 }
 
 .term-note {
@@ -343,6 +343,54 @@ button:focus-visible {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+}
+
+.simple-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, .82fr);
+  gap: 16px;
+}
+
+.simple-intro {
+  grid-column: 1 / -1;
+}
+
+.simple-panel {
+  min-width: 0;
+}
+
+.simple-result-panel {
+  position: sticky;
+  top: 12px;
+}
+
+.simple-agent-list {
+  display: grid;
+  gap: 12px;
+}
+
+.simple-agent-card .badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.simple-agent-metrics {
+  margin-top: 12px;
+}
+
+.simple-owner-box {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfcfe;
 }
 
 .quick-layout {
@@ -508,6 +556,12 @@ button:focus-visible {
   gap: 16px;
 }
 
+@media (max-width: 1280px) {
+  .scenario-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .scenario-card {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -541,6 +595,22 @@ button:focus-visible {
 .scenario-verdict.neutral {
   background: #eef2ff;
   color: var(--ink);
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-top: 18px;
+  padding: 14px 4px 4px;
+  color: #4b5563;
+  font-size: 13px;
+}
+
+.footer a {
+  color: var(--brand);
+  font-weight: 700;
 }
 
 .agent-card {
@@ -662,6 +732,38 @@ button:focus-visible {
 
 .table-shell {
   overflow-x: auto;
+  scrollbar-color: var(--brand) #eef2f7;
+  scrollbar-width: thin;
+  position: relative;
+}
+
+.table-shell::before {
+  content: "Таблицу можно прокручивать вправо";
+  display: block;
+  padding: 8px 10px;
+  color: #4b5563;
+  background: #fff7ed;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.table-shell.compact::before {
+  display: none;
+}
+
+.table-shell::-webkit-scrollbar {
+  height: 12px;
+}
+
+.table-shell::-webkit-scrollbar-track {
+  background: #eef2f7;
+  border-radius: 999px;
+}
+
+.table-shell::-webkit-scrollbar-thumb {
+  background: var(--brand);
+  border-radius: 999px;
 }
 
 table {
@@ -683,6 +785,21 @@ th {
   background: #f9fafb;
   font-size: 12px;
   text-transform: uppercase;
+}
+
+.office-table th:first-child,
+.office-table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: 190px;
+  background: #fff;
+  box-shadow: 8px 0 12px rgba(15, 23, 42, .06);
+}
+
+.office-table th:first-child {
+  z-index: 3;
+  background: #f9fafb;
 }
 
 td input,
@@ -797,6 +914,7 @@ td select {
   .period-panel,
   .start-panel,
   .summary-layout,
+  .simple-layout,
   .quick-layout,
   .analytics-layout,
   .scenario-grid,
