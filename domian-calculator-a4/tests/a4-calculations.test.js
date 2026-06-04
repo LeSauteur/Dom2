@@ -161,36 +161,79 @@ test('motivation reserve supports stipend and annual trip reserves', () => {
   const reserve = calculator.calculateMotivationReserve({
     stipendMode: 'auto',
     quarterlyResult: 1500000,
+    annualReserveMode: 'monthly',
     mountainSeaEnabled: true,
     mountainSeaPerTrip: 15000,
     mountainSeaTripsPerYear: 2,
     travelEnabled: true,
-    travelPerYear: 120000,
+    travelPerTrip: 100000,
+    travelTripsPerYear: 2,
     corporateEnabled: true,
     corporatePerYear: 20000,
     congressEnabled: true,
-    congressPerYear: 5000
+    congressPerYear: 3500,
+    starEnabled: true,
+    starPerYear: 5000
   });
 
   assert.equal(noReserve.monthly, 0);
   assert.equal(reserve.stipendMonthly, 7000);
   closeTo(reserve.mountainSeaMonthly, 2500);
-  closeTo(reserve.travelMonthly, 10000);
+  closeTo(reserve.travelMonthly, 16666.666666666668);
   closeTo(reserve.corporateMonthly, 1666.6666666666667);
-  closeTo(reserve.congressMonthly, 416.6666666666667);
-  closeTo(reserve.monthly, 21583.333333333332);
+  closeTo(reserve.congressMonthly, 291.6666666666667);
+  closeTo(reserve.starMonthly, 416.6666666666667);
+  closeTo(reserve.annualReserveMonthly, 21541.666666666668);
+  closeTo(reserve.monthly, 28541.666666666668);
 });
 
 test('travel reserve defaults to two international trips per year', () => {
-  assert.equal(calculator.DEFAULT_MOTIVATION.travelPerYear, 240000);
+  assert.equal(calculator.DEFAULT_MOTIVATION.travelPerTrip, 100000);
+  assert.equal(calculator.DEFAULT_MOTIVATION.travelTripsPerYear, 2);
 
   const reserve = calculator.calculateMotivationReserve({
     stipendMode: 'off',
+    annualReserveMode: 'monthly',
     travelEnabled: true
   });
 
-  assert.equal(reserve.travelMonthly, 20000);
-  assert.equal(reserve.monthly, 20000);
+  closeTo(reserve.travelAnnual, 200000);
+  closeTo(reserve.travelMonthly, 16666.666666666668);
+  closeTo(reserve.monthly, 16666.666666666668);
+});
+
+test('annual reserves can be recognized immediately or manually', () => {
+  const full = calculator.calculateMotivationReserve({
+    stipendMode: 'off',
+    annualReserveMode: 'full',
+    travelEnabled: true,
+    travelPerTrip: 100000,
+    travelTripsPerYear: 2,
+    congressEnabled: true,
+    congressPerYear: 3500,
+    starEnabled: true,
+    starPerYear: 5000
+  });
+
+  const manual = calculator.calculateMotivationReserve({
+    stipendMode: 'off',
+    annualReserveMode: 'manual',
+    manualAnnualReserveMonthly: 25000,
+    travelEnabled: true,
+    travelPerTrip: 100000,
+    travelTripsPerYear: 2,
+    congressEnabled: true,
+    congressPerYear: 3500,
+    starEnabled: true,
+    starPerYear: 5000
+  });
+
+  assert.equal(full.annualReserveTotal, 208500);
+  assert.equal(full.annualReserveMonthly, 208500);
+  assert.equal(full.monthly, 208500);
+  assert.equal(manual.annualReserveTotal, 208500);
+  assert.equal(manual.annualReserveMonthly, 25000);
+  assert.equal(manual.monthly, 25000);
 });
 
 test('office totals distinguish profit before and after reserves', () => {

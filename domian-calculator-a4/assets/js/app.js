@@ -109,6 +109,58 @@
     });
   }
 
+  function motivationAnnuals(motivation) {
+    var data = Object.assign(createMotivation(), motivation || {});
+    return {
+      mountainSea: positiveNumber(data.mountainSeaPerTrip) * positiveNumber(data.mountainSeaTripsPerYear),
+      travel: positiveNumber(data.travelPerTrip) * positiveNumber(data.travelTripsPerYear),
+      corporate: positiveNumber(data.corporatePerYear),
+      congress: positiveNumber(data.congressPerYear),
+      star: positiveNumber(data.starPerYear)
+    };
+  }
+
+  function renderMotivationMetric(agentId, key, label, value) {
+    return '<div><dt>' + label + '</dt><dd data-agent-id="' + agentId + '" data-motivation-metric="' + key + '">' + moneyPrecise(value) + '</dd></div>';
+  }
+
+  function renderTripMotivationCard(agent, config) {
+    var motivation = Object.assign(createMotivation(), agent.motivation || {});
+    var annuals = motivationAnnuals(motivation);
+    var annual = annuals[config.key];
+
+    return '<article class="motivation-card">'
+      + '<label class="motivation-card-toggle"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="' + config.enabledField + '"' + checked(motivation[config.enabledField]) + '>'
+      + '<span><strong>' + config.title + '</strong><small>' + config.description + '</small></span></label>'
+      + '<div class="motivation-card-fields">'
+      + '<label class="field"><span>Сумма за поездку, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="' + config.amountField + '" value="' + motivation[config.amountField] + '"></label>'
+      + '<label class="field"><span>Количество поездок в год</span><input type="number" min="0" step="1" data-agent-id="' + agent.id + '" data-motivation-field="' + config.countField + '" value="' + motivation[config.countField] + '"></label>'
+      + '</div>'
+      + '<dl class="motivation-card-total">'
+      + renderMotivationMetric(agent.id, config.key + 'Annual', 'Итого в год', annual)
+      + renderMotivationMetric(agent.id, config.key + 'Monthly', 'В месяц при делении на 12', annual / 12)
+      + '</dl>'
+      + '</article>';
+  }
+
+  function renderAnnualMotivationCard(agent, config) {
+    var motivation = Object.assign(createMotivation(), agent.motivation || {});
+    var annuals = motivationAnnuals(motivation);
+    var annual = annuals[config.key];
+
+    return '<article class="motivation-card">'
+      + '<label class="motivation-card-toggle"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="' + config.enabledField + '"' + checked(motivation[config.enabledField]) + '>'
+      + '<span><strong>' + config.title + '</strong><small>' + config.description + '</small></span></label>'
+      + '<div class="motivation-card-fields single">'
+      + '<label class="field"><span>Сумма в год, ₽</span><input type="number" min="0" step="500" data-agent-id="' + agent.id + '" data-motivation-field="' + config.amountField + '" value="' + motivation[config.amountField] + '"></label>'
+      + '</div>'
+      + '<dl class="motivation-card-total">'
+      + renderMotivationMetric(agent.id, config.key + 'Annual', 'Итого в год', annual)
+      + renderMotivationMetric(agent.id, config.key + 'Monthly', 'В месяц при делении на 12', annual / 12)
+      + '</dl>'
+      + '</article>';
+  }
+
   function renderExpenses() {
     elements.expensesList.innerHTML = state.expenses.map(function (expense) {
       return '<label class="field expense-row">'
@@ -122,10 +174,19 @@
 
   function renderMotivationControls(agent) {
     var motivation = Object.assign(createMotivation(), agent.motivation || {});
+    var motivationReserve = calculateAgent(agent).motivationReserve;
 
     return '<details class="motivation-box">'
-      + '<summary>Мотивации и резервы агента</summary>'
-      + '<p class="hint">Здесь можно добавить будущие расходы на удержание агента: стипендию, поездки, корпоративы и конгресс. Если не уверены — оставьте выключенным.</p>'
+      + '<summary class="motivation-summary">'
+      + '<span class="motivation-summary-main">'
+      + '<span class="motivation-summary-title"><span class="summary-closed">Настроить мотивации агента</span><span class="summary-open">Мотивации и резервы агента</span></span>'
+      + '<span class="motivation-summary-text">Здесь можно изменить стипендию, поездки, корпоративы, конгресс и звезду. Эти суммы влияют на итог офиса.</span>'
+      + '</span>'
+      + '<span class="motivation-summary-side">'
+      + '<span class="motivation-current">Сейчас учтено: <b data-agent-summary="motivationInline" data-agent-id="' + agent.id + '">' + money(motivationReserve) + '</b> / месяц</span>'
+      + '<span class="collapse-text">Свернуть настройки</span>'
+      + '</span>'
+      + '</summary>'
       + '<div class="form-grid compact-grid">'
       + '<label class="field wide-field"><span>Как учитывать стипендию?</span><select data-agent-id="' + agent.id + '" data-motivation-field="stipendMode">'
       + option('off', 'Не считать', motivation.stipendMode)
@@ -134,15 +195,21 @@
       + '</select><small>Стипендия — это будущая ежемесячная нагрузка по результатам квартала.</small></label>'
       + '<label class="field"><span>Результат агента за квартал, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="quarterlyResult" value="' + motivation.quarterlyResult + '"><small>Если оставить 0, берём комиссию агента за месяц × 3.</small></label>'
       + '<label class="field"><span>Стипендия вручную, ₽ в месяц</span><input type="number" min="0" step="500" data-agent-id="' + agent.id + '" data-motivation-field="manualStipendMonthly" value="' + motivation.manualStipendMonthly + '"></label>'
-      + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="mountainSeaEnabled"' + checked(motivation.mountainSeaEnabled) + '> Горы/Море <small>поездки по РФ</small></label>'
-      + '<label class="field"><span>Горы/Море, ₽ за поездку</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="mountainSeaPerTrip" value="' + motivation.mountainSeaPerTrip + '"><small>Обычно 2 поездки в год: Горы и Море.</small></label>'
-      + '<label class="field"><span>Поездок в год</span><input type="number" min="0" step="1" data-agent-id="' + agent.id + '" data-motivation-field="mountainSeaTripsPerYear" value="' + motivation.mountainSeaTripsPerYear + '"></label>'
-      + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="travelEnabled"' + checked(motivation.travelEnabled) + '> Заграница / Путешествие <small>2 поездки</small></label>'
-      + '<label class="field wide-field"><span>Заграница / Путешествие, ₽ в год</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="travelPerYear" value="' + motivation.travelPerYear + '"><small>2 поездки по 120 000 ₽ = 240 000 ₽ в год, или 20 000 ₽ в месяц.</small></label>'
-      + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="corporateEnabled"' + checked(motivation.corporateEnabled) + '> Корпоративы <small>мероприятия</small></label>'
-      + '<label class="field"><span>Корпоративы, ₽ в год</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="corporatePerYear" value="' + motivation.corporatePerYear + '"><small>Годовой резерв на мероприятия.</small></label>'
-      + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="congressEnabled"' + checked(motivation.congressEnabled) + '> Конгресс <small>участие</small></label>'
-      + '<label class="field"><span>Конгресс, ₽ в год</span><input type="number" min="0" step="500" data-agent-id="' + agent.id + '" data-motivation-field="congressPerYear" value="' + motivation.congressPerYear + '"><small>Годовой резерв на участие.</small></label>'
+      + '</div>'
+      + '<section class="reserve-mode-card">'
+      + '<label class="field"><span>Как учитывать годовые мотивации?</span><select data-agent-id="' + agent.id + '" data-motivation-field="annualReserveMode">'
+      + option('monthly', 'Распределить по 12 месяцам', motivation.annualReserveMode)
+      + option('full', 'Учесть всю сумму сейчас', motivation.annualReserveMode)
+      + option('manual', 'Ввести свою сумму в месяц', motivation.annualReserveMode)
+      + '</select><small>Собственник сам выбирает: копить равномерно, заложить всю сумму сразу или указать частичный резерв.</small></label>'
+      + '<label class="field"><span>Своя сумма резерва, ₽ в месяц</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="manualAnnualReserveMonthly" value="' + motivation.manualAnnualReserveMonthly + '"><small>Используется только в режиме “Ввести свою сумму в месяц”. В остальных режимах поле не влияет на расчёт.</small></label>'
+      + '</section>'
+      + '<div class="motivation-card-grid">'
+      + renderTripMotivationCard(agent, { key: 'mountainSea', enabledField: 'mountainSeaEnabled', amountField: 'mountainSeaPerTrip', countField: 'mountainSeaTripsPerYear', title: 'Горы / Море', description: 'Поездки по РФ для агента' })
+      + renderTripMotivationCard(agent, { key: 'travel', enabledField: 'travelEnabled', amountField: 'travelPerTrip', countField: 'travelTripsPerYear', title: 'Заграница / Путешествие', description: 'Зарубежные поездки для агента' })
+      + renderAnnualMotivationCard(agent, { key: 'corporate', enabledField: 'corporateEnabled', amountField: 'corporatePerYear', title: 'Корпоративы', description: 'Годовой резерв на мероприятия' })
+      + renderAnnualMotivationCard(agent, { key: 'congress', enabledField: 'congressEnabled', amountField: 'congressPerYear', title: 'Конгресс', description: 'Участие агента в годовом мероприятии' })
+      + renderAnnualMotivationCard(agent, { key: 'star', enabledField: 'starEnabled', amountField: 'starPerYear', title: 'Звезда', description: 'Награда для лучшего агента офиса' })
       + '</div>'
       + '</details>';
   }
@@ -185,7 +252,7 @@
         + '<div class="form-grid">'
         + '<label class="field agent-main-field"><span>Имя</span><input type="text" data-agent-id="' + agent.id + '" data-agent-field="name" value="' + escapeHtml(agent.name) + '"></label>'
         + '<label class="field agent-main-field"><span>Сколько агент принёс комиссии</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="commission" value="' + agent.commission + '"><small>Это вся комиссия за месяц.</small></label>'
-        + '<label class="field agent-main-field"><span>Количество сделок</span><input type="number" min="1" step="1" data-agent-id="' + agent.id + '" data-agent-field="dealCount" value="' + agent.dealCount + '"><small>Если точных сделок нет, укажите примерное количество.</small></label>'
+        + '<label class="field agent-main-field"><span>Количество сделок</span><input type="number" min="1" step="1" data-agent-id="' + agent.id + '" data-agent-field="dealCount" value="' + agent.dealCount + '"><small>Калькулятор делит общую комиссию поровну на сделки, а процент берёт разный по номеру сделки.</small></label>'
         + '<label class="field agent-main-field"><span>Тип расчёта выплаты</span><select data-agent-id="' + agent.id + '" data-agent-field="paymentType" data-structural="true">'
         + option('standard', 'Стандартная шкала', agent.paymentType)
         + option('boosted', 'Повышенная стартовая шкала', agent.paymentType)
@@ -275,11 +342,36 @@
         ['payout', agent.payout],
         ['referral', agent.referral],
         ['motivation', agent.motivationReserve],
+        ['motivationInline', agent.motivationReserve],
         ['office', agent.officeBeforeRoyaltyAndReserve]
       ].forEach(function (item) {
         var node = document.querySelector('[data-agent-summary="' + item[0] + '"][data-agent-id="' + agent.id + '"]');
         if (node) {
           node.textContent = money(item[1]);
+        }
+      });
+    });
+    updateMotivationCardMetrics();
+  }
+
+  function updateMotivationCardMetrics() {
+    state.agents.forEach(function (agent) {
+      var annuals = motivationAnnuals(agent.motivation || {});
+      [
+        ['mountainSeaAnnual', annuals.mountainSea],
+        ['mountainSeaMonthly', annuals.mountainSea / 12],
+        ['travelAnnual', annuals.travel],
+        ['travelMonthly', annuals.travel / 12],
+        ['corporateAnnual', annuals.corporate],
+        ['corporateMonthly', annuals.corporate / 12],
+        ['congressAnnual', annuals.congress],
+        ['congressMonthly', annuals.congress / 12],
+        ['starAnnual', annuals.star],
+        ['starMonthly', annuals.star / 12]
+      ].forEach(function (item) {
+        var node = document.querySelector('[data-motivation-metric="' + item[0] + '"][data-agent-id="' + agent.id + '"]');
+        if (node) {
+          node.textContent = moneyPrecise(item[1]);
         }
       });
     });
@@ -502,7 +594,7 @@
     }
     agent.motivation = Object.assign(createMotivation(), agent.motivation || {});
 
-    if (target.dataset.motivationField === 'stipendMode') {
+    if (target.dataset.motivationField === 'stipendMode' || target.dataset.motivationField === 'annualReserveMode') {
       agent.motivation[target.dataset.motivationField] = target.value;
     } else {
       agent.motivation[target.dataset.motivationField] = positiveNumber(target.value);
@@ -584,6 +676,7 @@
       'expensesList',
       'agentsList',
       'addAgentBtn',
+      'addAgentBottomBtn',
       'ownerSalesInput',
       'resultStatus',
       'agentTurnover',
@@ -623,6 +716,10 @@
     document.body.addEventListener('change', onInput);
     document.body.addEventListener('click', onClick);
     elements.addAgentBtn.addEventListener('click', function () {
+      state.agents.push(createAgent());
+      render();
+    });
+    elements.addAgentBottomBtn.addEventListener('click', function () {
       state.agents.push(createAgent());
       render();
     });

@@ -25,15 +25,21 @@
       <button class="button primary" type="button" data-action="restore-example">Вернуть пример</button>
     </section>
 
-    <section class="steps" aria-label="Порядок работы">
-      <div><span>1</span>Расходы офиса</div>
-      <div><span>2</span>Агенты и условия</div>
-      <div><span>3</span>Личные сделки</div>
-      <div><span>4</span>Итог офиса</div>
-      <div><span>5</span>Окупаемость</div>
-      <div><span>6</span>Проверка процента</div>
+    <section class="route-note" aria-labelledby="routeTitle">
+      <div class="route-note-head">
+        <span class="small-label">Маршрут расчёта</span>
+        <h2 id="routeTitle">Как пользоваться калькулятором</h2>
+        <p>Идите сверху вниз, как по бумажному листу.</p>
+      </div>
+      <ol class="route-list">
+        <li><strong>Введите расходы офиса</strong><span>Аренда, реклама, связь, зарплаты и другие траты.</span></li>
+        <li><strong>Добавьте агентов и условия</strong><span>Укажите комиссию, количество сделок и схему выплаты.</span></li>
+        <li><strong>Укажите личные сделки собственника</strong><span>Эти сделки считаются отдельно: агенту выплаты нет, но роялти есть.</span></li>
+        <li><strong>Посмотрите итог офиса</strong><span>Калькулятор покажет, офис в плюсе или в минусе.</span></li>
+        <li><strong>Проверьте окупаемость агентов</strong><span>Посмотрите, кто окупает своё место, а кто нет.</span></li>
+        <li><strong>Сравните процент агенту</strong><span>Проверьте, какие условия выдерживает офис.</span></li>
+      </ol>
     </section>
-    <p class="route-hint">Это не меню, а маршрут расчёта: удобнее идти сверху вниз, как по бумажному листу.</p>
 
     <details class="help-panel">
       <summary>Короткие пояснения без финансового словаря</summary>
@@ -78,6 +84,9 @@
           </div>
           <p class="hint">Комиссия агента — вся сумма за месяц. Если точных сделок нет, укажите примерное количество, и калькулятор распределит комиссию равномерно.</p>
           <div id="agentsList" class="agents-list"></div>
+          <div class="section-actions bottom-actions">
+            <button class="button primary" id="addAgentBottomBtn" type="button">Добавить агента</button>
+          </div>
         </section>
 
         <section class="section-card" aria-labelledby="ownerTitle">
@@ -101,6 +110,11 @@
               <h2 id="profitabilityTitle">Кто окупает своё место</h2>
             </div>
             <p class="hint">Мотивационный резерв — деньги, которые офис должен учитывать заранее. Доля расходов считается просто: расходы офиса делятся на активных обычных агентов. Роялти по агенту здесь показано как управленческая оценка.</p>
+          </div>
+          <div class="term-grid">
+            <p><strong>Роялти-оценка</strong> — примерная доля роялти по агенту. Реальная ставка зависит от общего оборота офиса.</p>
+            <p><strong>Доля расходов</strong> — часть расходов офиса, условно распределённая на агента.</p>
+            <p><strong>Вклад</strong> — сколько агент оставляет офису после выплаты, реферала, роялти-оценки, мотиваций и своей доли расходов.</p>
           </div>
           <div id="profitabilityList" class="profitability-list"></div>
         </section>

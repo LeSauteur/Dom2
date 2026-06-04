@@ -123,8 +123,7 @@ h3 {
   background: rgba(232, 241, 251, .58);
 }
 
-.help-panel summary,
-.motivation-box summary {
+.help-panel summary {
   color: var(--blue);
   font-weight: 900;
   cursor: pointer;
@@ -145,40 +144,77 @@ h3 {
   color: var(--muted);
 }
 
-.steps {
+.route-note {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 18px;
   margin: 20px 0;
-}
-
-.steps div {
-  display: grid;
-  gap: 6px;
-  padding: 10px;
-  border: 1px solid var(--line);
+  padding: 16px 18px;
+  border-left: 4px solid var(--blue);
   border-radius: var(--radius);
-  background: linear-gradient(180deg, rgba(255, 255, 255, .72), rgba(247, 248, 251, .72));
-  color: var(--muted);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .78), rgba(247, 248, 251, .78));
+}
+
+.route-note,
+.route-note * {
   cursor: default;
-  font-size: 13px;
-  font-weight: 700;
 }
 
-.steps span {
-  display: inline-grid;
-  width: 26px;
-  height: 26px;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--blue);
-  color: #fff;
+.route-note h2 {
+  margin: 2px 0 6px;
 }
 
-.route-hint {
-  margin: -8px 0 18px;
+.route-note p {
+  margin-bottom: 0;
   color: var(--muted);
+}
+
+.route-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: route;
+}
+
+.route-list li {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  color: var(--ink);
+  counter-increment: route;
+}
+
+.route-list li::before {
+  content: counter(route);
+  display: inline-grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: rgba(36, 92, 153, .12);
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.route-list strong,
+.route-list span {
+  grid-column: 2;
+}
+
+.route-list strong {
   font-size: 13px;
+}
+
+.route-list span {
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .sheet-grid {
@@ -324,6 +360,22 @@ select:focus {
   line-height: 1;
 }
 
+.term-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.term-grid p {
+  margin: 0;
+  padding: 10px;
+  border-radius: 6px;
+  background: #f7f8fb;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .agent-card {
   padding: 14px;
   border: 1px solid var(--line);
@@ -397,10 +449,183 @@ select:focus {
 
 .motivation-box {
   margin-top: 14px;
-  padding: 12px;
-  border: 1px solid rgba(36, 92, 153, .18);
+  padding: 0;
+  border: 1px solid rgba(36, 92, 153, .28);
   border-radius: var(--radius);
   background: #fbfdff;
+  overflow: hidden;
+}
+
+.motivation-summary {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  background:
+    linear-gradient(135deg, rgba(36, 92, 153, .13), rgba(232, 241, 251, .92));
+  color: var(--blue);
+  cursor: pointer;
+  list-style: none;
+}
+
+.motivation-summary::-webkit-details-marker {
+  display: none;
+}
+
+.motivation-summary::before {
+  content: "+";
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  position: absolute;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 900;
+}
+
+.motivation-box[open] .motivation-summary::before {
+  content: "−";
+}
+
+.motivation-summary-main {
+  display: grid;
+  gap: 5px;
+  padding-left: 42px;
+}
+
+.motivation-summary-title {
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.motivation-summary-text {
+  color: #315b86;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.motivation-summary-side {
+  display: grid;
+  gap: 5px;
+  justify-items: end;
+  min-width: 190px;
+}
+
+.motivation-current {
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.collapse-text {
+  display: none;
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.summary-open {
+  display: none;
+}
+
+.motivation-box[open] .summary-closed {
+  display: none;
+}
+
+.motivation-box[open] .summary-open,
+.motivation-box[open] .collapse-text {
+  display: inline;
+}
+
+.motivation-box .compact-grid {
+  padding: 14px;
+}
+
+.reserve-mode-card {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 14px 14px;
+  padding: 14px;
+  border: 1px solid rgba(36, 92, 153, .18);
+  border-radius: var(--radius);
+  background: rgba(232, 241, 251, .45);
+}
+
+.motivation-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0 14px 14px;
+}
+
+.motivation-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.motivation-card-toggle {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.motivation-card-toggle input {
+  width: auto;
+  min-height: auto;
+  margin-top: 3px;
+}
+
+.motivation-card-toggle strong {
+  display: block;
+  font-size: 16px;
+}
+
+.motivation-card-toggle small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.motivation-card-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.motivation-card-fields.single {
+  grid-template-columns: 1fr;
+}
+
+.motivation-card-total {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.motivation-card-total div {
+  padding: 9px;
+  border-radius: 6px;
+  background: #f7f8fb;
+}
+
+.motivation-card-total dd {
+  font-size: 16px;
 }
 
 .button {
@@ -607,8 +832,12 @@ dd {
     grid-template-columns: 1fr;
   }
 
-  .steps,
+  .route-note,
+  .route-list,
   .help-grid,
+  .term-grid,
+  .reserve-mode-card,
+  .motivation-card-grid,
   .checker-grid,
   .compact-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -630,12 +859,18 @@ dd {
     font-size: 36px;
   }
 
-  .steps,
+  .route-note,
+  .route-list,
   .form-grid,
   .rate-grid,
   .expense-row,
   .agent-summary,
   .help-grid,
+  .term-grid,
+  .reserve-mode-card,
+  .motivation-card-grid,
+  .motivation-card-fields,
+  .motivation-card-total,
   .checker-grid,
   .compact-grid,
   .economics-row dl {
@@ -644,6 +879,20 @@ dd {
 
   .button {
     width: 100%;
+  }
+
+  .motivation-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .motivation-summary-side {
+    justify-items: start;
+    min-width: 0;
+    padding-left: 42px;
+  }
+
+  .motivation-current {
+    white-space: normal;
   }
 
   .toolbar,

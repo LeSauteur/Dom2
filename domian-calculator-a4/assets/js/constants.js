@@ -38,15 +38,20 @@
     stipendMode: 'off',
     quarterlyResult: 0,
     manualStipendMonthly: 0,
+    annualReserveMode: 'monthly',
+    manualAnnualReserveMonthly: 0,
     mountainSeaEnabled: false,
     mountainSeaPerTrip: 15000,
     mountainSeaTripsPerYear: 2,
     travelEnabled: false,
-    travelPerYear: 240000,
+    travelPerTrip: 100000,
+    travelTripsPerYear: 2,
     corporateEnabled: false,
     corporatePerYear: 20000,
     congressEnabled: false,
-    congressPerYear: 5000
+    congressPerYear: 3500,
+    starEnabled: false,
+    starPerYear: 5000
   };
 
   window.DEFAULT_EXPENSES = [

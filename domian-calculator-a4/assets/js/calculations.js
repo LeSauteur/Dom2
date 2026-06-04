@@ -77,23 +77,50 @@
       stipendMonthly = positiveNumber(source.manualStipendMonthly);
     }
 
-    var mountainSeaMonthly = source.mountainSeaEnabled
-      ? positiveNumber(source.mountainSeaPerTrip || 15000) * positiveNumber(source.mountainSeaTripsPerYear || 2) / 12
+    var annualReserveMode = source.annualReserveMode || DEFAULT_MOTIVATION.annualReserveMode;
+    var mountainSeaAnnual = source.mountainSeaEnabled
+      ? positiveNumber(source.mountainSeaPerTrip || DEFAULT_MOTIVATION.mountainSeaPerTrip) * positiveNumber(source.mountainSeaTripsPerYear || DEFAULT_MOTIVATION.mountainSeaTripsPerYear)
       : 0;
-    var travelMonthly = source.travelEnabled ? positiveNumber(source.travelPerYear || DEFAULT_MOTIVATION.travelPerYear) / 12 : 0;
-    var corporateMonthly = source.corporateEnabled ? positiveNumber(source.corporatePerYear || 20000) / 12 : 0;
-    var congressMonthly = source.congressEnabled ? positiveNumber(source.congressPerYear || 5000) / 12 : 0;
-    var total = stipendMonthly + mountainSeaMonthly + travelMonthly + corporateMonthly + congressMonthly;
+    var travelAnnual = source.travelEnabled
+      ? positiveNumber(source.travelPerTrip || DEFAULT_MOTIVATION.travelPerTrip) * positiveNumber(source.travelTripsPerYear || DEFAULT_MOTIVATION.travelTripsPerYear)
+      : 0;
+    var corporateAnnual = source.corporateEnabled ? positiveNumber(source.corporatePerYear || DEFAULT_MOTIVATION.corporatePerYear) : 0;
+    var congressAnnual = source.congressEnabled ? positiveNumber(source.congressPerYear || DEFAULT_MOTIVATION.congressPerYear) : 0;
+    var starAnnual = source.starEnabled ? positiveNumber(source.starPerYear || DEFAULT_MOTIVATION.starPerYear) : 0;
+    var annualReserveTotal = mountainSeaAnnual + travelAnnual + corporateAnnual + congressAnnual + starAnnual;
+    var annualReserveMonthly = annualReserveTotal / 12;
+
+    if (annualReserveMode === 'full') {
+      annualReserveMonthly = annualReserveTotal;
+    } else if (annualReserveMode === 'manual') {
+      annualReserveMonthly = positiveNumber(source.manualAnnualReserveMonthly);
+    }
+
+    var mountainSeaMonthly = annualReserveMode === 'full' ? mountainSeaAnnual : mountainSeaAnnual / 12;
+    var travelMonthly = annualReserveMode === 'full' ? travelAnnual : travelAnnual / 12;
+    var corporateMonthly = annualReserveMode === 'full' ? corporateAnnual : corporateAnnual / 12;
+    var congressMonthly = annualReserveMode === 'full' ? congressAnnual : congressAnnual / 12;
+    var starMonthly = annualReserveMode === 'full' ? starAnnual : starAnnual / 12;
+    var total = stipendMonthly + annualReserveMonthly;
 
     return {
       stipendMode: stipendMode,
       quarterlyResult: quarterlyResult,
       stipendLevel: stipendLevel.level,
       stipendMonthly: stipendMonthly,
+      annualReserveMode: annualReserveMode,
+      annualReserveTotal: annualReserveTotal,
+      annualReserveMonthly: annualReserveMonthly,
+      mountainSeaAnnual: mountainSeaAnnual,
       mountainSeaMonthly: mountainSeaMonthly,
+      travelAnnual: travelAnnual,
       travelMonthly: travelMonthly,
+      corporateAnnual: corporateAnnual,
       corporateMonthly: corporateMonthly,
+      congressAnnual: congressAnnual,
       congressMonthly: congressMonthly,
+      starAnnual: starAnnual,
+      starMonthly: starMonthly,
       total: total,
       monthly: total
     };
