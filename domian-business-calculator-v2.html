@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Домиан — калькулятор рентабельности офиса V2</title>
+  <title>Домиан — калькулятор рентабельности офиса V2.3</title>
   <style>
     :root {
       --primary: #d91016;
@@ -609,12 +609,12 @@
 <body>
   <div class="page">
     <header>
-      <h1>Домиан — калькулятор рентабельности офиса V2</h1>
+      <h1>Домиан — калькулятор рентабельности офиса V2.3</h1>
       <p>Простой управленческий калькулятор: расходы офиса, агенты, сделки, зарплата по прогрессивной шкале, рефералы 2,5%, будущие стипендии и итоговая прибыль.</p>
     </header>
 
     <div class="notice">
-      <strong>Как пользоваться:</strong> сначала выберите месяц расчёта, потом внесите расходы офиса, затем добавьте агентов и сделки внутри каждого агента. Калькулятор сам считает зарплату агента, остаток офису, будущую стипендию и прибыль.
+      <strong>Как пользоваться:</strong> сначала выберите месяц расчёта, потом внесите расходы офиса, затем добавьте агентов и сделки внутри каждого агента. Калькулятор сам считает зарплату агента, остаток офису, будущую стипендию и прибыль. В общем, наконец-то файл делает работу, а не смотрит на вас как Excel с дипломом.
     </div>
 
     <div class="layout">
@@ -1134,7 +1134,7 @@
             </div>
             <div class="span-4">
               <label>Задатки за квартал</label>
-              <input type="number" min="0" step="10000" value="${agent.quarterDeposits}" oninput="updateAgent(${index}, 'quarterDeposits', this.value)">
+              <input type="number" min="0" step="10000" value="${agent.quarterDeposits}" oninput="updateAgent(${index}, 'quarterDeposits', this.value)" onblur="renderAgents(); calculateAll();">
               <span class="field-note">Нужно для проверки права на партнёрские бонусы. Порог: 250 000 ₽.</span>
             </div>
           </div>
@@ -1187,7 +1187,7 @@
               </div>
               <div class="span-4">
                 <label>Квартальная сумма вручную</label>
-                <input type="number" min="0" step="10000" value="${agent.manualQuarterIncome}" oninput="updateAgent(${index}, 'manualQuarterIncome', this.value)">
+                <input type="number" min="0" step="10000" value="${agent.manualQuarterIncome}" oninput="updateAgent(${index}, 'manualQuarterIncome', this.value)" onblur="renderAgents(); calculateAll();">
                 <span class="field-note">Используется только если выбран ручной режим.</span>
               </div>
               <div class="span-3">
@@ -1232,14 +1232,14 @@
       return agent.deals.map((deal, dealIndex) => {
         const row = calc.dealRows[dealIndex];
         const percentCell = agent.status === 'custom'
-          ? `<input type="number" min="0" max="100" step="0.1" value="${deal.customPercent}" oninput="updateDeal(${agentIndex}, ${dealIndex}, 'customPercent', this.value)">`
+          ? `<input type="number" min="0" max="100" step="0.1" value="${deal.customPercent}" oninput="updateDeal(${agentIndex}, ${dealIndex}, 'customPercent', this.value)" onblur="renderAgents(); calculateAll();">`
           : `<strong>${percent(row.rate)}</strong>`;
 
         return `
           <tr>
             <td data-label="Сделка"><strong>${dealIndex + 1}</strong></td>
             <td data-label="Комиссия">
-              <input type="number" min="0" step="1000" value="${deal.commission}" oninput="updateDeal(${agentIndex}, ${dealIndex}, 'commission', this.value)">
+              <input type="number" min="0" step="1000" value="${deal.commission}" oninput="updateDeal(${agentIndex}, ${dealIndex}, 'commission', this.value)" onblur="renderAgents(); calculateAll();">
             </td>
             <td data-label="% агенту">${percentCell}</td>
             <td data-label="ЗП агента" class="right danger-text">${money(row.agentPayout)}</td>
@@ -1301,11 +1301,15 @@
 
       if (field === 'hasReferral') {
         deal[field] = Boolean(value);
-      } else {
-        deal[field] = Number(value) || 0;
+        renderAgents();
+        calculateAll();
+        return;
       }
 
-      renderAgents();
+      deal[field] = Number(value) || 0;
+
+      // Не перерисовываем карточку агента на каждый символ.
+      // Иначе input пересоздаётся, курсор теряется, и ввод превращается в пытку.
       calculateAll();
     }
 
