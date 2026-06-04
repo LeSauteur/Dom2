@@ -34,6 +34,21 @@
     { threshold: 1500000, level: 7, monthly: 7000 }
   ];
 
+  window.DEFAULT_MOTIVATION = {
+    stipendMode: 'off',
+    quarterlyResult: 0,
+    manualStipendMonthly: 0,
+    mountainSeaEnabled: false,
+    mountainSeaPerTrip: 15000,
+    mountainSeaTripsPerYear: 2,
+    travelEnabled: false,
+    travelPerYear: 120000,
+    corporateEnabled: false,
+    corporatePerYear: 20000,
+    congressEnabled: false,
+    congressPerYear: 5000
+  };
+
   window.DEFAULT_EXPENSES = [
     { id: 'rent', name: 'Аренда', amount: 120000 },
     { id: 'utilities', name: 'Коммуналка', amount: 12000 },
@@ -55,7 +70,8 @@
       status: 'partner',
       boostedRates: [55, 55, 55, 60],
       fixedRate: 80,
-      introduced: false
+      introduced: false,
+      motivation: window.DEFAULT_MOTIVATION
     }
   ];
 }());
