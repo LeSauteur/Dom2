@@ -158,7 +158,9 @@ h3 {
   padding: 10px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: #fff;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .72), rgba(247, 248, 251, .72));
+  color: var(--muted);
+  cursor: default;
   font-size: 13px;
   font-weight: 700;
 }
@@ -171,6 +173,12 @@ h3 {
   border-radius: 50%;
   background: var(--blue);
   color: #fff;
+}
+
+.route-hint {
+  margin: -8px 0 18px;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .sheet-grid {
@@ -261,9 +269,11 @@ h3 {
 .field {
   display: grid;
   gap: 6px;
+  align-content: start;
 }
 
 .field span {
+  min-height: 18px;
   font-size: 13px;
   font-weight: 800;
 }
@@ -331,7 +341,12 @@ select:focus {
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 12px;
+}
+
+.agent-main-field {
+  min-height: 104px;
 }
 
 .compact-grid {

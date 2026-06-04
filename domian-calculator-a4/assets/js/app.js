@@ -183,10 +183,10 @@
         + '<button class="button ghost" type="button" data-action="remove-agent" data-agent-id="' + agent.id + '"' + (state.agents.length === 1 ? ' disabled' : '') + '>Удалить</button>'
         + '</div>'
         + '<div class="form-grid">'
-        + '<label class="field"><span>Имя</span><input type="text" data-agent-id="' + agent.id + '" data-agent-field="name" value="' + escapeHtml(agent.name) + '"></label>'
-        + '<label class="field"><span>Сколько агент принёс комиссии</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="commission" value="' + agent.commission + '"><small>Это вся комиссия за месяц.</small></label>'
-        + '<label class="field"><span>Количество сделок</span><input type="number" min="1" step="1" data-agent-id="' + agent.id + '" data-agent-field="dealCount" value="' + agent.dealCount + '"><small>Если точных сделок нет, укажите примерное количество.</small></label>'
-        + '<label class="field"><span>Тип расчёта выплаты</span><select data-agent-id="' + agent.id + '" data-agent-field="paymentType" data-structural="true">'
+        + '<label class="field agent-main-field"><span>Имя</span><input type="text" data-agent-id="' + agent.id + '" data-agent-field="name" value="' + escapeHtml(agent.name) + '"></label>'
+        + '<label class="field agent-main-field"><span>Сколько агент принёс комиссии</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="commission" value="' + agent.commission + '"><small>Это вся комиссия за месяц.</small></label>'
+        + '<label class="field agent-main-field"><span>Количество сделок</span><input type="number" min="1" step="1" data-agent-id="' + agent.id + '" data-agent-field="dealCount" value="' + agent.dealCount + '"><small>Если точных сделок нет, укажите примерное количество.</small></label>'
+        + '<label class="field agent-main-field"><span>Тип расчёта выплаты</span><select data-agent-id="' + agent.id + '" data-agent-field="paymentType" data-structural="true">'
         + option('standard', 'Стандартная шкала', agent.paymentType)
         + option('boosted', 'Повышенная стартовая шкала', agent.paymentType)
         + option('fixed', 'Фиксированный процент', agent.paymentType)
