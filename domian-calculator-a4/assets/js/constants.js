@@ -62,14 +62,14 @@
   };
 
   window.DEFAULT_EXPENSES = [
-    { id: 'rent', name: 'Аренда', amount: 120000 },
-    { id: 'utilities', name: 'Коммуналка', amount: 12000 },
+    { id: 'rent', name: 'Аренда', amount: 35000 },
+    { id: 'utilities', name: 'Коммуналка', amount: 15000 },
     { id: 'internet', name: 'Интернет', amount: 2500 },
     { id: 'phone', name: 'Связь', amount: 5000 },
-    { id: 'ads', name: 'Реклама', amount: 45000 },
+    { id: 'ads', name: 'Реклама', amount: 65000 },
     { id: 'admin', name: 'Администратор', amount: 55000 },
-    { id: 'accounting', name: 'Бухгалтер', amount: 18000 },
-    { id: 'other', name: 'Прочее', amount: 15000 }
+    { id: 'accounting', name: 'Бухгалтер', amount: 25000 },
+    { id: 'other', name: 'Прочее (вода, канцелярка и тд)', amount: 15000 }
   ];
 
   window.DEFAULT_AGENTS = [
