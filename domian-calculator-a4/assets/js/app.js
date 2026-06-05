@@ -299,12 +299,12 @@
     return '<details class="motivation-box" data-agent-id="' + agent.id + '">'
       + '<summary class="motivation-summary">'
       + '<span class="motivation-summary-main">'
-      + '<span class="motivation-summary-title"><span class="summary-closed">Настроить мотивации агента</span><span class="summary-open">Мотивации и резервы агента</span></span>'
+      + '<span class="motivation-summary-title"><span class="summary-closed">Открыть настройки мотиваций</span><span class="summary-open">Скрыть настройки мотиваций</span></span>'
       + '<span class="motivation-summary-text">Здесь можно изменить стипендию, поездки, корпоративы, конгресс и звезду. Эти суммы влияют на итог офиса.</span>'
       + '</span>'
       + '<span class="motivation-summary-side">'
       + '<span class="motivation-current">Сейчас учтено: <b data-agent-summary="motivationInline" data-agent-id="' + agent.id + '">' + money(motivationReserve) + '</b> / месяц</span>'
-      + '<span class="collapse-text">Свернуть настройки</span>'
+      + '<span class="collapse-text"><span class="summary-closed">Раскрыть ↓</span><span class="summary-open">Скрыть ↑</span></span>'
       + '</span>'
       + '</summary>'
       + '<section class="eligibility-panel">'
@@ -439,6 +439,167 @@
     return getAutoExpenseShare(totals);
   }
 
+  function getContributionStatus(contribution) {
+    if (contribution > 10000) {
+      return {
+        className: 'positive',
+        title: 'Сильный агент',
+        recommendation: 'Удерживать оборот и условия, при которых агент продолжает закрывать своё место.'
+      };
+    }
+    if (contribution >= -10000) {
+      return {
+        className: 'warning',
+        title: 'Почти в ноль',
+        recommendation: 'Проверить запас прочности: небольшое снижение комиссии или рост расходов может увести вклад в минус.'
+      };
+    }
+    return {
+      className: 'danger',
+      title: 'Зона риска',
+      recommendation: 'Проверьте условия выплат и минимальный план комиссии по агенту.'
+    };
+  }
+
+  function findSourceAgent(agentId) {
+    return state.agents.find(function (agent) {
+      return agent.id === agentId;
+    }) || {};
+  }
+
+  function getRiskReasons(agentEconomics) {
+    var source = findSourceAgent(agentEconomics.id);
+    var reasons = [];
+    var paymentType = agentEconomics.paymentType || source.paymentType || 'standard';
+    var fixedRate = positiveNumber(agentEconomics.fixedRate || source.fixedRate || 0);
+    var introduced = agentEconomics.introduced !== undefined ? agentEconomics.introduced : Boolean(source.introduced);
+    var directLoad = agentEconomics.payout + agentEconomics.referral + agentEconomics.motivationReserve + agentEconomics.royaltyShare + agentEconomics.expenseShare;
+
+    if (paymentType === 'fixed') {
+      reasons.push('фиксированный процент' + (fixedRate ? ' ' + fixedRate + '%' : ''));
+    }
+    if (paymentType === 'boosted') {
+      reasons.push('повышенная шкала');
+    }
+    if (agentEconomics.commission < 100000) {
+      reasons.push('низкая комиссия');
+    }
+    if (introduced) {
+      reasons.push('реферал');
+    }
+    if (agentEconomics.motivationReserve > 0) {
+      reasons.push('мотивационный резерв');
+    }
+    if (agentEconomics.expenseShare > Math.max(10000, agentEconomics.beforeExpenses)) {
+      reasons.push('высокая доля расходов');
+    }
+    if (agentEconomics.commission <= directLoad) {
+      reasons.push('комиссия недостаточна для покрытия выплаты, роялти-оценки и доли расходов');
+    }
+
+    return reasons.length ? reasons : ['вклад ниже безопасного уровня при текущей комиссии и расходах'];
+  }
+
+  function getManagementDiagnosis(totals) {
+    if (Math.abs(totals.resultWithOwner) <= 10000) {
+      return 'Офис находится около точки безубыточности. Небольшое снижение оборота или рост расходов быстро уведёт его в минус.';
+    }
+    if (totals.resultWithOwner < 0) {
+      return 'Офис убыточен даже с личными сделками собственника. При текущих показателях нужно увеличить оборот, снизить расходы или пересмотреть условия выплат.';
+    }
+    if (totals.resultWithoutOwner < 0 && totals.resultWithOwner > 0) {
+      return 'Офис в плюсе только за счёт личных сделок собственника. Без них результат офиса: ' + money(totals.resultWithoutOwner) + '. Команда пока не покрывает расходы офиса самостоятельно.';
+    }
+    return 'Офис окупается как система. Даже без личных сделок собственника остаётся положительный результат: +' + money(totals.resultWithoutOwner) + '.';
+  }
+
+  function getManagementRecommendations(totals, riskyAgents) {
+    var recommendations = [];
+    var hasFixedRisk = false;
+    var hasBoostedRisk = false;
+
+    if (totals.resultWithoutOwner < 0 && totals.resultWithOwner > 0) {
+      recommendations.push('Проверьте планы агентов: сейчас команда без личных сделок собственника не закрывает расходы офиса.');
+    }
+
+    riskyAgents.forEach(function (agent) {
+      var source = findSourceAgent(agent.id);
+      var paymentType = agent.paymentType || source.paymentType || 'standard';
+      recommendations.push('Проверьте условия выплат и минимальный план комиссии по агенту ' + agent.name + '.');
+      hasFixedRisk = hasFixedRisk || paymentType === 'fixed';
+      hasBoostedRisk = hasBoostedRisk || paymentType === 'boosted';
+    });
+
+    if (hasFixedRisk) {
+      recommendations.push('Фиксированный процент стоит оставлять только при понятном минимальном плане.');
+    }
+    if (hasBoostedRisk) {
+      recommendations.push('Повышенная шкала требует контроля оборота.');
+    }
+    if (!riskyAgents.length) {
+      recommendations.push('Команда окупает своё место. Следующий фокус — удержать оборот и не увеличивать постоянные расходы без необходимости.');
+    }
+
+    return recommendations.filter(function (item, index, list) {
+      return list.indexOf(item) === index;
+    });
+  }
+
+  function renderManagementSummary(totals) {
+    var riskyAgents = totals.agentEconomics.filter(function (agent) {
+      return agent.contribution < -10000;
+    });
+    var recommendations = getManagementRecommendations(totals, riskyAgents);
+
+    elements.managementSummary.innerHTML = ''
+      + '<div class="management-diagnosis">'
+      + '<span class="small-label">Диагноз офиса</span>'
+      + '<p>' + escapeHtml(getManagementDiagnosis(totals)) + '</p>'
+      + '</div>'
+      + '<div class="management-agents">'
+      + totals.agentEconomics.map(function (agent) {
+        var status = getContributionStatus(agent.contribution);
+        var reasons = getRiskReasons(agent);
+        return '<article class="management-agent ' + status.className + '">'
+          + '<div class="management-agent-head"><strong>' + escapeHtml(agent.name) + '</strong><span>' + status.title + '</span></div>'
+          + '<dl>'
+          + '<div><dt>Вклад</dt><dd>' + money(agent.contribution) + '</dd></div>'
+          + '<div><dt>Причина</dt><dd>' + escapeHtml(reasons.join(', ')) + '</dd></div>'
+          + '<div><dt>Рекомендация</dt><dd>' + escapeHtml(status.recommendation) + '</dd></div>'
+          + '</dl>'
+          + '</article>';
+      }).join('')
+      + '</div>'
+      + '<div class="management-recommendations">'
+      + '<span class="small-label">Рекомендации собственнику</span>'
+      + '<ul>' + recommendations.map(function (item) { return '<li>' + escapeHtml(item) + '</li>'; }).join('') + '</ul>'
+      + '</div>';
+  }
+
+  function renderForecast(totals) {
+    var periods = [
+      { label: 'Месяц ×1', months: 1 },
+      { label: 'Квартал ×3', months: 3 },
+      { label: 'Полугодие ×6', months: 6 },
+      { label: 'Год ×12', months: 12 }
+    ];
+
+    elements.forecastRows.innerHTML = periods.map(function (period) {
+      var months = period.months;
+      return '<tr>'
+        + '<th scope="row">' + period.label + '</th>'
+        + '<td>' + money(totals.totalTurnover * months) + '</td>'
+        + '<td>' + money(totals.agentPayouts * months) + '</td>'
+        + '<td>' + money(totals.referrals * months) + '</td>'
+        + '<td>' + money(totals.motivationReserves * months) + '</td>'
+        + '<td>' + money(totals.royaltyWithOwner * months) + '</td>'
+        + '<td>' + money(totals.expenses * months) + '</td>'
+        + '<td>' + money(totals.resultWithoutOwner * months) + '</td>'
+        + '<td>' + money(totals.resultWithOwner * months) + '</td>'
+        + '</tr>';
+    }).join('');
+  }
+
   function renderTotals() {
     var totals = calculateOffice(state);
     var status = resultClass(totals.resultWithOwner);
@@ -467,6 +628,8 @@
     elements.resultStatus.className = 'result-status ' + status;
 
     renderProfitability(totals);
+    renderManagementSummary(totals);
+    renderForecast(totals);
     renderSchemeChecker(totals);
     renderWarnings(totals);
   }
@@ -888,9 +1051,27 @@
     }
   }
 
+  function openTableModePage() {
+    try {
+      localStorage.setItem('domianA4TableSnapshot', JSON.stringify(clone(state)));
+    } catch (error) {
+      console.warn('Не удалось сохранить данные для табличного режима.', error);
+    }
+
+    var tableWindow = window.open('table.html', '_blank');
+    if (!tableWindow) {
+      window.location.href = 'table.html';
+    }
+  }
+
   function onClick(event) {
     var target = event.target.closest('[data-action]');
     if (!target) {
+      return;
+    }
+
+    if (target.dataset.action === 'open-table-mode') {
+      openTableModePage();
       return;
     }
 
@@ -978,6 +1159,8 @@
       'warningsList',
       'expensesInlineTotal',
       'profitabilityList',
+      'managementSummary',
+      'forecastRows',
       'schemeCommission',
       'schemeDealCount',
       'schemeIntroduced',

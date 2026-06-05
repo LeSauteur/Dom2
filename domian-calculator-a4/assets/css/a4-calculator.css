@@ -117,23 +117,64 @@ h3 {
 
 .help-panel {
   margin: 18px 0;
-  padding: 14px;
+  padding: 0;
   border: 1px dashed rgba(36, 92, 153, .42);
   border-radius: var(--radius);
   background: rgba(232, 241, 251, .58);
+  overflow: hidden;
 }
 
 .help-panel summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
   color: var(--blue);
   font-weight: 900;
   cursor: pointer;
+  list-style: none;
+}
+
+.help-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.help-panel summary:hover,
+.help-panel summary:focus {
+  background: rgba(36, 92, 153, .08);
+  outline: none;
+}
+
+.help-panel summary:focus-visible,
+.motivation-summary:focus-visible {
+  outline: 3px solid rgba(36, 92, 153, .2);
+  outline-offset: -3px;
+}
+
+.summary-action {
+  flex-shrink: 0;
+  padding: 7px 10px;
+  border: 1px solid rgba(36, 92, 153, .28);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.help-panel[open] .summary-closed {
+  display: none;
+}
+
+.help-panel[open] .summary-open {
+  display: inline;
 }
 
 .help-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
-  margin-top: 14px;
+  padding: 0 14px 14px;
 }
 
 .help-grid p {
@@ -236,7 +277,9 @@ h3 {
 .agents-list,
 .expense-list,
 .warnings-list,
-.profitability-list {
+.profitability-list,
+.management-summary,
+.management-agents {
   display: grid;
   gap: 14px;
 }
@@ -522,6 +565,13 @@ select:focus {
   list-style: none;
 }
 
+.motivation-summary:hover,
+.motivation-summary:focus {
+  background:
+    linear-gradient(135deg, rgba(36, 92, 153, .18), rgba(232, 241, 251, 1));
+  outline: none;
+}
+
 .motivation-summary::-webkit-details-marker {
   display: none;
 }
@@ -578,7 +628,12 @@ select:focus {
 }
 
 .collapse-text {
-  display: none;
+  display: inline;
+  justify-self: end;
+  padding: 7px 10px;
+  border: 1px solid rgba(36, 92, 153, .28);
+  border-radius: 999px;
+  background: #fff;
   color: var(--blue);
   font-size: 13px;
   font-weight: 900;
@@ -842,6 +897,113 @@ dd {
   font-size: 24px;
 }
 
+.management-diagnosis,
+.management-recommendations {
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.management-diagnosis p {
+  margin: 6px 0 0;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.management-agents {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.management-agent {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-left-width: 5px;
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.management-agent-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.management-agent-head span {
+  font-weight: 900;
+}
+
+.management-agent dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.management-agent dl div {
+  padding: 8px;
+  border-radius: 6px;
+  background: #f7f8fb;
+}
+
+.management-agent dd {
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.management-agent.positive {
+  border-left-color: var(--green);
+}
+
+.management-agent.warning {
+  border-left-color: var(--orange);
+}
+
+.management-agent.danger {
+  border-left-color: var(--red);
+}
+
+.management-recommendations ul {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding-left: 20px;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.forecast-card .notice {
+  margin-bottom: 0;
+}
+
+.forecast-table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.forecast-table th,
+.forecast-table td {
+  padding: 10px;
+  border: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+  font-size: 13px;
+}
+
+.forecast-table th {
+  background: #f2f5fa;
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.forecast-table td:last-child,
+.forecast-table td:nth-last-child(2) {
+  font-weight: 900;
+}
+
 .economics-row {
   padding: 12px;
   border: 1px solid var(--line);
@@ -956,6 +1118,7 @@ dd {
   .route-list,
   .help-grid,
   .term-grid,
+  .management-agents,
   .reserve-mode-card,
   .motivation-card-grid,
   .checker-grid,
@@ -995,6 +1158,7 @@ dd {
   .motivation-card-total,
   .checker-grid,
   .compact-grid,
+  .management-agents,
   .economics-row dl {
     grid-template-columns: 1fr;
   }
@@ -1011,6 +1175,11 @@ dd {
     justify-items: start;
     min-width: 0;
     padding-left: 42px;
+  }
+
+  .help-panel summary {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .motivation-current {

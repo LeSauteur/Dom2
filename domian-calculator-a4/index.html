@@ -21,6 +21,7 @@
     </header>
 
     <section class="toolbar" aria-label="Управление примером">
+      <button class="button ghost" type="button" data-action="open-table-mode">Табличный режим</button>
       <button class="button ghost" type="button" data-action="clear-all">Очистить всё</button>
       <button class="button primary" type="button" data-action="restore-example">Вернуть пример</button>
     </section>
@@ -42,7 +43,11 @@
     </section>
 
     <details class="help-panel">
-      <summary>Короткие пояснения без финансового словаря</summary>
+      <summary>
+        <span class="summary-label summary-closed">Показать короткие пояснения простыми словами</span>
+        <span class="summary-label summary-open">Скрыть короткие пояснения</span>
+        <span class="summary-action"><span class="summary-closed">Раскрыть ↓</span><span class="summary-open">Скрыть ↑</span></span>
+      </summary>
       <div class="help-grid">
         <p><strong>Оборот</strong> — вся комиссия офиса за месяц: агенты плюс личные сделки собственника.</p>
         <p><strong>Комиссия агента</strong> — сколько агент принёс за месяц до выплаты ему.</p>
@@ -117,6 +122,46 @@
             <p><strong>Вклад</strong> — сколько агент оставляет офису после выплаты, реферала, роялти-оценки, мотиваций и своей доли расходов.</p>
           </div>
           <div id="profitabilityList" class="profitability-list"></div>
+        </section>
+
+        <section class="section-card management-card" aria-labelledby="managementTitle">
+          <div class="section-head">
+            <div>
+              <span class="step-label">Итог</span>
+              <h2 id="managementTitle">Управленческий итог</h2>
+            </div>
+            <p class="hint">Короткий вывод для собственника: состояние офиса, вклад агентов, причины риска и следующий фокус.</p>
+          </div>
+          <div id="managementSummary" class="management-summary"></div>
+        </section>
+
+        <section class="section-card forecast-card" aria-labelledby="forecastTitle">
+          <div class="section-head">
+            <div>
+              <span class="step-label">Прогноз</span>
+              <h2 id="forecastTitle">Прогноз при текущих показателях</h2>
+            </div>
+            <p class="hint">Прогноз показывает, что будет, если офис каждый месяц будет работать с такими же показателями. Это не фактический отчёт за период.</p>
+          </div>
+          <div class="notice info">В прогнозе роялти считается как сумма одинаковых месяцев. Если в реальности оборот по месяцам будет отличаться, ставка роялти может измениться.</div>
+          <div class="table-wrap forecast-wrap">
+            <table class="forecast-table">
+              <thead>
+                <tr>
+                  <th>Период</th>
+                  <th>Оборот</th>
+                  <th>Выплаты агентам</th>
+                  <th>Рефералы</th>
+                  <th>Мотивации/резервы</th>
+                  <th>Роялти</th>
+                  <th>Расходы</th>
+                  <th>Итог без собственника</th>
+                  <th>Итог с собственником</th>
+                </tr>
+              </thead>
+              <tbody id="forecastRows"></tbody>
+            </table>
+          </div>
         </section>
 
         <section class="section-card" aria-labelledby="schemeTitle">

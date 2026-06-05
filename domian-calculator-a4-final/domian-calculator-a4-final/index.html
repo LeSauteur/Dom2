@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Домиан — лист А4 собственника</title>
+  <link rel="stylesheet" href="a4-calculator.css">
+  <script src="constants.js"></script>
+  <script src="calculations.js"></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Новая A4-версия</p>
+        <h1>Домиан — лист А4 собственника</h1>
+        <p class="lead">Пройдите сверху вниз и посмотрите, живёт ли офис как система или держится на личных продажах собственника.</p>
+      </div>
+      <div class="hero-note">
+        <strong>Главное правило</strong>
+        <span>Роялти не добавляйте в расходы — калькулятор считает его автоматически.</span>
+      </div>
+    </header>
+
+    <div class="toolbar top-toolbar">
+      <button class="button ghost" type="button" data-action="clear-all">Очистить всё</button>
+      <button class="button ghost" type="button" data-action="restore-example">Вернуть пример</button>
+      <button class="button" type="button" data-action="toggle-table-view">Табличная версия</button>
+    </div>
+
+    <details class="help-panel" open>
+      <summary>Маршрут расчёта: как пользоваться калькулятором</summary>
+      <div class="route-note">
+        <div>
+          <h2>Идите сверху вниз, как по бумажному листу.</h2>
+          <p>Короткие пояснения без финансового словаря:</p>
+          <ul class="route-list compact">
+            <li><strong>Оборот</strong><span>вся комиссия офиса за месяц: агенты плюс личные сделки собственника.</span></li>
+            <li><strong>Комиссия агента</strong><span>сколько агент принёс за месяц до выплаты ему.</span></li>
+            <li><strong>Роялти</strong><span>автоматическая выплата по сетке Домиан, её не нужно добавлять в расходы вручную.</span></li>
+            <li><strong>Мотивационный резерв</strong><span>будущая нагрузка: стипендии, поездки, корпоративы, конгресс и звезда.</span></li>
+          </ul>
+        </div>
+        <ol class="route-list">
+          <li><strong>Введите расходы офиса</strong><span>Аренда, реклама, связь, зарплаты и другие траты.</span></li>
+          <li><strong>Добавьте агентов и условия</strong><span>Укажите комиссию, количество сделок и схему выплаты.</span></li>
+          <li><strong>Укажите личные сделки собственника</strong><span>Эти сделки считаются отдельно: агенту выплаты нет, но роялти есть.</span></li>
+          <li><strong>Посмотрите итог офиса</strong><span>Калькулятор покажет, офис в плюсе или в минусе.</span></li>
+          <li><strong>Проверьте окупаемость агентов</strong><span>Посмотрите, кто окупает своё место, а кто нет.</span></li>
+          <li><strong>Сравните процент агенту</strong><span>Проверьте, какие условия выдерживает офис.</span></li>
+        </ol>
+      </div>
+    </details>
+
+    <main class="sheet-grid">
+      <div class="main-column">
+        <section class="section-card">
+          <div class="section-head split">
+            <div>
+              <span class="step-label">Шаг 1</span>
+              <h2>Сколько офис съедает каждый месяц</h2>
+              <p class="hint">Введите обычные ежемесячные расходы. Роялти сюда не включайте.</p>
+            </div>
+            <button class="button ghost" type="button" data-action="add-expense">Добавить расход</button>
+          </div>
+          <div class="notice info">Роялти не добавляйте в расходы — калькулятор считает его автоматически.</div>
+          <div id="expensesList" class="expense-list"></div>
+          <div class="paper-total">
+            <span>Итого расходов офиса</span>
+            <strong id="expensesInlineTotal">0 ₽</strong>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-head split">
+            <div>
+              <span class="step-label">Шаг 2</span>
+              <h2>Кто приносит деньги</h2>
+              <p class="hint">Комиссия агента — вся сумма за месяц. Точный режим учитывает каждую сделку отдельно. Быстрый режим делит общую сумму поровну.</p>
+            </div>
+            <button class="button primary" type="button" id="addAgentBtn">Добавить агента</button>
+          </div>
+          <div id="agentsList" class="agents-list"></div>
+          <div class="section-actions">
+            <button class="button ghost" type="button" id="addAgentBottomBtn">Добавить агента</button>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-head">
+            <span class="step-label">Шаг 3</span>
+            <h2>Личные сделки собственника</h2>
+            <p class="hint">По личным сделкам агентская выплата равна 0, но роялти считается. Поэтому итог показывается отдельно без собственника и с собственником.</p>
+          </div>
+          <label class="field">
+            <span>Комиссия личных сделок за месяц, ₽</span>
+            <input type="number" id="ownerSalesInput" min="0" step="1000" value="0">
+          </label>
+        </section>
+
+        <section class="section-card result-card">
+          <div class="section-head">
+            <span class="step-label">Шаг 4</span>
+            <h2>Что осталось собственнику</h2>
+            <p class="hint">Главный итог показывает офис как систему и офис вместе с личными продажами собственника.</p>
+          </div>
+          <p id="resultStatus" class="result-status neutral">Офис около нуля.</p>
+          <dl class="totals">
+            <div><dt>Агенты продали</dt><dd id="agentTurnover">0 ₽</dd></div>
+            <div><dt>Личные сделки собственника</dt><dd id="ownerSales">0 ₽</dd></div>
+            <div><dt>Общий оборот</dt><dd id="totalTurnover">0 ₽</dd></div>
+            <div><dt>Выплаты агентам</dt><dd id="agentPayouts">0 ₽</dd></div>
+            <div><dt>Рефералы</dt><dd id="referrals">0 ₽</dd></div>
+            <div><dt>Мотивационные резервы</dt><dd id="motivationReserves">0 ₽</dd></div>
+            <div><dt>Роялти</dt><dd id="royalty">0 ₽</dd></div>
+            <div><dt>Расходы офиса</dt><dd id="officeExpenses">0 ₽</dd></div>
+            <div><dt>Без собственника до резервов</dt><dd id="resultWithoutOwnerBeforeReserves">0 ₽</dd></div>
+            <div class="total-line"><dt>Итог без личных сделок</dt><dd id="resultWithoutOwner">0 ₽</dd></div>
+            <div><dt>С собственником до резервов</dt><dd id="resultWithOwnerBeforeReserves">0 ₽</dd></div>
+            <div class="total-line"><dt>Итог с личными сделками</dt><dd id="resultWithOwner">0 ₽</dd></div>
+          </dl>
+        </section>
+
+        <section class="section-card">
+          <div class="section-head">
+            <span class="step-label">Шаг 5</span>
+            <h2>Кто окупает своё место</h2>
+            <p class="hint">Вклад — сколько агент оставляет офису после выплаты, реферала, роялти-оценки, мотиваций и своей доли расходов.</p>
+          </div>
+          <div class="hint-grid">
+            <span>Роялти-оценка — примерная доля роялти по агенту.</span>
+            <span>Доля расходов — расходы офиса, условно распределённые на агента.</span>
+          </div>
+          <div id="profitabilityList" class="profitability-list"></div>
+        </section>
+
+        <section id="managementSummary" class="section-card"></section>
+        <section id="forecastSection" class="section-card"></section>
+
+        <section class="section-card">
+          <div class="section-head">
+            <span class="step-label">Шаг 6</span>
+            <h2>Какой процент агенту выдержит офис?</h2>
+            <p class="hint">Чем выше процент или щедрее шкала, тем больше оборот агент должен делать, чтобы окупать своё место.</p>
+          </div>
+          <div class="form-grid compact-grid checker-grid">
+            <label class="field"><span>Комиссия агента в месяц, ₽</span><input type="number" min="0" step="1000" id="schemeCommission" data-scheme-field="commission" value="400000"></label>
+            <label class="field"><span>Количество сделок</span><input type="number" min="1" step="1" id="schemeDealCount" data-scheme-field="dealCount" value="4"></label>
+            <label class="field"><span>Приведённый агент</span><select id="schemeIntroduced" data-scheme-field="introduced"><option value="false">Нет</option><option value="true">Да</option></select></label>
+            <label class="field"><span>Доля расходов агента</span><select id="schemeExpenseShareMode" data-scheme-field="expenseShareMode"><option value="auto">Авто из офиса</option><option value="manual">Ручная сумма</option></select></label>
+            <label class="field"><span>Ручная доля расходов, ₽</span><input type="number" min="0" step="1000" id="schemeManualExpenseShare" data-scheme-field="manualExpenseShare" value="0"><small>Сейчас в расчёте используется: <b id="schemeExpenseShare">0 ₽</b></small></label>
+            <label class="field"><span>Мотивации учитывать, ₽/мес</span><input type="number" min="0" step="1000" id="schemeMotivationReserve" data-scheme-field="motivationReserve" value="0"><small>Введите месячный резерв вручную, если хотите проверить щедрые условия.</small></label>
+            <label class="field"><span>Ручной фикс, %</span><input type="number" min="0" max="100" step="1" id="schemeManualRate" data-scheme-field="manualRate" value="80"></label>
+          </div>
+          <div class="table-wrap">
+            <table class="scheme-table">
+              <thead>
+                <tr><th>Вариант</th><th>Выплата</th><th>Реферал</th><th>Роялти</th><th>До расходов</th><th>Вклад</th><th>Окупится от</th><th>Вывод</th></tr>
+              </thead>
+              <tbody id="schemeResults"></tbody>
+            </table>
+          </div>
+          <div id="schemeAdvice" class="scheme-advice"></div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-head">
+            <span class="step-label">Контроль</span>
+            <h2>Опасные места</h2>
+          </div>
+          <div id="warningsList" class="warnings-list"></div>
+        </section>
+
+        <section id="tableViewSection" class="section-card" style="display: none;"></section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
