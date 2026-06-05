@@ -316,8 +316,9 @@ h3 {
 .hint,
 .field small {
   margin: 0;
-  color: var(--muted);
+  color: #556274;
   font-size: 13px;
+  line-height: 1.45;
 }
 
 .hint.compact {
@@ -702,19 +703,6 @@ select:focus {
   margin: 0;
   color: var(--blue);
   font-size: 15px;
-}
-
-.sub-details {
-  border: 1px solid rgba(36, 92, 153, .16);
-  border-radius: 8px;
-  background: #fff;
-}
-
-.sub-details summary {
-  cursor: pointer;
-  padding: 12px 14px;
-  color: var(--blue);
-  font-weight: 800;
 }
 
 .reserve-mode-card {

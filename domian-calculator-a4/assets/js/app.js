@@ -365,6 +365,7 @@
     return '<div class="agent-inline-note">'
       + '<strong>Стандартная шкала: ' + scale + '.</strong> '
       + text
+      + ' Чем щедрее условия, тем больше комиссии агент должен приносить, чтобы оставаться выгодным офису.'
       + '</div>';
   }
 
@@ -411,7 +412,7 @@
         + '</summary>'
         + '<div class="motivation-content">'
         + '<div class="form-grid compact-grid">'
-        + renderMotivationModeSelect(agent, 'Учитывать резерв мотиваций?', 'Стажёрские партнёрские поездки и годовые мотивации здесь не показываются.', [
+        + renderMotivationModeSelect(agent, 'Учитывать резерв мотиваций?', 'Для стажёра это не расчёт партнёрских поездок, а только решение: учитывать резерв или оставить его нулевым.', [
           { value: 'off', label: 'Не учитывать' },
           { value: 'manual', label: 'Заложить вручную' }
         ])
@@ -436,10 +437,10 @@
         + '</span>'
         + '</summary>'
         + '<div class="motivation-content">'
-        + '<p class="motivation-lead">Особые условия — это проверка, выдержит ли офис повышенную выплату агенту.</p>'
+        + '<p class="motivation-lead">Особые условия — это повышенная или фиксированная выплата, которую дают, чтобы привлечь или удержать сильного агента. Главный вопрос здесь: остаётся ли офис в плюсе после такой выплаты.</p>'
         + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-field="specialManualReserveEnabled" data-structural="true"' + checked(Boolean(motivation.specialManualReserveEnabled)) + '><span>Заложить ручной резерв мотиваций при особых условиях</span></label>'
         + (motivation.specialManualReserveEnabled
-          ? '<label class="field"><span>Резерв мотиваций в месяц, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="manualReserveMonthly" value="' + motivation.manualReserveMonthly + '"><small>Используется только как ручной ежемесячный резерв.</small></label>'
+          ? '<label class="field"><span>Резерв мотиваций в месяц, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="manualReserveMonthly" value="' + motivation.manualReserveMonthly + '"><small>Нужно только если собственник всё равно хочет откладывать сумму на будущие бонусы сверх особых условий.</small></label>'
           : renderReserveSummary('Ручной резерв не учитывается.', 0))
         + '</div>'
         + '</details>';
@@ -458,7 +459,7 @@
       + '</summary>'
       + '<div class="motivation-content">'
       + '<div class="form-grid compact-grid">'
-      + renderMotivationModeSelect(agent, 'Учитывать мотивации агента?', 'Сначала выберите режим, и только потом калькулятор покажет нужные поля.', [
+      + renderMotivationModeSelect(agent, 'Учитывать мотивации агента?', 'Не учитывать — резерв будет 0 ₽. Заложить вручную — вы сами задаёте ежемесячную сумму. Рассчитать по правилам — калькулятор покажет дополнительные поля и посчитает резерв по условиям.', [
         { value: 'off', label: 'Не учитывать' },
         { value: 'manual', label: 'Заложить вручную' },
         { value: 'rules', label: 'Рассчитать по правилам' }
@@ -475,7 +476,7 @@
           + '<label class="field wide-field"><span>Партнёрство подтверждено?</span><select data-agent-id="' + agent.id + '" data-agent-field="partnerConfirmed" data-structural="true">'
           + option('true', 'Да', String(Boolean(agent.partnerConfirmed)))
           + option('false', 'Нет', String(Boolean(agent.partnerConfirmed)))
-          + '</select><small>По правилам партнёрство обычно подтверждается задатками от 250 000 ₽ за квартал.</small></label>'
+          + '</select><small>Да — мотивации, завязанные на партнёрство, считаются доступными. Нет — такие бонусы не учитываются. Порог 250 000 ₽ остаётся только как ориентир правила.</small></label>'
           + '<label class="field"><span>Результат агента за квартал, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="quarterlyCommission" data-structural="true" value="' + positiveNumber(agent.quarterlyCommission) + '"><small>Нужно для уровня и стипендии.</small></label>'
           + '</div>'
           + '<p class="eligibility-note ' + (reserve.partnershipConfirmed ? 'ok' : 'blocked') + '">' + (reserve.partnershipConfirmed ? 'Партнёрство подтверждено.' : 'Партнёрство не подтверждено: партнёрские бонусы по умолчанию не положены.') + '</p>'
@@ -497,7 +498,7 @@
           + option('monthly', 'Распределить по 12 месяцам', motivation.annualReserveMode)
           + option('full', 'Учесть всю сумму сейчас', motivation.annualReserveMode)
           + option('manual', 'Ввести свою сумму в месяц', motivation.annualReserveMode)
-          + '</select></label>'
+          + '</select><small>Безопаснее по умолчанию распределять сумму на 12 месяцев. Полный учёт сразу делает текущий месяц строже.</small></label>'
           + '<label class="field"><span>Своя сумма резерва, ₽ в месяц</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="manualAnnualReserveMonthly" value="' + motivation.manualAnnualReserveMonthly + '"><small>Работает только в режиме “Ввести свою сумму в месяц”.</small></label>'
           + '</div></section>'
           + '<section class="motivation-section"><h4>Годовые мотивации</h4><div class="motivation-card-grid">'
@@ -561,19 +562,19 @@
         + '<label class="field agent-main-field"><span>Как считать сделки?</span><select data-agent-id="' + agent.id + '" data-agent-field="commissionMode" data-structural="true">'
         + option('exact', 'Точно: ввести каждую сделку отдельно', agent.commissionMode || 'exact')
         + option('quick', 'Быстро: общая комиссия и количество сделок', agent.commissionMode || 'exact')
-        + '</select><small>Точный режим нужен, если сделки были разными по сумме.</small></label>'
+        + '</select><small>Точный режим — безопасный вариант, если сделки были разными по сумме. Быстрый режим удобен для прикидки, но может отличаться от точного расчёта.</small></label>'
         + renderDealInputs(agent, result)
         + (agent.status === 'partner' && getPartnerSystem(agent) === 'special'
           ? '<label class="field agent-main-field"><span>Тип особых условий</span><select data-agent-id="' + agent.id + '" data-agent-field="paymentType" data-structural="true">'
             + option('boosted', 'Повышенная стартовая шкала', agent.paymentType)
             + option('fixed', 'Фиксированный процент', agent.paymentType)
-            + '</select><small>Проверьте, выдержит ли офис повышенную выплату.</small></label>'
+            + '</select><small>Повышенная стартовая шкала — более мягкий special-вариант. Фиксированный процент — самый рискованный вариант, если комиссия агента нестабильна.</small></label>'
           : '')
         + fixedControl
         + '<label class="field"><span>Приведённый агент</span><select data-agent-id="' + agent.id + '" data-agent-field="introduced">'
         + option('false', 'Нет', String(agent.introduced))
         + option('true', 'Да', String(agent.introduced))
-        + '</select><small>Если да, дополнительно считается 2,5% от его комиссии.</small></label>'
+        + '</select><small>Если выбрать “Да”, офис дополнительно платит 2,5% реферала от комиссии этого агента. Это уменьшает итог по офису.</small></label>'
         + '</div>'
         + (agent.status === 'partner' && getPartnerSystem(agent) === 'special' ? boostedControls : '')
         + renderMotivationControls(agent)
@@ -947,21 +948,21 @@
     if (totals.warningOwnerDependency) {
       warnings.push({
         type: 'warning',
-        text: 'Офис выходит в плюс только за счёт личных продаж собственника. Как система офис пока не окупается сам.'
+        text: 'Без личных сделок собственника офис не окупается сам. Плюс появляется только благодаря собственнику.'
       });
     }
 
     if (totals.resultWithOwner < -0.5) {
       warnings.push({
         type: 'danger',
-        text: 'Офис в минусе. Проверьте расходы, выплаты агентам, мотивационные резервы и общий оборот.'
+        text: 'Даже с личными сделками собственника офис остаётся в минусе. Проверьте расходы, выплаты агентам, мотивационные резервы и общий оборот.'
       });
     }
 
     if (totals.agentEconomics.some(function (agent) { return agent.status === 'Не окупается'; })) {
       warnings.push({
         type: 'danger',
-        text: 'Есть агенты, которые не окупают свою долю расходов. Посмотрите блок “Кто окупает своё место”.'
+        text: 'Есть агенты, которые не окупают свою долю расходов. Посмотрите блок “Кто окупает своё место” и проверьте их условия выплат.'
       });
     }
 
@@ -1306,12 +1307,18 @@
     }
 
     if (target.dataset.action === 'clear-all') {
+      if (!window.confirm('Очистить все текущие данные на странице? Это действие заменит текущий ввод пустым шаблоном.')) {
+        return;
+      }
       state = createBlankState();
       window.domianA4State = state;
       render();
     }
 
     if (target.dataset.action === 'restore-example') {
+      if (!window.confirm('Вернуть демонстрационный пример и заменить им текущие данные?')) {
+        return;
+      }
       state = createState();
       window.domianA4State = state;
       render();
