@@ -656,6 +656,67 @@ select:focus {
   padding: 14px;
 }
 
+.motivation-content {
+  display: grid;
+  gap: 14px;
+}
+
+.motivation-lead {
+  margin: 14px 14px 0;
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.motivation-brief {
+  display: grid;
+  gap: 10px;
+  margin: 0 14px 14px;
+  padding: 14px;
+  border: 1px solid rgba(36, 92, 153, .16);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.motivation-brief p {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.motivation-brief-total {
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.motivation-section {
+  display: grid;
+  gap: 12px;
+  margin: 0 14px 14px;
+  padding: 14px;
+  border: 1px solid rgba(36, 92, 153, .18);
+  border-radius: var(--radius);
+  background: rgba(232, 241, 251, .32);
+}
+
+.motivation-section h4 {
+  margin: 0;
+  color: var(--blue);
+  font-size: 15px;
+}
+
+.sub-details {
+  border: 1px solid rgba(36, 92, 153, .16);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.sub-details summary {
+  cursor: pointer;
+  padding: 12px 14px;
+  color: var(--blue);
+  font-weight: 800;
+}
+
 .reserve-mode-card {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -834,6 +895,17 @@ select:focus {
   display: grid;
   gap: 8px;
   margin: 14px 0 0;
+}
+
+.agent-inline-note {
+  grid-column: 1 / -1;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #eef5fb;
+  color: #315b86;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.4;
 }
 
 .agent-summary {

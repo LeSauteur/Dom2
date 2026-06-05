@@ -37,17 +37,59 @@
       boostedRates: clone(PAY_SCALES.boostedDefault),
       fixedRate: PAY_SCALES.fixedDefault,
       introduced: false,
+      partnerConfirmed: false,
       quarterlyCommission: 0,
       quarterlyDeposits: 0,
       halfYearCommission: 0,
       preTripQuarterDeposits: 0,
       motivationOverride: false,
       stipendOverride: false,
+      mountainSeaOverride: false,
       travelOverride: false,
       eventsOverride: false,
       specialTermsOverride: false,
       motivation: createMotivation()
     };
+  }
+
+  function inferInitialMotivationMode(agent, motivation) {
+    if (motivation.mode) {
+      return motivation.mode;
+    }
+    if (positiveNumber(motivation.manualReserveMonthly) > 0) {
+      return 'manual';
+    }
+    if (motivation.specialManualReserveEnabled) {
+      return 'manual';
+    }
+    if (
+      motivation.stipendMode !== DEFAULT_MOTIVATION.stipendMode
+      || positiveNumber(motivation.manualStipendMonthly) > 0
+      || positiveNumber(motivation.quarterlyResult) > 0
+      || positiveNumber(agent.quarterlyCommission) > 0
+      || positiveNumber(agent.quarterlyDeposits) > 0
+      || positiveNumber(agent.halfYearCommission) > 0
+      || positiveNumber(agent.preTripQuarterDeposits) > 0
+      || motivation.mountainSeaEnabled
+      || motivation.travelEnabled
+      || motivation.corporateEnabled
+      || motivation.congressEnabled
+      || motivation.starEnabled
+      || positiveNumber(motivation.manualAnnualReserveMonthly) > 0
+    ) {
+      return 'rules';
+    }
+    return 'off';
+  }
+
+  function normalizeAgent(agent) {
+    var normalized = Object.assign({}, agent || {});
+    normalized.motivation = Object.assign(createMotivation(), normalized.motivation || {});
+    if (normalized.partnerConfirmed === undefined) {
+      normalized.partnerConfirmed = positiveNumber(normalized.quarterlyDeposits) >= PARTNERSHIP_DEPOSIT_THRESHOLD;
+    }
+    normalized.motivation.mode = inferInitialMotivationMode(normalized, normalized.motivation);
+    return normalized;
   }
 
   function splitCommissionIntoDeals(commission, dealCount) {
@@ -78,8 +120,7 @@
 
   function createState() {
     var agents = clone(DEFAULT_AGENTS).map(function (agent) {
-      agent.motivation = Object.assign(createMotivation(), agent.motivation || {});
-      return agent;
+      return normalizeAgent(agent);
     });
 
     return {
@@ -101,7 +142,7 @@
   function createBlankState() {
     return {
       expenses: [createBlankExpense()],
-      agents: [createAgent()],
+      agents: [normalizeAgent(createAgent())],
       ownerSales: 0,
       schemeCheck: {
         commission: 0,
@@ -291,57 +332,182 @@
     }).join('');
   }
 
+  function hasSpecialPaymentTermsUi(agent) {
+    return agent.paymentType === 'fixed' || agent.paymentType === 'boosted';
+  }
+
+  function getPartnerSystem(agent) {
+    return hasSpecialPaymentTermsUi(agent) ? 'special' : 'standard';
+  }
+
+  function getVisibleMotivationMode(agent) {
+    var motivation = Object.assign(createMotivation(), agent.motivation || {});
+    var mode = motivation.mode || 'off';
+
+    if (agent.status === 'trainee') {
+      return mode === 'manual' ? 'manual' : 'off';
+    }
+
+    if (hasSpecialPaymentTermsUi(agent)) {
+      return mode === 'manual' && motivation.specialManualReserveEnabled ? 'manual' : 'off';
+    }
+
+    return mode;
+  }
+
+  function renderStandardScaleNote(agent) {
+    var isTrainee = agent.status === 'trainee';
+    var scale = isTrainee ? '30 / 35 / 40%' : '45 / 50 / 55 / 60%';
+    var text = isTrainee
+      ? 'Стажёр — новичок, считается по стажёрской шкале.'
+      : 'Партнёр — опытный агент, может работать по стандартной системе или на особых условиях.';
+
+    return '<div class="agent-inline-note">'
+      + '<strong>Стандартная шкала: ' + scale + '.</strong> '
+      + text
+      + '</div>';
+  }
+
+  function renderMotivationModeSelect(agent, label, hint, options) {
+    var currentMode = getVisibleMotivationMode(agent);
+
+    return '<label class="field wide-field"><span>' + label + '</span>'
+      + '<select data-agent-id="' + agent.id + '" data-motivation-field="mode" data-structural="true">'
+      + options.map(function (item) {
+        return option(item.value, item.label, currentMode);
+      }).join('')
+      + '</select><small>' + hint + '</small></label>';
+  }
+
+  function renderReserveSummary(text, amount) {
+    return '<div class="motivation-brief">'
+      + '<p>' + text + '</p>'
+      + '<div class="motivation-brief-total">Резерв мотиваций: <b>' + money(amount) + '</b></div>'
+      + '</div>';
+  }
+
   function renderMotivationControls(agent) {
     var motivation = Object.assign(createMotivation(), agent.motivation || {});
     var motivationReserve = calculateAgent(agent).motivationReserve;
     var reserve = calculateMotivationReserve(agent);
+    var currentMode = getVisibleMotivationMode(agent);
+    var headerText = agent.status === 'trainee'
+      ? 'Для стажёра можно оставить только простой ручной резерв без партнёрских мотиваций.'
+      : (hasSpecialPaymentTermsUi(agent)
+        ? 'При особых условиях стандартные мотивации обычно не применяются. Проверьте, остаётся ли офис в плюсе после повышенной выплаты агенту.'
+        : 'Стандартная система — выплата по шкале и возможные мотивации.');
+
+    if (agent.status === 'trainee') {
+      return '<details class="motivation-box" data-agent-id="' + agent.id + '">'
+        + '<summary class="motivation-summary">'
+        + '<span class="motivation-summary-main">'
+        + '<span class="motivation-summary-title"><span class="summary-closed">Резерв мотиваций стажёра</span><span class="summary-open">Скрыть резерв стажёра</span></span>'
+        + '<span class="motivation-summary-text">' + headerText + '</span>'
+        + '</span>'
+        + '<span class="motivation-summary-side">'
+        + '<span class="motivation-current">Сейчас учтено: <b data-agent-summary="motivationInline" data-agent-id="' + agent.id + '">' + money(motivationReserve) + '</b> / месяц</span>'
+        + '<span class="collapse-text"><span class="summary-closed">Раскрыть ↓</span><span class="summary-open">Скрыть ↑</span></span>'
+        + '</span>'
+        + '</summary>'
+        + '<div class="motivation-content">'
+        + '<div class="form-grid compact-grid">'
+        + renderMotivationModeSelect(agent, 'Учитывать резерв мотиваций?', 'Стажёрские партнёрские поездки и годовые мотивации здесь не показываются.', [
+          { value: 'off', label: 'Не учитывать' },
+          { value: 'manual', label: 'Заложить вручную' }
+        ])
+        + (currentMode === 'off'
+          ? renderReserveSummary('Мотивации не учитываются.', 0)
+          : '<label class="field wide-field"><span>Резерв мотиваций в месяц, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="manualReserveMonthly" value="' + motivation.manualReserveMonthly + '"><small>Укажите сумму, которую собственник хочет ежемесячно закладывать на будущие мотивации этого агента.</small></label>')
+        + '</div>'
+        + '</div>'
+        + '</details>';
+    }
+
+    if (hasSpecialPaymentTermsUi(agent)) {
+      return '<details class="motivation-box" data-agent-id="' + agent.id + '">'
+        + '<summary class="motivation-summary">'
+        + '<span class="motivation-summary-main">'
+        + '<span class="motivation-summary-title"><span class="summary-closed">Резерв при особых условиях</span><span class="summary-open">Скрыть резерв при особых условиях</span></span>'
+        + '<span class="motivation-summary-text">' + headerText + '</span>'
+        + '</span>'
+        + '<span class="motivation-summary-side">'
+        + '<span class="motivation-current">Сейчас учтено: <b data-agent-summary="motivationInline" data-agent-id="' + agent.id + '">' + money(motivationReserve) + '</b> / месяц</span>'
+        + '<span class="collapse-text"><span class="summary-closed">Раскрыть ↓</span><span class="summary-open">Скрыть ↑</span></span>'
+        + '</span>'
+        + '</summary>'
+        + '<div class="motivation-content">'
+        + '<p class="motivation-lead">Особые условия — это проверка, выдержит ли офис повышенную выплату агенту.</p>'
+        + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-field="specialManualReserveEnabled" data-structural="true"' + checked(Boolean(motivation.specialManualReserveEnabled)) + '><span>Заложить ручной резерв мотиваций при особых условиях</span></label>'
+        + (motivation.specialManualReserveEnabled
+          ? '<label class="field"><span>Резерв мотиваций в месяц, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="manualReserveMonthly" value="' + motivation.manualReserveMonthly + '"><small>Используется только как ручной ежемесячный резерв.</small></label>'
+          : renderReserveSummary('Ручной резерв не учитывается.', 0))
+        + '</div>'
+        + '</details>';
+    }
 
     return '<details class="motivation-box" data-agent-id="' + agent.id + '">'
       + '<summary class="motivation-summary">'
       + '<span class="motivation-summary-main">'
-      + '<span class="motivation-summary-title"><span class="summary-closed">Открыть настройки мотиваций</span><span class="summary-open">Скрыть настройки мотиваций</span></span>'
-      + '<span class="motivation-summary-text">Здесь можно изменить стипендию, поездки, корпоративы, конгресс и звезду. Эти суммы влияют на итог офиса.</span>'
+      + '<span class="motivation-summary-title"><span class="summary-closed">Настройки мотиваций</span><span class="summary-open">Скрыть настройки мотиваций</span></span>'
+      + '<span class="motivation-summary-text">' + headerText + '</span>'
       + '</span>'
       + '<span class="motivation-summary-side">'
       + '<span class="motivation-current">Сейчас учтено: <b data-agent-summary="motivationInline" data-agent-id="' + agent.id + '">' + money(motivationReserve) + '</b> / месяц</span>'
       + '<span class="collapse-text"><span class="summary-closed">Раскрыть ↓</span><span class="summary-open">Скрыть ↑</span></span>'
       + '</span>'
       + '</summary>'
-      + '<section class="eligibility-panel">'
-      + '<p><strong>Проверка права на мотивации.</strong> Заполните квартальный результат и задатки: по ним калькулятор понимает, какие мотивации положены агенту.</p>'
+      + '<div class="motivation-content">'
       + '<div class="form-grid compact-grid">'
-      + '<label class="field"><span>Результат агента за квартал, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="quarterlyCommission" data-structural="true" value="' + positiveNumber(agent.quarterlyCommission) + '"><small>Нужно для уровня и стипендии.</small></label>'
-      + '<label class="field"><span>Задатки за квартал, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="quarterlyDeposits" data-structural="true" value="' + positiveNumber(agent.quarterlyDeposits) + '"><small>Партнёрство подтверждено от 250 000 ₽.</small></label>'
-      + '<label class="field"><span>Результат за полугодие, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="halfYearCommission" data-structural="true" value="' + positiveNumber(agent.halfYearCommission) + '"><small>Для Путешествия с Домиан: минимум 1 600 000 ₽.</small></label>'
-      + '<label class="field"><span>Задатки перед поездкой, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="preTripQuarterDeposits" data-structural="true" value="' + positiveNumber(agent.preTripQuarterDeposits) + '"><small>Для поездки нужен квартал от 250 000 ₽ задатков.</small></label>'
+      + renderMotivationModeSelect(agent, 'Учитывать мотивации агента?', 'Сначала выберите режим, и только потом калькулятор покажет нужные поля.', [
+        { value: 'off', label: 'Не учитывать' },
+        { value: 'manual', label: 'Заложить вручную' },
+        { value: 'rules', label: 'Рассчитать по правилам' }
+      ])
       + '</div>'
-      + '<p class="eligibility-note ' + (reserve.partnershipConfirmed ? 'ok' : 'blocked') + '">' + (reserve.partnershipConfirmed ? 'Партнёрство подтверждено: задатков за квартал 250 000 ₽ или больше.' : 'Партнёрство не подтверждено: задатков за квартал меньше 250 000 ₽. Партнёрские бонусы по умолчанию не положены.') + '</p>'
-      + renderOverrideCheckbox(agent, 'specialTermsOverride', 'Разрешить мотивации при особых условиях агента')
-      + '</section>'
-      + '<div class="form-grid compact-grid">'
-      + '<label class="field wide-field"><span>Как учитывать стипендию?</span><select data-agent-id="' + agent.id + '" data-motivation-field="stipendMode">'
-      + option('off', 'Не считать', motivation.stipendMode)
-      + option('auto', 'Посчитать по кварталу', motivation.stipendMode)
-      + option('manual', 'Ввести сумму вручную', motivation.stipendMode)
-      + '</select><small>Стипендия — это будущая ежемесячная нагрузка по результатам квартала.</small></label>'
-      + renderEligibilityNote(reserve.stipendAvailable, reserve.stipendReason, reserve.stipendOverride)
-      + (!reserve.stipendAvailable ? renderOverrideCheckbox(agent, 'stipendOverride', 'Всё равно заложить стипендию') : '')
-      + '<label class="field"><span>Стипендия вручную, ₽ в месяц</span><input type="number" min="0" step="500" data-agent-id="' + agent.id + '" data-motivation-field="manualStipendMonthly" value="' + motivation.manualStipendMonthly + '"' + disabled(!reserve.stipendAvailable && !reserve.stipendOverride) + '></label>'
-      + '</div>'
-      + '<section class="reserve-mode-card">'
-      + '<label class="field"><span>Как учитывать годовые мотивации?</span><select data-agent-id="' + agent.id + '" data-motivation-field="annualReserveMode">'
-      + option('monthly', 'Распределить по 12 месяцам', motivation.annualReserveMode)
-      + option('full', 'Учесть всю сумму сейчас', motivation.annualReserveMode)
-      + option('manual', 'Ввести свою сумму в месяц', motivation.annualReserveMode)
-      + '</select><small>Собственник сам выбирает: копить равномерно, заложить всю сумму сразу или указать частичный резерв.</small></label>'
-      + '<label class="field"><span>Своя сумма резерва, ₽ в месяц</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="manualAnnualReserveMonthly" value="' + motivation.manualAnnualReserveMonthly + '"><small>Используется только в режиме “Ввести свою сумму в месяц”. В остальных режимах поле не влияет на расчёт.</small></label>'
-      + '</section>'
-      + '<div class="motivation-card-grid">'
-      + renderTripMotivationCard(agent, { key: 'mountainSea', enabledField: 'mountainSeaEnabled', amountField: 'mountainSeaPerTrip', countField: 'mountainSeaTripsPerYear', overrideField: 'travelOverride', overrideLabel: 'Всё равно заложить поездки по РФ', title: 'Горы / Море', description: 'Поездки по РФ для агента' })
-      + renderTripMotivationCard(agent, { key: 'travel', enabledField: 'travelEnabled', amountField: 'travelPerTrip', countField: 'travelTripsPerYear', overrideField: 'travelOverride', overrideLabel: 'Всё равно заложить путешествие', title: 'Заграница / Путешествие', description: 'Зарубежные поездки для агента' })
-      + renderAnnualMotivationCard(agent, { key: 'corporate', enabledField: 'corporateEnabled', amountField: 'corporatePerYear', overrideField: 'eventsOverride', overrideLabel: 'Всё равно заложить корпоратив', title: 'Корпоративы', description: 'Годовой резерв на мероприятия' })
-      + renderAnnualMotivationCard(agent, { key: 'congress', enabledField: 'congressEnabled', amountField: 'congressPerYear', alwaysAvailable: true, title: 'Конгресс', description: 'Участие агента в годовом мероприятии' })
-      + renderAnnualMotivationCard(agent, { key: 'star', enabledField: 'starEnabled', amountField: 'starPerYear', alwaysAvailable: true, title: 'Звезда', description: 'Награда для лучшего агента офиса' })
+      + (currentMode === 'off'
+        ? renderReserveSummary('Мотивации не учитываются.', 0)
+        : '')
+      + (currentMode === 'manual'
+        ? '<div class="form-grid compact-grid"><label class="field wide-field"><span>Резерв мотиваций в месяц, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="manualReserveMonthly" value="' + motivation.manualReserveMonthly + '"><small>Укажите сумму, которую собственник хочет ежемесячно закладывать на будущие мотивации этого агента.</small></label></div>'
+        : '')
+      + (currentMode === 'rules'
+        ? '<section class="motivation-section"><h4>Квартальные условия</h4><div class="form-grid compact-grid">'
+          + '<label class="field wide-field"><span>Партнёрство подтверждено?</span><select data-agent-id="' + agent.id + '" data-agent-field="partnerConfirmed" data-structural="true">'
+          + option('true', 'Да', String(Boolean(agent.partnerConfirmed)))
+          + option('false', 'Нет', String(Boolean(agent.partnerConfirmed)))
+          + '</select><small>По правилам партнёрство обычно подтверждается задатками от 250 000 ₽ за квартал.</small></label>'
+          + '<label class="field"><span>Результат агента за квартал, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="quarterlyCommission" data-structural="true" value="' + positiveNumber(agent.quarterlyCommission) + '"><small>Нужно для уровня и стипендии.</small></label>'
+          + '</div>'
+          + '<p class="eligibility-note ' + (reserve.partnershipConfirmed ? 'ok' : 'blocked') + '">' + (reserve.partnershipConfirmed ? 'Партнёрство подтверждено.' : 'Партнёрство не подтверждено: партнёрские бонусы по умолчанию не положены.') + '</p>'
+          + '</section>'
+          + '<section class="motivation-section"><h4>Полугодовые условия</h4><div class="form-grid compact-grid">'
+          + '<label class="field"><span>Результат за полугодие, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="halfYearCommission" data-structural="true" value="' + positiveNumber(agent.halfYearCommission) + '"><small>Для путешествия нужен минимум 1 600 000 ₽.</small></label>'
+          + '<label class="field"><span>Задатки перед поездкой, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="preTripQuarterDeposits" data-structural="true" value="' + positiveNumber(agent.preTripQuarterDeposits) + '"><small>Для поездки нужен квартал от 250 000 ₽ задатков.</small></label>'
+          + '</div></section>'
+          + '<section class="motivation-section"><h4>Дополнительные резервы</h4><div class="form-grid compact-grid">'
+          + '<label class="field wide-field"><span>Как учитывать стипендию?</span><select data-agent-id="' + agent.id + '" data-motivation-field="stipendMode">'
+          + option('off', 'Не считать', motivation.stipendMode)
+          + option('auto', 'Посчитать по кварталу', motivation.stipendMode)
+          + option('manual', 'Ввести сумму вручную', motivation.stipendMode)
+          + '</select><small>Стипендия — это будущая ежемесячная нагрузка по результатам квартала.</small></label>'
+          + renderEligibilityNote(reserve.stipendAvailable, reserve.stipendReason, reserve.stipendOverride)
+          + (!reserve.stipendAvailable ? renderOverrideCheckbox(agent, 'stipendOverride', 'Всё равно заложить стипендию') : '')
+          + '<label class="field"><span>Стипендия вручную, ₽ в месяц</span><input type="number" min="0" step="500" data-agent-id="' + agent.id + '" data-motivation-field="manualStipendMonthly" value="' + motivation.manualStipendMonthly + '"' + disabled(!reserve.stipendAvailable && !reserve.stipendOverride) + '></label>'
+          + '<label class="field"><span>Как учитывать годовые мотивации?</span><select data-agent-id="' + agent.id + '" data-motivation-field="annualReserveMode">'
+          + option('monthly', 'Распределить по 12 месяцам', motivation.annualReserveMode)
+          + option('full', 'Учесть всю сумму сейчас', motivation.annualReserveMode)
+          + option('manual', 'Ввести свою сумму в месяц', motivation.annualReserveMode)
+          + '</select></label>'
+          + '<label class="field"><span>Своя сумма резерва, ₽ в месяц</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="manualAnnualReserveMonthly" value="' + motivation.manualAnnualReserveMonthly + '"><small>Работает только в режиме “Ввести свою сумму в месяц”.</small></label>'
+          + '</div></section>'
+          + '<section class="motivation-section"><h4>Годовые мотивации</h4><div class="motivation-card-grid">'
+          + renderTripMotivationCard(agent, { key: 'mountainSea', enabledField: 'mountainSeaEnabled', amountField: 'mountainSeaPerTrip', countField: 'mountainSeaTripsPerYear', overrideField: 'mountainSeaOverride', overrideLabel: 'Всё равно заложить поездки по РФ', title: 'Горы / Море', description: 'Поездки по РФ для агента' })
+          + renderTripMotivationCard(agent, { key: 'travel', enabledField: 'travelEnabled', amountField: 'travelPerTrip', countField: 'travelTripsPerYear', overrideField: 'travelOverride', overrideLabel: 'Всё равно заложить путешествие', title: 'Заграница / Путешествие', description: 'Зарубежные поездки для агента' })
+          + renderAnnualMotivationCard(agent, { key: 'corporate', enabledField: 'corporateEnabled', amountField: 'corporatePerYear', overrideField: 'eventsOverride', overrideLabel: 'Всё равно заложить корпоратив', title: 'Корпоративы', description: 'Годовой резерв на мероприятия' })
+          + renderAnnualMotivationCard(agent, { key: 'congress', enabledField: 'congressEnabled', amountField: 'congressPerYear', alwaysAvailable: true, title: 'Конгресс', description: 'Участие агента в годовом мероприятии' })
+          + renderAnnualMotivationCard(agent, { key: 'star', enabledField: 'starEnabled', amountField: 'starPerYear', alwaysAvailable: true, title: 'Звезда', description: 'Награда для лучшего агента офиса' })
+          + '</div></section>'
+        : '')
       + '</div>'
       + '</details>';
   }
@@ -351,14 +517,11 @@
       var result = calculateAgent(agent);
       var boostedControls = '';
       var fixedControl = '';
-      var statusControl = '';
-
-      if (agent.paymentType === 'standard') {
-        statusControl = '<label class="field"><span>Статус</span><select data-agent-id="' + agent.id + '" data-agent-field="status">'
-          + option('trainee', 'Стажёр', agent.status)
-          + option('partner', 'Партнёр', agent.status)
-          + '</select><small>Обычная шкала выплат по номеру сделки.</small></label>';
-      }
+      var partnerSystemControl = '';
+      var statusControl = '<label class="field"><span>Статус агента</span><select data-agent-id="' + agent.id + '" data-agent-field="status" data-structural="true">'
+        + option('trainee', 'Стажёр', agent.status)
+        + option('partner', 'Партнёр', agent.status)
+        + '</select><small>Стажёр и партнёр считаются по разным шкалам выплат.</small></label>';
 
       if (agent.paymentType === 'boosted') {
         boostedControls = '<div class="rate-grid">'
@@ -376,6 +539,15 @@
           + '<small>Один процент на все сделки. Чем выше процент, тем больше агент должен продавать.</small></label>';
       }
 
+      if (agent.status === 'partner') {
+        partnerSystemControl = '<label class="field"><span>Партнёр работает по какой системе?</span><select data-agent-id="' + agent.id + '" data-agent-field="partnerSystem" data-structural="true">'
+          + option('standard', 'Стандартная система', getPartnerSystem(agent))
+          + option('special', 'Особые условия', getPartnerSystem(agent))
+          + '</select><small>' + (getPartnerSystem(agent) === 'standard'
+            ? 'Стандартная система — выплата по шкале и возможные мотивации.'
+            : 'Особые условия — повышенная выплата, которую нужно проверить на окупаемость.') + '</small></label>';
+      }
+
       return '<article class="agent-card">'
         + '<div class="agent-head">'
         + '<h3>Агент ' + (index + 1) + '</h3>'
@@ -383,24 +555,27 @@
         + '</div>'
         + '<div class="form-grid">'
         + '<label class="field agent-main-field"><span>Имя</span><input type="text" data-agent-id="' + agent.id + '" data-agent-field="name" value="' + escapeHtml(agent.name) + '"></label>'
+        + statusControl
+        + renderStandardScaleNote(agent)
+        + partnerSystemControl
         + '<label class="field agent-main-field"><span>Как считать сделки?</span><select data-agent-id="' + agent.id + '" data-agent-field="commissionMode" data-structural="true">'
         + option('exact', 'Точно: ввести каждую сделку отдельно', agent.commissionMode || 'exact')
         + option('quick', 'Быстро: общая комиссия и количество сделок', agent.commissionMode || 'exact')
         + '</select><small>Точный режим нужен, если сделки были разными по сумме.</small></label>'
         + renderDealInputs(agent, result)
-        + '<label class="field agent-main-field"><span>Тип расчёта выплаты</span><select data-agent-id="' + agent.id + '" data-agent-field="paymentType" data-structural="true">'
-        + option('standard', 'Стандартная шкала', agent.paymentType)
-        + option('boosted', 'Повышенная стартовая шкала', agent.paymentType)
-        + option('fixed', 'Фиксированный процент', agent.paymentType)
-        + '</select></label>'
-        + statusControl
+        + (agent.status === 'partner' && getPartnerSystem(agent) === 'special'
+          ? '<label class="field agent-main-field"><span>Тип особых условий</span><select data-agent-id="' + agent.id + '" data-agent-field="paymentType" data-structural="true">'
+            + option('boosted', 'Повышенная стартовая шкала', agent.paymentType)
+            + option('fixed', 'Фиксированный процент', agent.paymentType)
+            + '</select><small>Проверьте, выдержит ли офис повышенную выплату.</small></label>'
+          : '')
         + fixedControl
         + '<label class="field"><span>Приведённый агент</span><select data-agent-id="' + agent.id + '" data-agent-field="introduced">'
         + option('false', 'Нет', String(agent.introduced))
         + option('true', 'Да', String(agent.introduced))
         + '</select><small>Если да, дополнительно считается 2,5% от его комиссии.</small></label>'
         + '</div>'
-        + boostedControls
+        + (agent.status === 'partner' && getPartnerSystem(agent) === 'special' ? boostedControls : '')
         + renderMotivationControls(agent)
         + '<dl class="agent-summary">'
         + '<div><dt>Выплата агенту</dt><dd data-agent-summary="payout" data-agent-id="' + agent.id + '">' + money(result.payout) + '</dd></div>'
@@ -980,11 +1155,19 @@
       return;
     }
 
+    agent.motivation = Object.assign(createMotivation(), agent.motivation || {});
+
     if (field === 'commission' || field === 'fixedRate' || field === 'quarterlyCommission' || field === 'quarterlyDeposits' || field === 'halfYearCommission' || field === 'preTripQuarterDeposits') {
       agent[field] = positiveNumber(target.value);
     } else if (field === 'dealCount') {
       agent[field] = Math.max(1, Math.floor(positiveNumber(target.value)));
-    } else if (field === 'introduced' || field === 'motivationOverride' || field === 'stipendOverride' || field === 'travelOverride' || field === 'eventsOverride' || field === 'specialTermsOverride') {
+    } else if (field === 'partnerSystem') {
+      if (target.value === 'standard') {
+        agent.paymentType = 'standard';
+      } else if (agent.paymentType === 'standard') {
+        agent.paymentType = 'boosted';
+      }
+    } else if (field === 'introduced' || field === 'partnerConfirmed' || field === 'motivationOverride' || field === 'stipendOverride' || field === 'mountainSeaOverride' || field === 'travelOverride' || field === 'eventsOverride' || field === 'specialTermsOverride') {
       agent[field] = target.type === 'checkbox' ? target.checked : target.value === 'true';
     } else if (field === 'commissionMode') {
       if (target.value === 'quick') {
@@ -996,6 +1179,14 @@
           ? agent.dealsInput
           : splitCommissionIntoDeals(agent.commission, agent.dealCount);
         syncAgentTotalsFromDeals(agent);
+      }
+    } else if (field === 'status') {
+      agent[field] = target.value;
+      if (target.value === 'trainee') {
+        agent.paymentType = 'standard';
+        if (agent.motivation.mode === 'rules') {
+          agent.motivation.mode = 'off';
+        }
       }
     } else {
       agent[field] = target.value;
@@ -1019,13 +1210,20 @@
     }
     agent.motivation = Object.assign(createMotivation(), agent.motivation || {});
 
-    if (target.dataset.motivationField === 'stipendMode' || target.dataset.motivationField === 'annualReserveMode') {
+    if (target.dataset.motivationField === 'stipendMode' || target.dataset.motivationField === 'annualReserveMode' || target.dataset.motivationField === 'mode') {
       agent.motivation[target.dataset.motivationField] = target.value;
+    } else if (target.dataset.motivationField === 'specialManualReserveEnabled') {
+      agent.motivation[target.dataset.motivationField] = target.checked;
+      agent.motivation.mode = target.checked ? 'manual' : 'off';
     } else {
       agent.motivation[target.dataset.motivationField] = positiveNumber(target.value);
     }
 
-    updateTotalsOnly();
+    if (target.dataset.structural === 'true' || target.dataset.motivationField === 'mode' || target.dataset.motivationField === 'specialManualReserveEnabled') {
+      renderPreservingUiState();
+    } else {
+      updateTotalsOnly();
+    }
   }
 
   function updateMotivationFlag(target) {

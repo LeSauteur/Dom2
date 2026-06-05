@@ -39,6 +39,10 @@
       status: 'partner',
       fixedRate: PAY_SCALES.fixedDefault,
       introduced: false,
+      mountainSeaOverride: false,
+      travelOverride: false,
+      eventsOverride: false,
+      specialTermsOverride: false,
       motivationReserve: 0,
       manualExpenseShare: 0
     };
@@ -69,15 +73,35 @@
   }
 
   function isActiveAgent(agent) {
-    return positiveNumber(agent.commission) > 0
+    var name = String(agent.name || '').trim();
+    var hasMeaningfulDeals = Array.isArray(agent.dealsInput) && agent.dealsInput.some(function (deal) {
+      return positiveNumber(deal) > 0;
+    });
+
+    return (name && name !== 'Новый агент')
+      || positiveNumber(agent.commission) > 0
+      || Math.max(1, Math.floor(positiveNumber(agent.dealCount))) > 1
+      || hasMeaningfulDeals
+      || (agent.paymentType && agent.paymentType !== 'standard')
+      || positiveNumber(agent.fixedRate) !== PAY_SCALES.fixedDefault
+      || Boolean(agent.introduced)
       || positiveNumber(agent.motivationReserve) > 0
-      || positiveNumber(agent.manualExpenseShare) > 0;
+      || positiveNumber(agent.manualExpenseShare) > 0
+      || Boolean(agent.mountainSeaOverride)
+      || Boolean(agent.travelOverride)
+      || Boolean(agent.eventsOverride)
+      || Boolean(agent.specialTermsOverride);
   }
 
   function toTableAgent(source) {
     var calculated = calculateAgent(Object.assign({}, source, {
       motivation: Object.assign({}, DEFAULT_MOTIVATION, source.motivation || {})
     }));
+    var fixedRate = source.fixedRate;
+
+    if (fixedRate === undefined || fixedRate === null || fixedRate === '') {
+      fixedRate = calculated.fixedRate;
+    }
 
     return {
       id: source.id || nextAgentId(),
@@ -86,8 +110,12 @@
       dealCount: calculated.dealCount,
       paymentType: source.paymentType || calculated.paymentType || 'standard',
       status: source.status || calculated.status || 'partner',
-      fixedRate: positiveNumber(source.fixedRate || calculated.fixedRate || PAY_SCALES.fixedDefault),
+      fixedRate: positiveNumber(fixedRate),
       introduced: Boolean(source.introduced),
+      mountainSeaOverride: source.mountainSeaOverride !== undefined ? Boolean(source.mountainSeaOverride) : Boolean(source.travelOverride),
+      travelOverride: Boolean(source.travelOverride),
+      eventsOverride: Boolean(source.eventsOverride),
+      specialTermsOverride: Boolean(source.specialTermsOverride),
       motivationReserve: calculated.motivationReserve,
       manualExpenseShare: 0
     };
@@ -122,6 +150,12 @@
   }
 
   function getCalculationAgent(agent) {
+    var fixedRate = agent.fixedRate;
+
+    if (fixedRate === undefined || fixedRate === null || fixedRate === '') {
+      fixedRate = PAY_SCALES.fixedDefault;
+    }
+
     return {
       id: agent.id,
       name: agent.name,
@@ -129,8 +163,12 @@
       dealCount: Math.max(1, Math.floor(positiveNumber(agent.dealCount))),
       paymentType: agent.paymentType || 'standard',
       status: agent.status || 'partner',
-      fixedRate: positiveNumber(agent.fixedRate || PAY_SCALES.fixedDefault),
+      fixedRate: positiveNumber(fixedRate),
       introduced: Boolean(agent.introduced),
+      mountainSeaOverride: Boolean(agent.mountainSeaOverride),
+      travelOverride: Boolean(agent.travelOverride),
+      eventsOverride: Boolean(agent.eventsOverride),
+      specialTermsOverride: Boolean(agent.specialTermsOverride),
       boostedRates: clone(PAY_SCALES.boostedDefault),
       motivation: {
         stipendMode: 'manual',
@@ -267,7 +305,7 @@
       + option('trainee', 'Стажёр', agent.status)
       + option('partner', 'Партнёр', agent.status)
       + '</select></td>'
-      + '<td><input type="number" min="0" max="100" step="1" data-agent-id="' + agent.id + '" data-agent-field="fixedRate" value="' + positiveNumber(agent.fixedRate || PAY_SCALES.fixedDefault) + '"></td>'
+      + '<td><input type="number" min="0" max="100" step="1" data-agent-id="' + agent.id + '" data-agent-field="fixedRate" value="' + positiveNumber(agent.fixedRate === undefined || agent.fixedRate === null || agent.fixedRate === '' ? PAY_SCALES.fixedDefault : agent.fixedRate) + '"></td>'
       + '<td><select data-agent-id="' + agent.id + '" data-agent-field="introduced">'
       + option('false', 'Нет', String(Boolean(agent.introduced)))
       + option('true', 'Да', String(Boolean(agent.introduced)))
@@ -299,7 +337,7 @@
       + option('trainee', 'Стажёр', agent.status)
       + option('partner', 'Партнёр', agent.status)
       + '</select></td>'
-      + '<td><input type="number" min="0" max="100" step="1" data-agent-id="' + agent.id + '" data-agent-field="fixedRate" value="' + positiveNumber(agent.fixedRate || PAY_SCALES.fixedDefault) + '"></td>'
+      + '<td><input type="number" min="0" max="100" step="1" data-agent-id="' + agent.id + '" data-agent-field="fixedRate" value="' + positiveNumber(agent.fixedRate === undefined || agent.fixedRate === null || agent.fixedRate === '' ? PAY_SCALES.fixedDefault : agent.fixedRate) + '"></td>'
       + '<td><select data-agent-id="' + agent.id + '" data-agent-field="introduced">'
       + option('false', 'Нет', String(Boolean(agent.introduced)))
       + option('true', 'Да', String(Boolean(agent.introduced)))

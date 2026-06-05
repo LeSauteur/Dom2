@@ -110,6 +110,22 @@ test('agent payout supports standard, boosted and fixed schemes', () => {
   closeTo(fixed.payout, 320000);
 });
 
+test('fixed scheme keeps explicit zero rate', () => {
+  const fixedZero = calculator.calculateAgent({
+    id: 'fixed-zero',
+    name: 'Фикс 0',
+    commission: 400000,
+    dealCount: 4,
+    paymentType: 'fixed',
+    status: 'partner',
+    fixedRate: 0,
+    introduced: false
+  });
+
+  assert.equal(fixedZero.fixedRate, 0);
+  closeTo(fixedZero.payout, 0);
+});
+
 test('exact deals mode pays standard partner by real deal amounts', () => {
   const agent = calculator.calculateAgent({
     id: 'exact-standard',
@@ -241,6 +257,78 @@ test('motivation reserve supports stipend and annual trip reserves', () => {
   closeTo(reserve.monthly, 28541.666666666668);
 });
 
+test('motivation reserve preserves explicit zero values', () => {
+  const reserve = calculator.calculateMotivationReserve({
+    paymentType: 'standard',
+    quarterlyResult: 1000000,
+    quarterlyDeposits: 250000,
+    halfYearCommission: 1600000,
+    preTripQuarterDeposits: 250000,
+    annualReserveMode: 'monthly',
+    mountainSeaEnabled: true,
+    mountainSeaPerTrip: 0,
+    mountainSeaTripsPerYear: 0,
+    travelEnabled: true,
+    travelPerTrip: 0,
+    travelTripsPerYear: 0,
+    corporateEnabled: true,
+    corporatePerYear: 0,
+    congressEnabled: true,
+    congressPerYear: 0,
+    starEnabled: true,
+    starPerYear: 0
+  });
+
+  assert.equal(reserve.mountainSeaAnnual, 0);
+  assert.equal(reserve.mountainSeaMonthly, 0);
+  assert.equal(reserve.travelAnnual, 0);
+  assert.equal(reserve.travelMonthly, 0);
+  assert.equal(reserve.corporateAnnual, 0);
+  assert.equal(reserve.corporateMonthly, 0);
+  assert.equal(reserve.congressAnnual, 0);
+  assert.equal(reserve.congressMonthly, 0);
+  assert.equal(reserve.starAnnual, 0);
+  assert.equal(reserve.starMonthly, 0);
+});
+
+test('mountain sea override is independent and legacy travel override still unlocks old snapshots', () => {
+  const separated = calculator.calculateMotivationReserve({
+    paymentType: 'standard',
+    quarterlyDeposits: 0,
+    halfYearCommission: 1600000,
+    preTripQuarterDeposits: 250000,
+    mountainSeaOverride: true,
+    travelOverride: false,
+    motivation: {
+      annualReserveMode: 'monthly',
+      mountainSeaEnabled: true,
+      mountainSeaPerTrip: 15000,
+      mountainSeaTripsPerYear: 2,
+      travelEnabled: true,
+      travelPerTrip: 100000,
+      travelTripsPerYear: 2
+    }
+  });
+
+  const legacy = calculator.calculateMotivationReserve({
+    paymentType: 'standard',
+    quarterlyDeposits: 0,
+    halfYearCommission: 1600000,
+    preTripQuarterDeposits: 250000,
+    travelOverride: true,
+    motivation: {
+      annualReserveMode: 'monthly',
+      mountainSeaEnabled: true,
+      mountainSeaPerTrip: 15000,
+      mountainSeaTripsPerYear: 2
+    }
+  });
+
+  closeTo(separated.mountainSeaAnnual, 30000);
+  assert.equal(separated.travelAnnual, 0);
+  closeTo(legacy.mountainSeaAnnual, 30000);
+});
+
 test('travel reserve defaults to two international trips per year', () => {
   assert.equal(calculator.DEFAULT_MOTIVATION.travelPerTrip, 100000);
   assert.equal(calculator.DEFAULT_MOTIVATION.travelTripsPerYear, 2);
@@ -358,10 +446,11 @@ test('agent profitability distributes office expenses across active agents', () 
     ]
   });
 
+  assert.equal(totals.agentEconomics.length, 1);
   const first = totals.agentEconomics[0];
-  assert.equal(first.expenseShare, 20000);
+  assert.equal(first.expenseShare, 100000);
   assert.equal(first.royaltyShare, 7000);
-  assert.equal(first.contribution, -7000);
+  assert.equal(first.contribution, -87000);
   assert.equal(first.status, 'Не окупается');
 });
 
