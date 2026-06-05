@@ -30,13 +30,42 @@
       name: 'Новый агент',
       commission: 0,
       dealCount: 1,
+      commissionMode: 'exact',
+      dealsInput: [0],
       paymentType: 'standard',
       status: 'partner',
       boostedRates: clone(PAY_SCALES.boostedDefault),
       fixedRate: PAY_SCALES.fixedDefault,
       introduced: false,
+      quarterlyCommission: 0,
+      quarterlyDeposits: 0,
+      halfYearCommission: 0,
+      preTripQuarterDeposits: 0,
+      motivationOverride: false,
+      stipendOverride: false,
+      travelOverride: false,
+      eventsOverride: false,
+      specialTermsOverride: false,
       motivation: createMotivation()
     };
+  }
+
+  function splitCommissionIntoDeals(commission, dealCount) {
+    var count = Math.max(1, Math.floor(positiveNumber(dealCount)));
+    var amount = count ? positiveNumber(commission) / count : 0;
+    var deals = [];
+
+    for (var i = 0; i < count; i += 1) {
+      deals.push(amount);
+    }
+
+    return deals;
+  }
+
+  function hasMeaningfulDeals(deals) {
+    return Array.isArray(deals) && deals.some(function (deal) {
+      return positiveNumber(deal) > 0;
+    });
   }
 
   function createBlankExpense() {
@@ -103,6 +132,10 @@
     return value ? ' checked' : '';
   }
 
+  function disabled(value) {
+    return value ? ' disabled' : '';
+  }
+
   function findAgent(agentId) {
     return state.agents.find(function (agent) {
       return agent.id === agentId;
@@ -124,17 +157,59 @@
     return '<div><dt>' + label + '</dt><dd data-agent-id="' + agentId + '" data-motivation-metric="' + key + '">' + moneyPrecise(value) + '</dd></div>';
   }
 
+  function getEligibilityText(reason) {
+    if (reason === 'level') {
+      return 'Мотивация не положена: агент не достиг нужного уровня по результатам.';
+    }
+    if (reason === 'partnership') {
+      return 'Мотивация не положена: партнёрство не подтверждено, задатков за квартал меньше 250 000 ₽.';
+    }
+    if (reason === 'specialTerms') {
+      return 'У агента особые условия выплаты. По умолчанию мотивации за счёт офиса не предусмотрены.';
+    }
+    if (reason === 'halfYearLevel') {
+      return 'Путешествие недоступно: результат за полугодие меньше 1 600 000 ₽.';
+    }
+    if (reason === 'preTripDeposits') {
+      return 'Путешествие недоступно: в квартале перед поездкой задатков меньше 250 000 ₽.';
+    }
+    return 'Мотивация доступна по текущим данным.';
+  }
+
+  function renderOverrideCheckbox(agent, field, label) {
+    return '<label class="override-row">'
+      + '<input type="checkbox" data-agent-id="' + agent.id + '" data-agent-field="' + field + '" data-structural="true"' + checked(agent[field]) + '>'
+      + '<span>' + label + '</span>'
+      + '</label>';
+  }
+
+  function renderEligibilityNote(available, reason, overridden) {
+    if (available) {
+      return '<p class="eligibility-note ok">Доступно по текущим условиям.</p>';
+    }
+    if (overridden) {
+      return '<p class="eligibility-note warning">Важно: условия для мотивации не выполнены. Вы вручную добавляете расход как решение собственника.</p>';
+    }
+    return '<p class="eligibility-note blocked">' + getEligibilityText(reason) + '</p>';
+  }
+
   function renderTripMotivationCard(agent, config) {
     var motivation = Object.assign(createMotivation(), agent.motivation || {});
-    var annuals = motivationAnnuals(motivation);
-    var annual = annuals[config.key];
+    var reserve = calculateMotivationReserve(agent);
+    var annual = reserve[config.key + 'Annual'];
+    var available = reserve[config.key + 'Available'];
+    var reason = reserve[config.key + 'Reason'];
+    var overridden = !available && (agent[config.overrideField] || agent.motivationOverride);
+    var locked = !available && !overridden;
 
-    return '<article class="motivation-card">'
-      + '<label class="motivation-card-toggle"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="' + config.enabledField + '"' + checked(motivation[config.enabledField]) + '>'
+    return '<article class="motivation-card' + (locked ? ' is-blocked' : '') + '">'
+      + '<label class="motivation-card-toggle"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="' + config.enabledField + '"' + checked(motivation[config.enabledField]) + disabled(locked) + '>'
       + '<span><strong>' + config.title + '</strong><small>' + config.description + '</small></span></label>'
+      + renderEligibilityNote(available, reason, overridden)
+      + (!available ? renderOverrideCheckbox(agent, config.overrideField, config.overrideLabel) : '')
       + '<div class="motivation-card-fields">'
-      + '<label class="field"><span>Сумма за поездку, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="' + config.amountField + '" value="' + motivation[config.amountField] + '"></label>'
-      + '<label class="field"><span>Количество поездок в год</span><input type="number" min="0" step="1" data-agent-id="' + agent.id + '" data-motivation-field="' + config.countField + '" value="' + motivation[config.countField] + '"></label>'
+      + '<label class="field"><span>Сумма за поездку, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="' + config.amountField + '" value="' + motivation[config.amountField] + '"' + disabled(locked) + '></label>'
+      + '<label class="field"><span>Количество поездок в год</span><input type="number" min="0" step="1" data-agent-id="' + agent.id + '" data-motivation-field="' + config.countField + '" value="' + motivation[config.countField] + '"' + disabled(locked) + '></label>'
       + '</div>'
       + '<dl class="motivation-card-total">'
       + renderMotivationMetric(agent.id, config.key + 'Annual', 'Итого в год', annual)
@@ -145,20 +220,64 @@
 
   function renderAnnualMotivationCard(agent, config) {
     var motivation = Object.assign(createMotivation(), agent.motivation || {});
-    var annuals = motivationAnnuals(motivation);
-    var annual = annuals[config.key];
+    var reserve = calculateMotivationReserve(agent);
+    var annual = reserve[config.key + 'Annual'];
+    var available = config.alwaysAvailable ? true : reserve[config.key + 'Available'];
+    var reason = config.alwaysAvailable ? 'available' : reserve[config.key + 'Reason'];
+    var overridden = !available && (agent[config.overrideField] || agent.motivationOverride);
+    var locked = !available && !overridden;
 
-    return '<article class="motivation-card">'
-      + '<label class="motivation-card-toggle"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="' + config.enabledField + '"' + checked(motivation[config.enabledField]) + '>'
+    return '<article class="motivation-card' + (locked ? ' is-blocked' : '') + '">'
+      + '<label class="motivation-card-toggle"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="' + config.enabledField + '"' + checked(motivation[config.enabledField]) + disabled(locked) + '>'
       + '<span><strong>' + config.title + '</strong><small>' + config.description + '</small></span></label>'
+      + (config.alwaysAvailable ? '<p class="eligibility-note ok">Конгресс и Звезда учитываются как обязательный годовой расход собственника и доступны независимо от условий агента.</p>' : renderEligibilityNote(available, reason, overridden))
+      + (!available ? renderOverrideCheckbox(agent, config.overrideField, config.overrideLabel) : '')
       + '<div class="motivation-card-fields single">'
-      + '<label class="field"><span>Сумма в год, ₽</span><input type="number" min="0" step="500" data-agent-id="' + agent.id + '" data-motivation-field="' + config.amountField + '" value="' + motivation[config.amountField] + '"></label>'
+      + '<label class="field"><span>Сумма в год, ₽</span><input type="number" min="0" step="500" data-agent-id="' + agent.id + '" data-motivation-field="' + config.amountField + '" value="' + motivation[config.amountField] + '"' + disabled(locked) + '></label>'
       + '</div>'
       + '<dl class="motivation-card-total">'
       + renderMotivationMetric(agent.id, config.key + 'Annual', 'Итого в год', annual)
       + renderMotivationMetric(agent.id, config.key + 'Monthly', 'В месяц при делении на 12', annual / 12)
       + '</dl>'
       + '</article>';
+  }
+
+  function renderExactDeals(agent, result) {
+    var deals = Array.isArray(agent.dealsInput) && agent.dealsInput.length ? agent.dealsInput : [0];
+    return '<div class="exact-deals-panel wide-field">'
+      + '<p class="hint">Для точной зарплаты лучше ввести сделки отдельно. Особенно если одна сделка сильно больше других.</p>'
+      + '<div class="exact-deals-list">'
+      + deals.map(function (deal, index) {
+        return '<label class="field exact-deal-row">'
+          + '<span>Сделка ' + (index + 1) + ' — комиссия, ₽</span>'
+          + '<input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-deal-index="' + index + '" value="' + positiveNumber(deal) + '">'
+          + '<button class="button ghost" type="button" data-action="remove-deal" data-agent-id="' + agent.id + '" data-deal-index="' + index + '"' + (deals.length === 1 ? ' disabled' : '') + '>Удалить</button>'
+          + '</label>';
+      }).join('')
+      + '</div>'
+      + '<button class="button ghost" type="button" data-action="add-deal" data-agent-id="' + agent.id + '">Добавить сделку</button>'
+      + '<dl class="exact-deals-total">'
+      + '<div><dt>Итого комиссия по сделкам</dt><dd data-agent-summary="commission" data-agent-id="' + agent.id + '">' + money(result.commission) + '</dd></div>'
+      + '<div><dt>Количество сделок</dt><dd data-agent-summary="dealCount" data-agent-id="' + agent.id + '">' + result.dealCount + '</dd></div>'
+      + '</dl>'
+      + '</div>';
+  }
+
+  function renderQuickDealEstimate(agent, result) {
+    return '<div class="exact-deals-panel wide-field quick-deals-panel">'
+      + '<p class="deal-mode-hint">Быстрый расчёт — примерная оценка. Калькулятор делит общую комиссию поровну на сделки. Если сделки были разными по сумме, используйте точный расчёт.</p>'
+      + '<div class="form-grid compact-grid deal-estimate-grid">'
+      + '<label class="field"><span>Сколько агент принёс комиссии</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="commission" value="' + result.commission + '"><small>Это вся комиссия за месяц.</small></label>'
+      + '<label class="field"><span>Количество сделок</span><input type="number" min="1" step="1" data-agent-id="' + agent.id + '" data-agent-field="dealCount" value="' + result.dealCount + '"><small>Если сделки были разными по сумме, используйте точный расчёт по сделкам.</small></label>'
+      + '</div>'
+      + '</div>';
+  }
+
+  function renderDealInputs(agent, result) {
+    if (agent.commissionMode === 'exact') {
+      return renderExactDeals(agent, result);
+    }
+    return renderQuickDealEstimate(agent, result);
   }
 
   function renderExpenses() {
@@ -175,8 +294,9 @@
   function renderMotivationControls(agent) {
     var motivation = Object.assign(createMotivation(), agent.motivation || {});
     var motivationReserve = calculateAgent(agent).motivationReserve;
+    var reserve = calculateMotivationReserve(agent);
 
-    return '<details class="motivation-box">'
+    return '<details class="motivation-box" data-agent-id="' + agent.id + '">'
       + '<summary class="motivation-summary">'
       + '<span class="motivation-summary-main">'
       + '<span class="motivation-summary-title"><span class="summary-closed">Настроить мотивации агента</span><span class="summary-open">Мотивации и резервы агента</span></span>'
@@ -187,14 +307,26 @@
       + '<span class="collapse-text">Свернуть настройки</span>'
       + '</span>'
       + '</summary>'
+      + '<section class="eligibility-panel">'
+      + '<p><strong>Проверка права на мотивации.</strong> Заполните квартальный результат и задатки: по ним калькулятор понимает, какие мотивации положены агенту.</p>'
+      + '<div class="form-grid compact-grid">'
+      + '<label class="field"><span>Результат агента за квартал, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="quarterlyCommission" data-structural="true" value="' + positiveNumber(agent.quarterlyCommission) + '"><small>Нужно для уровня и стипендии.</small></label>'
+      + '<label class="field"><span>Задатки за квартал, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="quarterlyDeposits" data-structural="true" value="' + positiveNumber(agent.quarterlyDeposits) + '"><small>Партнёрство подтверждено от 250 000 ₽.</small></label>'
+      + '<label class="field"><span>Результат за полугодие, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="halfYearCommission" data-structural="true" value="' + positiveNumber(agent.halfYearCommission) + '"><small>Для Путешествия с Домиан: минимум 1 600 000 ₽.</small></label>'
+      + '<label class="field"><span>Задатки перед поездкой, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="preTripQuarterDeposits" data-structural="true" value="' + positiveNumber(agent.preTripQuarterDeposits) + '"><small>Для поездки нужен квартал от 250 000 ₽ задатков.</small></label>'
+      + '</div>'
+      + '<p class="eligibility-note ' + (reserve.partnershipConfirmed ? 'ok' : 'blocked') + '">' + (reserve.partnershipConfirmed ? 'Партнёрство подтверждено: задатков за квартал 250 000 ₽ или больше.' : 'Партнёрство не подтверждено: задатков за квартал меньше 250 000 ₽. Партнёрские бонусы по умолчанию не положены.') + '</p>'
+      + renderOverrideCheckbox(agent, 'specialTermsOverride', 'Разрешить мотивации при особых условиях агента')
+      + '</section>'
       + '<div class="form-grid compact-grid">'
       + '<label class="field wide-field"><span>Как учитывать стипендию?</span><select data-agent-id="' + agent.id + '" data-motivation-field="stipendMode">'
       + option('off', 'Не считать', motivation.stipendMode)
       + option('auto', 'Посчитать по кварталу', motivation.stipendMode)
       + option('manual', 'Ввести сумму вручную', motivation.stipendMode)
       + '</select><small>Стипендия — это будущая ежемесячная нагрузка по результатам квартала.</small></label>'
-      + '<label class="field"><span>Результат агента за квартал, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="quarterlyResult" value="' + motivation.quarterlyResult + '"><small>Если оставить 0, берём комиссию агента за месяц × 3.</small></label>'
-      + '<label class="field"><span>Стипендия вручную, ₽ в месяц</span><input type="number" min="0" step="500" data-agent-id="' + agent.id + '" data-motivation-field="manualStipendMonthly" value="' + motivation.manualStipendMonthly + '"></label>'
+      + renderEligibilityNote(reserve.stipendAvailable, reserve.stipendReason, reserve.stipendOverride)
+      + (!reserve.stipendAvailable ? renderOverrideCheckbox(agent, 'stipendOverride', 'Всё равно заложить стипендию') : '')
+      + '<label class="field"><span>Стипендия вручную, ₽ в месяц</span><input type="number" min="0" step="500" data-agent-id="' + agent.id + '" data-motivation-field="manualStipendMonthly" value="' + motivation.manualStipendMonthly + '"' + disabled(!reserve.stipendAvailable && !reserve.stipendOverride) + '></label>'
       + '</div>'
       + '<section class="reserve-mode-card">'
       + '<label class="field"><span>Как учитывать годовые мотивации?</span><select data-agent-id="' + agent.id + '" data-motivation-field="annualReserveMode">'
@@ -205,11 +337,11 @@
       + '<label class="field"><span>Своя сумма резерва, ₽ в месяц</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="manualAnnualReserveMonthly" value="' + motivation.manualAnnualReserveMonthly + '"><small>Используется только в режиме “Ввести свою сумму в месяц”. В остальных режимах поле не влияет на расчёт.</small></label>'
       + '</section>'
       + '<div class="motivation-card-grid">'
-      + renderTripMotivationCard(agent, { key: 'mountainSea', enabledField: 'mountainSeaEnabled', amountField: 'mountainSeaPerTrip', countField: 'mountainSeaTripsPerYear', title: 'Горы / Море', description: 'Поездки по РФ для агента' })
-      + renderTripMotivationCard(agent, { key: 'travel', enabledField: 'travelEnabled', amountField: 'travelPerTrip', countField: 'travelTripsPerYear', title: 'Заграница / Путешествие', description: 'Зарубежные поездки для агента' })
-      + renderAnnualMotivationCard(agent, { key: 'corporate', enabledField: 'corporateEnabled', amountField: 'corporatePerYear', title: 'Корпоративы', description: 'Годовой резерв на мероприятия' })
-      + renderAnnualMotivationCard(agent, { key: 'congress', enabledField: 'congressEnabled', amountField: 'congressPerYear', title: 'Конгресс', description: 'Участие агента в годовом мероприятии' })
-      + renderAnnualMotivationCard(agent, { key: 'star', enabledField: 'starEnabled', amountField: 'starPerYear', title: 'Звезда', description: 'Награда для лучшего агента офиса' })
+      + renderTripMotivationCard(agent, { key: 'mountainSea', enabledField: 'mountainSeaEnabled', amountField: 'mountainSeaPerTrip', countField: 'mountainSeaTripsPerYear', overrideField: 'travelOverride', overrideLabel: 'Всё равно заложить поездки по РФ', title: 'Горы / Море', description: 'Поездки по РФ для агента' })
+      + renderTripMotivationCard(agent, { key: 'travel', enabledField: 'travelEnabled', amountField: 'travelPerTrip', countField: 'travelTripsPerYear', overrideField: 'travelOverride', overrideLabel: 'Всё равно заложить путешествие', title: 'Заграница / Путешествие', description: 'Зарубежные поездки для агента' })
+      + renderAnnualMotivationCard(agent, { key: 'corporate', enabledField: 'corporateEnabled', amountField: 'corporatePerYear', overrideField: 'eventsOverride', overrideLabel: 'Всё равно заложить корпоратив', title: 'Корпоративы', description: 'Годовой резерв на мероприятия' })
+      + renderAnnualMotivationCard(agent, { key: 'congress', enabledField: 'congressEnabled', amountField: 'congressPerYear', alwaysAvailable: true, title: 'Конгресс', description: 'Участие агента в годовом мероприятии' })
+      + renderAnnualMotivationCard(agent, { key: 'star', enabledField: 'starEnabled', amountField: 'starPerYear', alwaysAvailable: true, title: 'Звезда', description: 'Награда для лучшего агента офиса' })
       + '</div>'
       + '</details>';
   }
@@ -251,8 +383,11 @@
         + '</div>'
         + '<div class="form-grid">'
         + '<label class="field agent-main-field"><span>Имя</span><input type="text" data-agent-id="' + agent.id + '" data-agent-field="name" value="' + escapeHtml(agent.name) + '"></label>'
-        + '<label class="field agent-main-field"><span>Сколько агент принёс комиссии</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="commission" value="' + agent.commission + '"><small>Это вся комиссия за месяц.</small></label>'
-        + '<label class="field agent-main-field"><span>Количество сделок</span><input type="number" min="1" step="1" data-agent-id="' + agent.id + '" data-agent-field="dealCount" value="' + agent.dealCount + '"><small>Калькулятор делит общую комиссию поровну на сделки, а процент берёт разный по номеру сделки.</small></label>'
+        + '<label class="field agent-main-field"><span>Как считать сделки?</span><select data-agent-id="' + agent.id + '" data-agent-field="commissionMode" data-structural="true">'
+        + option('exact', 'Точно: ввести каждую сделку отдельно', agent.commissionMode || 'exact')
+        + option('quick', 'Быстро: общая комиссия и количество сделок', agent.commissionMode || 'exact')
+        + '</select><small>Точный режим нужен, если сделки были разными по сумме.</small></label>'
+        + renderDealInputs(agent, result)
         + '<label class="field agent-main-field"><span>Тип расчёта выплаты</span><select data-agent-id="' + agent.id + '" data-agent-field="paymentType" data-structural="true">'
         + option('standard', 'Стандартная шкала', agent.paymentType)
         + option('boosted', 'Повышенная стартовая шкала', agent.paymentType)
@@ -340,6 +475,7 @@
     calculateOffice(state).agents.forEach(function (agent) {
       [
         ['payout', agent.payout],
+        ['commission', agent.commission],
         ['referral', agent.referral],
         ['motivation', agent.motivationReserve],
         ['motivationInline', agent.motivationReserve],
@@ -350,24 +486,38 @@
           node.textContent = money(item[1]);
         }
       });
+      if (agent.commissionMode === 'exact') {
+        var commissionInput = document.querySelector('[data-agent-field="commission"][data-agent-id="' + agent.id + '"]');
+        var dealCountInput = document.querySelector('[data-agent-field="dealCount"][data-agent-id="' + agent.id + '"]');
+        if (commissionInput) {
+          commissionInput.value = agent.commission;
+        }
+        if (dealCountInput) {
+          dealCountInput.value = agent.dealCount;
+        }
+        var dealCountNode = document.querySelector('[data-agent-summary="dealCount"][data-agent-id="' + agent.id + '"]');
+        if (dealCountNode) {
+          dealCountNode.textContent = agent.dealCount;
+        }
+      }
     });
     updateMotivationCardMetrics();
   }
 
   function updateMotivationCardMetrics() {
     state.agents.forEach(function (agent) {
-      var annuals = motivationAnnuals(agent.motivation || {});
+      var reserve = calculateMotivationReserve(agent);
       [
-        ['mountainSeaAnnual', annuals.mountainSea],
-        ['mountainSeaMonthly', annuals.mountainSea / 12],
-        ['travelAnnual', annuals.travel],
-        ['travelMonthly', annuals.travel / 12],
-        ['corporateAnnual', annuals.corporate],
-        ['corporateMonthly', annuals.corporate / 12],
-        ['congressAnnual', annuals.congress],
-        ['congressMonthly', annuals.congress / 12],
-        ['starAnnual', annuals.star],
-        ['starMonthly', annuals.star / 12]
+        ['mountainSeaAnnual', reserve.mountainSeaAnnual],
+        ['mountainSeaMonthly', reserve.mountainSeaMonthly],
+        ['travelAnnual', reserve.travelAnnual],
+        ['travelMonthly', reserve.travelMonthly],
+        ['corporateAnnual', reserve.corporateAnnual],
+        ['corporateMonthly', reserve.corporateMonthly],
+        ['congressAnnual', reserve.congressAnnual],
+        ['congressMonthly', reserve.congressMonthly],
+        ['starAnnual', reserve.starAnnual],
+        ['starMonthly', reserve.starMonthly]
       ].forEach(function (item) {
         var node = document.querySelector('[data-motivation-metric="' + item[0] + '"][data-agent-id="' + agent.id + '"]');
         if (node) {
@@ -506,6 +656,92 @@
     renderTotals();
   }
 
+  function getFocusSelector(element) {
+    if (!element || !element.dataset) {
+      return null;
+    }
+
+    if (element.dataset.agentField && element.dataset.agentId) {
+      return '[data-agent-field="' + element.dataset.agentField + '"][data-agent-id="' + element.dataset.agentId + '"]';
+    }
+    if (element.dataset.motivationField && element.dataset.agentId) {
+      return '[data-motivation-field="' + element.dataset.motivationField + '"][data-agent-id="' + element.dataset.agentId + '"]';
+    }
+    if (element.dataset.motivationFlag && element.dataset.agentId) {
+      return '[data-motivation-flag="' + element.dataset.motivationFlag + '"][data-agent-id="' + element.dataset.agentId + '"]';
+    }
+    if (element.dataset.rateIndex !== undefined && element.dataset.agentId) {
+      return '[data-rate-index="' + element.dataset.rateIndex + '"][data-agent-id="' + element.dataset.agentId + '"]';
+    }
+    if (element.dataset.dealIndex !== undefined && element.dataset.agentId) {
+      return '[data-deal-index="' + element.dataset.dealIndex + '"][data-agent-id="' + element.dataset.agentId + '"]';
+    }
+    if (element.dataset.action === 'add-deal' && element.dataset.agentId) {
+      return '[data-action="add-deal"][data-agent-id="' + element.dataset.agentId + '"]';
+    }
+    if (element.dataset.action === 'remove-deal' && element.dataset.agentId && element.dataset.dealIndex !== undefined) {
+      return '[data-action="remove-deal"][data-agent-id="' + element.dataset.agentId + '"][data-deal-index="' + element.dataset.dealIndex + '"]';
+    }
+    return null;
+  }
+
+  function captureUiState() {
+    var active = document.activeElement;
+    return {
+      openDetails: Array.prototype.map.call(document.querySelectorAll('details[open][data-agent-id]'), function (node) {
+        return {
+          agentId: node.dataset.agentId,
+          className: node.className
+        };
+      }),
+      focusSelector: getFocusSelector(active),
+      selectionStart: active && active.selectionStart,
+      selectionEnd: active && active.selectionEnd
+    };
+  }
+
+  function restoreUiState(uiState) {
+    uiState.openDetails.forEach(function (detail) {
+      var selector = detail.className
+        ? 'details.' + detail.className.split(/\s+/).filter(Boolean).join('.') + '[data-agent-id="' + detail.agentId + '"]'
+        : 'details[data-agent-id="' + detail.agentId + '"]';
+      var detailNode = document.querySelector(selector);
+      if (detailNode) {
+        detailNode.open = true;
+      }
+    });
+
+    if (uiState.focusSelector) {
+      var active = document.querySelector(uiState.focusSelector);
+      if (active) {
+        active.focus();
+        if (typeof active.setSelectionRange === 'function' && uiState.selectionStart !== null && uiState.selectionStart !== undefined) {
+          active.setSelectionRange(uiState.selectionStart, uiState.selectionEnd);
+        }
+      }
+    }
+  }
+
+  function renderPreservingUiState(focusSelectorOverride) {
+    var uiState = captureUiState();
+    if (focusSelectorOverride) {
+      uiState.focusSelector = focusSelectorOverride;
+      uiState.selectionStart = null;
+      uiState.selectionEnd = null;
+    }
+    render();
+    restoreUiState(uiState);
+  }
+
+  function syncAgentTotalsFromDeals(agent) {
+    if (!agent) {
+      return;
+    }
+    var calculated = calculateAgent(Object.assign({}, agent, { commissionMode: 'exact' }));
+    agent.commission = calculated.commission;
+    agent.dealCount = calculated.dealCount;
+  }
+
   function updateTotalsOnly() {
     updateAgentSummaries();
     renderTotals();
@@ -554,6 +790,17 @@
       return;
     }
 
+    if (target.dataset.dealIndex !== undefined) {
+      var dealAgent = findAgent(target.dataset.agentId);
+      if (dealAgent) {
+        dealAgent.dealsInput = Array.isArray(dealAgent.dealsInput) && dealAgent.dealsInput.length ? dealAgent.dealsInput : [0];
+        dealAgent.dealsInput[Number(target.dataset.dealIndex)] = positiveNumber(target.value);
+        syncAgentTotalsFromDeals(dealAgent);
+        updateTotalsOnly();
+      }
+      return;
+    }
+
     if (target.dataset.rateIndex !== undefined) {
       var rateAgent = findAgent(target.dataset.agentId);
       if (rateAgent) {
@@ -570,18 +817,33 @@
       return;
     }
 
-    if (field === 'commission' || field === 'fixedRate') {
+    if (field === 'commission' || field === 'fixedRate' || field === 'quarterlyCommission' || field === 'quarterlyDeposits' || field === 'halfYearCommission' || field === 'preTripQuarterDeposits') {
       agent[field] = positiveNumber(target.value);
     } else if (field === 'dealCount') {
       agent[field] = Math.max(1, Math.floor(positiveNumber(target.value)));
-    } else if (field === 'introduced') {
-      agent[field] = target.value === 'true';
+    } else if (field === 'introduced' || field === 'motivationOverride' || field === 'stipendOverride' || field === 'travelOverride' || field === 'eventsOverride' || field === 'specialTermsOverride') {
+      agent[field] = target.type === 'checkbox' ? target.checked : target.value === 'true';
+    } else if (field === 'commissionMode') {
+      if (target.value === 'quick') {
+        syncAgentTotalsFromDeals(agent);
+      }
+      agent[field] = target.value;
+      if (target.value === 'exact') {
+        agent.dealsInput = hasMeaningfulDeals(agent.dealsInput)
+          ? agent.dealsInput
+          : splitCommissionIntoDeals(agent.commission, agent.dealCount);
+        syncAgentTotalsFromDeals(agent);
+      }
     } else {
       agent[field] = target.value;
     }
 
+    if ((field === 'commission' || field === 'dealCount') && (agent.commissionMode || 'quick') === 'quick') {
+      agent.dealsInput = splitCommissionIntoDeals(agent.commission, agent.dealCount);
+    }
+
     if (target.dataset.structural === 'true') {
-      render();
+      renderPreservingUiState();
     } else {
       updateTotalsOnly();
     }
@@ -639,7 +901,29 @@
       if (!state.agents.length) {
         state.agents.push(createAgent());
       }
-      render();
+      renderPreservingUiState();
+    }
+
+    if (target.dataset.action === 'add-deal') {
+      var addDealAgent = findAgent(target.dataset.agentId);
+      if (addDealAgent) {
+        addDealAgent.dealsInput = Array.isArray(addDealAgent.dealsInput) && addDealAgent.dealsInput.length ? addDealAgent.dealsInput : [0];
+        addDealAgent.dealsInput.push(0);
+        syncAgentTotalsFromDeals(addDealAgent);
+        renderPreservingUiState('[data-deal-index="' + (addDealAgent.dealsInput.length - 1) + '"][data-agent-id="' + addDealAgent.id + '"]');
+      }
+    }
+
+    if (target.dataset.action === 'remove-deal') {
+      var removeDealAgent = findAgent(target.dataset.agentId);
+      if (removeDealAgent) {
+        removeDealAgent.dealsInput = Array.isArray(removeDealAgent.dealsInput) && removeDealAgent.dealsInput.length ? removeDealAgent.dealsInput : [0];
+        if (removeDealAgent.dealsInput.length > 1) {
+          removeDealAgent.dealsInput.splice(Number(target.dataset.dealIndex), 1);
+        }
+        syncAgentTotalsFromDeals(removeDealAgent);
+        renderPreservingUiState('[data-deal-index="' + Math.max(0, Number(target.dataset.dealIndex) - 1) + '"][data-agent-id="' + removeDealAgent.id + '"]');
+      }
     }
 
     if (target.dataset.action === 'clear-all') {
@@ -660,14 +944,14 @@
         name: 'Новый расход',
         amount: 0
       });
-      render();
+      renderPreservingUiState();
     }
 
     if (target.dataset.action === 'remove-expense') {
       state.expenses = state.expenses.filter(function (expense) {
         return expense.id !== target.dataset.expenseId;
       });
-      render();
+      renderPreservingUiState();
     }
   }
 
@@ -717,11 +1001,11 @@
     document.body.addEventListener('click', onClick);
     elements.addAgentBtn.addEventListener('click', function () {
       state.agents.push(createAgent());
-      render();
+      renderPreservingUiState('[data-agent-field="name"][data-agent-id="' + state.agents[state.agents.length - 1].id + '"]');
     });
     elements.addAgentBottomBtn.addEventListener('click', function () {
       state.agents.push(createAgent());
-      render();
+      renderPreservingUiState('[data-agent-field="name"][data-agent-id="' + state.agents[state.agents.length - 1].id + '"]');
     });
     render();
     window.domianA4State = state;

@@ -14,6 +14,10 @@
   ];
 
   window.REFERRAL_RATE = 0.025;
+  window.PARTNERSHIP_DEPOSIT_THRESHOLD = 250000;
+  window.STIPEND_MIN_LEVEL = 3;
+  window.STIPEND_MIN_QUARTERLY_COMMISSION = 600000;
+  window.TRAVEL_MIN_HALF_YEAR_COMMISSION = 1600000;
 
   window.PAY_SCALES = {
     standard: {
@@ -38,6 +42,9 @@
     stipendMode: 'off',
     quarterlyResult: 0,
     manualStipendMonthly: 0,
+    quarterlyDeposits: 0,
+    halfYearCommission: 0,
+    preTripQuarterDeposits: 0,
     annualReserveMode: 'monthly',
     manualAnnualReserveMonthly: 0,
     mountainSeaEnabled: false,
@@ -71,11 +78,22 @@
       name: 'Анна',
       commission: 400000,
       dealCount: 4,
+      commissionMode: 'exact',
+      dealsInput: [100000, 100000, 100000, 100000],
       paymentType: 'standard',
       status: 'partner',
       boostedRates: [55, 55, 55, 60],
       fixedRate: 80,
       introduced: false,
+      quarterlyCommission: 400000,
+      quarterlyDeposits: 250000,
+      halfYearCommission: 1600000,
+      preTripQuarterDeposits: 250000,
+      motivationOverride: false,
+      stipendOverride: false,
+      travelOverride: false,
+      eventsOverride: false,
+      specialTermsOverride: false,
       motivation: window.DEFAULT_MOTIVATION
     }
   ];

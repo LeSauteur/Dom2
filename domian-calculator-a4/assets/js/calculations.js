@@ -63,28 +63,158 @@
     return matched;
   }
 
-  function calculateMotivationReserve(agent) {
+  function getAgentLevelByQuarterlyCommission(quarterlyCommission) {
+    return getStipendLevel(quarterlyCommission).level;
+  }
+
+  function getStipendByQuarterlyCommission(quarterlyCommission) {
+    return getStipendLevel(quarterlyCommission).monthly;
+  }
+
+  function isPartnershipConfirmed(quarterlyDeposits) {
+    return positiveNumber(quarterlyDeposits) >= PARTNERSHIP_DEPOSIT_THRESHOLD;
+  }
+
+  function readAgentValue(agent, source, field, fallback) {
+    if (agent && agent[field] !== undefined) {
+      return agent[field];
+    }
+    if (source && source[field] !== undefined) {
+      return source[field];
+    }
+    return fallback;
+  }
+
+  function readAgentFlag(agent, source, field) {
+    return Boolean(readAgentValue(agent, source, field, false));
+  }
+
+  function getMotivationContext(agent) {
     var source = agent && agent.motivation ? agent.motivation : (agent || {});
     var commission = positiveNumber(agent && agent.commission);
-    var quarterlyResult = positiveNumber(source.quarterlyResult || commission * 3);
+    var quarterlyCommission = positiveNumber(
+      readAgentValue(agent, source, 'quarterlyCommission', source.quarterlyResult || commission * 3)
+    );
+    var quarterlyDeposits = positiveNumber(readAgentValue(agent, source, 'quarterlyDeposits', 0));
+    var halfYearCommission = positiveNumber(readAgentValue(agent, source, 'halfYearCommission', 0));
+    var preTripQuarterDeposits = positiveNumber(readAgentValue(agent, source, 'preTripQuarterDeposits', 0));
+
+    return {
+      source: source,
+      commission: commission,
+      quarterlyCommission: quarterlyCommission,
+      quarterlyDeposits: quarterlyDeposits,
+      halfYearCommission: halfYearCommission,
+      preTripQuarterDeposits: preTripQuarterDeposits,
+      paymentType: readAgentValue(agent, source, 'paymentType', 'standard'),
+      motivationOverride: readAgentFlag(agent, source, 'motivationOverride'),
+      stipendOverride: readAgentFlag(agent, source, 'stipendOverride'),
+      travelOverride: readAgentFlag(agent, source, 'travelOverride'),
+      eventsOverride: readAgentFlag(agent, source, 'eventsOverride'),
+      specialTermsOverride: readAgentFlag(agent, source, 'specialTermsOverride')
+    };
+  }
+
+  function hasSpecialPaymentTerms(agent) {
+    var paymentType = agent && agent.paymentType ? agent.paymentType : 'standard';
+    return paymentType === 'fixed' || paymentType === 'boosted';
+  }
+
+  function getBlockedResult(reason) {
+    return {
+      available: false,
+      reason: reason
+    };
+  }
+
+  function getStipendEligibility(agent) {
+    var context = getMotivationContext(agent || {});
+    var level = getStipendLevel(context.quarterlyCommission);
+    var result = {
+      available: true,
+      reason: 'available',
+      level: level.level,
+      stipendMonthly: level.monthly,
+      partnershipConfirmed: isPartnershipConfirmed(context.quarterlyDeposits)
+    };
+
+    if (context.quarterlyCommission < STIPEND_MIN_QUARTERLY_COMMISSION || level.level < STIPEND_MIN_LEVEL) {
+      return Object.assign(result, getBlockedResult('level'));
+    }
+    if (!result.partnershipConfirmed) {
+      return Object.assign(result, getBlockedResult('partnership'));
+    }
+    if (hasSpecialPaymentTerms(context) && !context.specialTermsOverride) {
+      return Object.assign(result, getBlockedResult('specialTerms'));
+    }
+    return result;
+  }
+
+  function getMotivationEligibility(agent) {
+    var context = getMotivationContext(agent || {});
+    var result = {
+      available: true,
+      reason: 'available',
+      partnershipConfirmed: isPartnershipConfirmed(context.quarterlyDeposits)
+    };
+
+    if (!result.partnershipConfirmed) {
+      return Object.assign(result, getBlockedResult('partnership'));
+    }
+    if (hasSpecialPaymentTerms(context) && !context.specialTermsOverride) {
+      return Object.assign(result, getBlockedResult('specialTerms'));
+    }
+    return result;
+  }
+
+  function getTravelEligibility(agent) {
+    var context = getMotivationContext(agent || {});
+    var base = getMotivationEligibility(agent || {});
+    if (!base.available) {
+      return base;
+    }
+    if (context.halfYearCommission < TRAVEL_MIN_HALF_YEAR_COMMISSION) {
+      return Object.assign(base, getBlockedResult('halfYearLevel'));
+    }
+    if (!isPartnershipConfirmed(context.preTripQuarterDeposits)) {
+      return Object.assign(base, getBlockedResult('preTripDeposits'));
+    }
+    return base;
+  }
+
+  function canUseBlockedMotivation(context, overrideField) {
+    return context.motivationOverride || Boolean(context[overrideField]);
+  }
+
+  function calculateMotivationReserve(agent) {
+    var context = getMotivationContext(agent);
+    var source = context.source;
+    var quarterlyResult = context.quarterlyCommission;
     var stipendMode = source.stipendMode || 'off';
     var stipendLevel = getStipendLevel(quarterlyResult);
+    var stipendEligibility = getStipendEligibility(Object.assign({}, agent || {}, source));
+    var motivationEligibility = getMotivationEligibility(Object.assign({}, agent || {}, source));
+    var travelEligibility = getTravelEligibility(Object.assign({}, agent || {}, source));
+    var stipendAllowed = stipendEligibility.available || canUseBlockedMotivation(context, 'stipendOverride');
+    var mountainSeaAllowed = motivationEligibility.available || canUseBlockedMotivation(context, 'travelOverride');
+    var travelAllowed = travelEligibility.available || canUseBlockedMotivation(context, 'travelOverride');
+    var corporateAllowed = motivationEligibility.available || canUseBlockedMotivation(context, 'eventsOverride');
     var stipendMonthly = 0;
 
-    if (stipendMode === 'auto') {
+    if (stipendAllowed && stipendMode === 'auto') {
       stipendMonthly = stipendLevel.monthly;
-    } else if (stipendMode === 'manual') {
+    } else if (stipendAllowed && stipendMode === 'manual') {
       stipendMonthly = positiveNumber(source.manualStipendMonthly);
     }
 
     var annualReserveMode = source.annualReserveMode || DEFAULT_MOTIVATION.annualReserveMode;
-    var mountainSeaAnnual = source.mountainSeaEnabled
+    var mountainSeaAnnual = source.mountainSeaEnabled && mountainSeaAllowed
       ? positiveNumber(source.mountainSeaPerTrip || DEFAULT_MOTIVATION.mountainSeaPerTrip) * positiveNumber(source.mountainSeaTripsPerYear || DEFAULT_MOTIVATION.mountainSeaTripsPerYear)
       : 0;
-    var travelAnnual = source.travelEnabled
+    var travelAnnual = source.travelEnabled && travelAllowed
       ? positiveNumber(source.travelPerTrip || DEFAULT_MOTIVATION.travelPerTrip) * positiveNumber(source.travelTripsPerYear || DEFAULT_MOTIVATION.travelTripsPerYear)
       : 0;
-    var corporateAnnual = source.corporateEnabled ? positiveNumber(source.corporatePerYear || DEFAULT_MOTIVATION.corporatePerYear) : 0;
+    var corporateAnnual = source.corporateEnabled && corporateAllowed ? positiveNumber(source.corporatePerYear || DEFAULT_MOTIVATION.corporatePerYear) : 0;
     var congressAnnual = source.congressEnabled ? positiveNumber(source.congressPerYear || DEFAULT_MOTIVATION.congressPerYear) : 0;
     var starAnnual = source.starEnabled ? positiveNumber(source.starPerYear || DEFAULT_MOTIVATION.starPerYear) : 0;
     var annualReserveTotal = mountainSeaAnnual + travelAnnual + corporateAnnual + congressAnnual + starAnnual;
@@ -107,18 +237,33 @@
       stipendMode: stipendMode,
       quarterlyResult: quarterlyResult,
       stipendLevel: stipendLevel.level,
+      stipendAvailable: stipendEligibility.available,
+      stipendReason: stipendEligibility.reason,
+      stipendOverride: canUseBlockedMotivation(context, 'stipendOverride'),
       stipendMonthly: stipendMonthly,
       annualReserveMode: annualReserveMode,
       annualReserveTotal: annualReserveTotal,
       annualReserveMonthly: annualReserveMonthly,
+      partnershipConfirmed: isPartnershipConfirmed(context.quarterlyDeposits),
+      quarterlyDeposits: context.quarterlyDeposits,
+      halfYearCommission: context.halfYearCommission,
+      preTripQuarterDeposits: context.preTripQuarterDeposits,
+      mountainSeaAvailable: motivationEligibility.available,
+      mountainSeaReason: motivationEligibility.reason,
       mountainSeaAnnual: mountainSeaAnnual,
       mountainSeaMonthly: mountainSeaMonthly,
+      travelAvailable: travelEligibility.available,
+      travelReason: travelEligibility.reason,
       travelAnnual: travelAnnual,
       travelMonthly: travelMonthly,
+      corporateAvailable: motivationEligibility.available,
+      corporateReason: motivationEligibility.reason,
       corporateAnnual: corporateAnnual,
       corporateMonthly: corporateMonthly,
+      congressAvailable: true,
       congressAnnual: congressAnnual,
       congressMonthly: congressMonthly,
+      starAvailable: true,
       starAnnual: starAnnual,
       starMonthly: starMonthly,
       total: total,
@@ -127,19 +272,26 @@
   }
 
   function calculateAgent(agent) {
-    var commission = positiveNumber(agent.commission);
-    var dealCount = positiveInteger(agent.dealCount, 1);
+    var exactMode = agent.commissionMode === 'exact';
+    var sourceDeals = exactMode && Array.isArray(agent.dealsInput)
+      ? agent.dealsInput.map(positiveNumber).filter(function (amount) { return amount > 0; })
+      : [];
+    var commission = exactMode
+      ? sourceDeals.reduce(function (sum, amount) { return sum + amount; }, 0)
+      : positiveNumber(agent.commission);
+    var dealCount = exactMode ? Math.max(1, sourceDeals.length) : positiveInteger(agent.dealCount, 1);
     var dealCommission = dealCount ? commission / dealCount : 0;
     var payout = 0;
     var deals = [];
 
     for (var i = 0; i < dealCount; i += 1) {
       var rate = getDealRate(agent, i);
-      var dealPayout = dealCommission * rate;
+      var currentDealCommission = exactMode ? positiveNumber(sourceDeals[i]) : dealCommission;
+      var dealPayout = currentDealCommission * rate;
       payout += dealPayout;
       deals.push({
         index: i + 1,
-        commission: dealCommission,
+        commission: currentDealCommission,
         rate: rate,
         payout: dealPayout
       });
@@ -153,6 +305,7 @@
       name: agent.name || 'Агент',
       commission: commission,
       dealCount: dealCount,
+      commissionMode: exactMode ? 'exact' : 'quick',
       paymentType: agent.paymentType || 'standard',
       status: agent.status || 'partner',
       boostedRates: agent.boostedRates || PAY_SCALES.boostedDefault,
@@ -356,6 +509,13 @@
   window.calculateRoyalty = calculateRoyalty;
   window.getDealRate = getDealRate;
   window.getStipendLevel = getStipendLevel;
+  window.getAgentLevelByQuarterlyCommission = getAgentLevelByQuarterlyCommission;
+  window.getStipendByQuarterlyCommission = getStipendByQuarterlyCommission;
+  window.isPartnershipConfirmed = isPartnershipConfirmed;
+  window.hasSpecialPaymentTerms = hasSpecialPaymentTerms;
+  window.getStipendEligibility = getStipendEligibility;
+  window.getMotivationEligibility = getMotivationEligibility;
+  window.getTravelEligibility = getTravelEligibility;
   window.calculateMotivationReserve = calculateMotivationReserve;
   window.calculateAgent = calculateAgent;
   window.calculateExpenses = calculateExpenses;

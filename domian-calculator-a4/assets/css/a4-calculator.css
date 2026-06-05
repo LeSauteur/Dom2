@@ -401,6 +401,58 @@ select:focus {
   min-height: 104px;
 }
 
+.deal-mode-hint {
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-weight: 800;
+}
+
+.quick-deals-panel .deal-mode-hint {
+  margin: 0;
+}
+
+.deal-estimate-grid {
+  margin-top: 0;
+}
+
+.exact-deals-panel {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(36, 92, 153, .2);
+  border-radius: var(--radius);
+  background: #fbfdff;
+}
+
+.exact-deals-list {
+  display: grid;
+  gap: 10px;
+}
+
+.exact-deal-row {
+  grid-template-columns: minmax(180px, 1fr) minmax(140px, .5fr) auto;
+  align-items: end;
+}
+
+.exact-deals-total {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.exact-deals-total div {
+  padding: 9px;
+  border-radius: 6px;
+  background: #f7f8fb;
+}
+
+.exact-deals-total dd {
+  font-size: 16px;
+}
+
 .compact-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 12px;
@@ -575,6 +627,67 @@ select:focus {
   border-radius: var(--radius);
   background: #fff;
   align-content: start;
+}
+
+.motivation-card.is-blocked {
+  background: #f8fafc;
+  border-style: dashed;
+}
+
+.eligibility-panel {
+  display: grid;
+  gap: 10px;
+  margin: 14px;
+  padding: 14px;
+  border: 1px solid rgba(36, 92, 153, .18);
+  border-radius: var(--radius);
+  background: rgba(232, 241, 251, .35);
+}
+
+.eligibility-panel p {
+  margin: 0;
+}
+
+.eligibility-note {
+  margin: 0;
+  padding: 9px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.eligibility-note.ok {
+  color: #146b35;
+  background: #e8f6ee;
+}
+
+.eligibility-note.warning {
+  color: #8a4a00;
+  background: #fff3dd;
+}
+
+.eligibility-note.blocked {
+  color: #7a2431;
+  background: #fdecef;
+}
+
+.override-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding: 9px 10px;
+  border-radius: 6px;
+  background: #fff7e8;
+  color: #744400;
+  font-weight: 850;
+}
+
+.override-row input {
+  width: auto;
+  min-height: auto;
+  margin-top: 2px;
 }
 
 .motivation-card-toggle {
@@ -871,7 +984,9 @@ dd {
   .form-grid,
   .rate-grid,
   .expense-row,
+  .exact-deal-row,
   .agent-summary,
+  .exact-deals-total,
   .help-grid,
   .term-grid,
   .reserve-mode-card,

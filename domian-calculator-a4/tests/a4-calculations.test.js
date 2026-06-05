@@ -3,8 +3,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
+const rootDir = path.resolve(__dirname, '..');
+
 function loadCalculator() {
-  const rootDir = path.resolve(__dirname, '..');
   const context = { window: {}, console };
   vm.createContext(context);
 
@@ -36,6 +37,7 @@ function closeTo(actual, expected) {
 }
 
 const calculator = loadCalculator();
+const appSource = fs.readFileSync(path.join(rootDir, 'assets/js/app.js'), 'utf8');
 
 test('royalty boundaries use strict less-than limits', () => {
   [
@@ -108,6 +110,52 @@ test('agent payout supports standard, boosted and fixed schemes', () => {
   closeTo(fixed.payout, 320000);
 });
 
+test('exact deals mode pays standard partner by real deal amounts', () => {
+  const agent = calculator.calculateAgent({
+    id: 'exact-standard',
+    commissionMode: 'exact',
+    dealsInput: [10000, 10000, 10000, 370000],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  });
+
+  assert.equal(agent.commission, 400000);
+  assert.equal(agent.dealCount, 4);
+  closeTo(agent.payout, 237000);
+});
+
+test('exact deals mode pays boosted scale by real deal amounts', () => {
+  const agent = calculator.calculateAgent({
+    id: 'exact-boosted',
+    commissionMode: 'exact',
+    dealsInput: [10000, 10000, 10000, 370000],
+    paymentType: 'boosted',
+    boostedRates: [55, 55, 55, 60],
+    introduced: false
+  });
+
+  assert.equal(agent.commission, 400000);
+  assert.equal(agent.dealCount, 4);
+  closeTo(agent.payout, 238500);
+});
+
+test('exact deals mode pays fixed percent and referral from total commission', () => {
+  const agent = calculator.calculateAgent({
+    id: 'exact-fixed',
+    commissionMode: 'exact',
+    dealsInput: [10000, 10000, 10000, 370000],
+    paymentType: 'fixed',
+    fixedRate: 80,
+    introduced: true
+  });
+
+  assert.equal(agent.commission, 400000);
+  assert.equal(agent.dealCount, 4);
+  closeTo(agent.payout, 320000);
+  assert.equal(agent.referral, 10000);
+});
+
 test('referral is 2.5 percent only for introduced agents', () => {
   const introduced = calculator.calculateAgent({
     id: 'introduced',
@@ -150,8 +198,10 @@ test('office totals separate owner sales and show owner dependency warning', () 
 
 test('motivation reserve supports stipend and annual trip reserves', () => {
   const noReserve = calculator.calculateMotivationReserve({
+    paymentType: 'standard',
     stipendMode: 'off',
     quarterlyResult: 1500000,
+    quarterlyDeposits: 250000,
     mountainSeaEnabled: false,
     travelEnabled: false,
     corporateEnabled: false,
@@ -159,8 +209,12 @@ test('motivation reserve supports stipend and annual trip reserves', () => {
   });
 
   const reserve = calculator.calculateMotivationReserve({
+    paymentType: 'standard',
     stipendMode: 'auto',
     quarterlyResult: 1500000,
+    quarterlyDeposits: 250000,
+    halfYearCommission: 1600000,
+    preTripQuarterDeposits: 250000,
     annualReserveMode: 'monthly',
     mountainSeaEnabled: true,
     mountainSeaPerTrip: 15000,
@@ -192,7 +246,11 @@ test('travel reserve defaults to two international trips per year', () => {
   assert.equal(calculator.DEFAULT_MOTIVATION.travelTripsPerYear, 2);
 
   const reserve = calculator.calculateMotivationReserve({
+    paymentType: 'standard',
     stipendMode: 'off',
+    quarterlyDeposits: 250000,
+    halfYearCommission: 1600000,
+    preTripQuarterDeposits: 250000,
     annualReserveMode: 'monthly',
     travelEnabled: true
   });
@@ -204,7 +262,11 @@ test('travel reserve defaults to two international trips per year', () => {
 
 test('annual reserves can be recognized immediately or manually', () => {
   const full = calculator.calculateMotivationReserve({
+    paymentType: 'standard',
     stipendMode: 'off',
+    quarterlyDeposits: 250000,
+    halfYearCommission: 1600000,
+    preTripQuarterDeposits: 250000,
     annualReserveMode: 'full',
     travelEnabled: true,
     travelPerTrip: 100000,
@@ -216,7 +278,11 @@ test('annual reserves can be recognized immediately or manually', () => {
   });
 
   const manual = calculator.calculateMotivationReserve({
+    paymentType: 'standard',
     stipendMode: 'off',
+    quarterlyDeposits: 250000,
+    halfYearCommission: 1600000,
+    preTripQuarterDeposits: 250000,
     annualReserveMode: 'manual',
     manualAnnualReserveMonthly: 25000,
     travelEnabled: true,
@@ -249,7 +315,10 @@ test('office totals distinguish profit before and after reserves', () => {
         dealCount: 4,
         paymentType: 'standard',
         status: 'partner',
+        quarterlyCommission: 1500000,
+        quarterlyDeposits: 250000,
         introduced: false,
+        travelOverride: true,
         motivation: {
           stipendMode: 'manual',
           manualStipendMonthly: 3000,
@@ -321,4 +390,194 @@ test('scheme checker compares variants and finds break-even commission', () => {
     expenseShare: 20000,
     motivationReserve: 0
   }).variants.find((item) => item.id === 'fixed-80').contribution);
+});
+
+test('partnership is confirmed by quarterly deposits threshold', () => {
+  assert.equal(calculator.PARTNERSHIP_DEPOSIT_THRESHOLD, 250000);
+  assert.equal(calculator.isPartnershipConfirmed(249999), false);
+  assert.equal(calculator.isPartnershipConfirmed(250000), true);
+  assert.equal(calculator.isPartnershipConfirmed(300000), true);
+});
+
+test('stipend eligibility requires level, partnership and no special terms unless overridden', () => {
+  const lowLevel = calculator.getStipendEligibility({
+    paymentType: 'standard',
+    quarterlyCommission: 400000,
+    quarterlyDeposits: 250000
+  });
+  assert.equal(lowLevel.available, false);
+  assert.equal(lowLevel.reason, 'level');
+
+  const noPartnership = calculator.calculateMotivationReserve({
+    paymentType: 'standard',
+    quarterlyCommission: 1000000,
+    quarterlyDeposits: 0,
+    motivation: {
+      stipendMode: 'auto'
+    }
+  });
+  assert.equal(noPartnership.stipendLevel, 5);
+  assert.equal(noPartnership.stipendAvailable, false);
+  assert.equal(noPartnership.stipendMonthly, 0);
+
+  const confirmed = calculator.calculateMotivationReserve({
+    paymentType: 'standard',
+    quarterlyCommission: 1000000,
+    quarterlyDeposits: 250000,
+    motivation: {
+      stipendMode: 'auto'
+    }
+  });
+  assert.equal(confirmed.stipendAvailable, true);
+  assert.equal(confirmed.stipendMonthly, 5000);
+
+  const specialTerms = calculator.calculateMotivationReserve({
+    paymentType: 'fixed',
+    quarterlyCommission: 1000000,
+    quarterlyDeposits: 250000,
+    motivation: {
+      stipendMode: 'auto'
+    }
+  });
+  assert.equal(specialTerms.stipendAvailable, false);
+  assert.equal(specialTerms.stipendMonthly, 0);
+
+  const overridden = calculator.calculateMotivationReserve({
+    paymentType: 'fixed',
+    quarterlyCommission: 400000,
+    quarterlyDeposits: 0,
+    stipendOverride: true,
+    motivation: {
+      stipendMode: 'manual',
+      manualStipendMonthly: 3000
+    }
+  });
+  assert.equal(overridden.stipendAvailable, false);
+  assert.equal(overridden.stipendOverride, true);
+  assert.equal(overridden.stipendMonthly, 3000);
+});
+
+test('travel and corporate reserves are blocked by eligibility unless overridden', () => {
+  const blocked = calculator.calculateMotivationReserve({
+    paymentType: 'boosted',
+    quarterlyCommission: 400000,
+    quarterlyDeposits: 0,
+    halfYearCommission: 1600000,
+    preTripQuarterDeposits: 0,
+    motivation: {
+      annualReserveMode: 'monthly',
+      mountainSeaEnabled: true,
+      travelEnabled: true,
+      corporateEnabled: true
+    }
+  });
+
+  assert.equal(blocked.mountainSeaAvailable, false);
+  assert.equal(blocked.travelAvailable, false);
+  assert.equal(blocked.corporateAvailable, false);
+  assert.equal(blocked.mountainSeaAnnual, 0);
+  assert.equal(blocked.travelAnnual, 0);
+  assert.equal(blocked.corporateAnnual, 0);
+
+  const overridden = calculator.calculateMotivationReserve({
+    paymentType: 'fixed',
+    quarterlyCommission: 0,
+    quarterlyDeposits: 0,
+    motivationOverride: true,
+    travelOverride: true,
+    eventsOverride: true,
+    motivation: {
+      annualReserveMode: 'monthly',
+      mountainSeaEnabled: true,
+      mountainSeaPerTrip: 15000,
+      mountainSeaTripsPerYear: 2,
+      travelEnabled: true,
+      travelPerTrip: 100000,
+      travelTripsPerYear: 2,
+      corporateEnabled: true,
+      corporatePerYear: 20000
+    }
+  });
+
+  closeTo(overridden.mountainSeaAnnual, 30000);
+  closeTo(overridden.travelAnnual, 200000);
+  closeTo(overridden.corporateAnnual, 20000);
+});
+
+test('domian travel requires half-year result and pre-trip deposits', () => {
+  assert.equal(calculator.getTravelEligibility({
+    paymentType: 'standard',
+    quarterlyDeposits: 250000,
+    halfYearCommission: 1599999,
+    preTripQuarterDeposits: 250000
+  }).available, false);
+
+  assert.equal(calculator.getTravelEligibility({
+    paymentType: 'standard',
+    quarterlyDeposits: 250000,
+    halfYearCommission: 1600000,
+    preTripQuarterDeposits: 0
+  }).available, false);
+
+  assert.equal(calculator.getTravelEligibility({
+    paymentType: 'standard',
+    quarterlyDeposits: 250000,
+    halfYearCommission: 1600000,
+    preTripQuarterDeposits: 250000
+  }).available, true);
+});
+
+test('congress and star are always available without override', () => {
+  const fixed = calculator.calculateMotivationReserve({
+    paymentType: 'fixed',
+    quarterlyCommission: 0,
+    quarterlyDeposits: 0,
+    motivation: {
+      stipendMode: 'auto',
+      annualReserveMode: 'monthly',
+      mountainSeaEnabled: true,
+      travelEnabled: true,
+      corporateEnabled: true,
+      congressEnabled: true,
+      starEnabled: true
+    }
+  });
+
+  assert.equal(fixed.stipendAvailable, false);
+  assert.equal(fixed.mountainSeaAvailable, false);
+  assert.equal(fixed.travelAvailable, false);
+  assert.equal(fixed.corporateAvailable, false);
+  assert.equal(fixed.congressAvailable, true);
+  assert.equal(fixed.starAvailable, true);
+  assert.equal(fixed.congressAnnual, 3500);
+  assert.equal(fixed.starAnnual, 5000);
+
+  const boosted = calculator.calculateMotivationReserve({
+    paymentType: 'boosted',
+    quarterlyCommission: 400000,
+    quarterlyDeposits: 0,
+    motivation: {
+      annualReserveMode: 'monthly',
+      congressEnabled: true,
+      starEnabled: true
+    }
+  });
+
+  assert.equal(boosted.congressAvailable, true);
+  assert.equal(boosted.starAvailable, true);
+  assert.equal(boosted.congressAnnual, 3500);
+  assert.equal(boosted.starAnnual, 5000);
+});
+
+test('new agents default to exact deals mode in app state', () => {
+  assert.match(appSource, /commissionMode:\s*'exact'/);
+});
+
+test('example agent anna defaults to exact deals mode with preserved deal list', () => {
+  const anna = calculator.DEFAULT_AGENTS[0];
+
+  assert.equal(anna.commissionMode, 'exact');
+  assert.deepEqual(Array.from(anna.dealsInput), [100000, 100000, 100000, 100000]);
+  assert.equal(anna.commission, 400000);
+  assert.equal(anna.dealCount, 4);
 });
