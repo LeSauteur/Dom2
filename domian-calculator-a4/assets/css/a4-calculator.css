@@ -316,13 +316,23 @@ h3 {
 .hint,
 .field small {
   margin: 0;
-  color: #556274;
-  font-size: 13px;
-  line-height: 1.45;
+  color: #8e2f3d;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .hint.compact {
-  margin-top: 8px;
+  margin-top: 6px;
+}
+
+.field small {
+  display: block;
+  margin-top: 6px;
+  padding: 0;
+  border-left: 0;
+  border-radius: 0;
+  background: transparent;
+  font-weight: 500;
 }
 
 .notice {
@@ -446,11 +456,13 @@ select:focus {
 }
 
 .deal-mode-hint {
-  padding: 10px 12px;
-  border-radius: 6px;
-  background: var(--blue-soft);
-  color: var(--blue);
-  font-weight: 800;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #8e2f3d;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 500;
 }
 
 .quick-deals-panel .deal-mode-hint {
@@ -534,8 +546,6 @@ select:focus {
 .check-field small {
   flex-basis: 100%;
   margin-left: 24px;
-  color: var(--muted);
-  font-weight: 700;
 }
 
 .check-field input {
@@ -607,7 +617,8 @@ select:focus {
 
 .motivation-summary-text {
   color: #315b86;
-  font-size: 13px;
+  font-size: 14px;
+  line-height: 1.5;
   font-weight: 700;
 }
 
@@ -664,8 +675,13 @@ select:focus {
 
 .motivation-lead {
   margin: 14px 14px 0;
-  color: var(--ink);
-  font-weight: 800;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #8e2f3d;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 500;
 }
 
 .motivation-brief {
@@ -680,8 +696,10 @@ select:focus {
 
 .motivation-brief p {
   margin: 0;
-  color: var(--muted);
-  font-weight: 700;
+  color: #8e2f3d;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 500;
 }
 
 .motivation-brief-total {
@@ -814,9 +832,15 @@ select:focus {
 
 .motivation-card-toggle small {
   display: block;
-  margin-top: 3px;
-  color: var(--muted);
-  font-weight: 700;
+  margin-top: 6px;
+  padding: 0;
+  border-left: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #8e2f3d;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 500;
 }
 
 .motivation-card-fields {

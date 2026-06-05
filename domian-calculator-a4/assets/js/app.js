@@ -412,7 +412,7 @@
         + '</summary>'
         + '<div class="motivation-content">'
         + '<div class="form-grid compact-grid">'
-        + renderMotivationModeSelect(agent, 'Учитывать резерв мотиваций?', 'Для стажёра это не расчёт партнёрских поездок, а только решение: учитывать резерв или оставить его нулевым.', [
+        + renderMotivationModeSelect(agent, 'Учитывать резерв мотиваций?', 'Для стажёра здесь только выбор: оставить резерв 0 ₽ или заложить сумму вручную.', [
           { value: 'off', label: 'Не учитывать' },
           { value: 'manual', label: 'Заложить вручную' }
         ])
@@ -440,7 +440,7 @@
         + '<p class="motivation-lead">Особые условия — это повышенная или фиксированная выплата, которую дают, чтобы привлечь или удержать сильного агента. Главный вопрос здесь: остаётся ли офис в плюсе после такой выплаты.</p>'
         + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-field="specialManualReserveEnabled" data-structural="true"' + checked(Boolean(motivation.specialManualReserveEnabled)) + '><span>Заложить ручной резерв мотиваций при особых условиях</span></label>'
         + (motivation.specialManualReserveEnabled
-          ? '<label class="field"><span>Резерв мотиваций в месяц, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="manualReserveMonthly" value="' + motivation.manualReserveMonthly + '"><small>Нужно только если собственник всё равно хочет откладывать сумму на будущие бонусы сверх особых условий.</small></label>'
+          ? '<label class="field"><span>Резерв мотиваций в месяц, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="manualReserveMonthly" value="' + motivation.manualReserveMonthly + '"><small>Заполняйте только если хотите отдельно откладывать резерв сверх особых условий.</small></label>'
           : renderReserveSummary('Ручной резерв не учитывается.', 0))
         + '</div>'
         + '</details>';
@@ -459,7 +459,7 @@
       + '</summary>'
       + '<div class="motivation-content">'
       + '<div class="form-grid compact-grid">'
-      + renderMotivationModeSelect(agent, 'Учитывать мотивации агента?', 'Не учитывать — резерв будет 0 ₽. Заложить вручную — вы сами задаёте ежемесячную сумму. Рассчитать по правилам — калькулятор покажет дополнительные поля и посчитает резерв по условиям.', [
+      + renderMotivationModeSelect(agent, 'Учитывать мотивации агента?', 'Не учитывать — резерв 0 ₽. Вручную — вы задаёте сумму сами. По правилам — калькулятор откроет дополнительные поля.', [
         { value: 'off', label: 'Не учитывать' },
         { value: 'manual', label: 'Заложить вручную' },
         { value: 'rules', label: 'Рассчитать по правилам' }
@@ -476,7 +476,7 @@
           + '<label class="field wide-field"><span>Партнёрство подтверждено?</span><select data-agent-id="' + agent.id + '" data-agent-field="partnerConfirmed" data-structural="true">'
           + option('true', 'Да', String(Boolean(agent.partnerConfirmed)))
           + option('false', 'Нет', String(Boolean(agent.partnerConfirmed)))
-          + '</select><small>Да — мотивации, завязанные на партнёрство, считаются доступными. Нет — такие бонусы не учитываются. Порог 250 000 ₽ остаётся только как ориентир правила.</small></label>'
+          + '</select><small>Да — партнёрские бонусы можно учитывать. Нет — такие бонусы не считаются. 250 000 ₽ остаётся ориентиром правила.</small></label>'
           + '<label class="field"><span>Результат агента за квартал, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="quarterlyCommission" data-structural="true" value="' + positiveNumber(agent.quarterlyCommission) + '"><small>Нужно для уровня и стипендии.</small></label>'
           + '</div>'
           + '<p class="eligibility-note ' + (reserve.partnershipConfirmed ? 'ok' : 'blocked') + '">' + (reserve.partnershipConfirmed ? 'Партнёрство подтверждено.' : 'Партнёрство не подтверждено: партнёрские бонусы по умолчанию не положены.') + '</p>'
@@ -498,7 +498,7 @@
           + option('monthly', 'Распределить по 12 месяцам', motivation.annualReserveMode)
           + option('full', 'Учесть всю сумму сейчас', motivation.annualReserveMode)
           + option('manual', 'Ввести свою сумму в месяц', motivation.annualReserveMode)
-          + '</select><small>Безопаснее по умолчанию распределять сумму на 12 месяцев. Полный учёт сразу делает текущий месяц строже.</small></label>'
+          + '</select><small>По умолчанию безопаснее распределять сумму на 12 месяцев. Полный учёт сразу делает текущий месяц строже.</small></label>'
           + '<label class="field"><span>Своя сумма резерва, ₽ в месяц</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="manualAnnualReserveMonthly" value="' + motivation.manualAnnualReserveMonthly + '"><small>Работает только в режиме “Ввести свою сумму в месяц”.</small></label>'
           + '</div></section>'
           + '<section class="motivation-section"><h4>Годовые мотивации</h4><div class="motivation-card-grid">'
@@ -562,19 +562,19 @@
         + '<label class="field agent-main-field"><span>Как считать сделки?</span><select data-agent-id="' + agent.id + '" data-agent-field="commissionMode" data-structural="true">'
         + option('exact', 'Точно: ввести каждую сделку отдельно', agent.commissionMode || 'exact')
         + option('quick', 'Быстро: общая комиссия и количество сделок', agent.commissionMode || 'exact')
-        + '</select><small>Точный режим — безопасный вариант, если сделки были разными по сумме. Быстрый режим удобен для прикидки, но может отличаться от точного расчёта.</small></label>'
+        + '</select><small>Точный режим нужен для сделок разного размера. Быстрый подходит для прикидки, но может отличаться от точного расчёта.</small></label>'
         + renderDealInputs(agent, result)
         + (agent.status === 'partner' && getPartnerSystem(agent) === 'special'
           ? '<label class="field agent-main-field"><span>Тип особых условий</span><select data-agent-id="' + agent.id + '" data-agent-field="paymentType" data-structural="true">'
             + option('boosted', 'Повышенная стартовая шкала', agent.paymentType)
             + option('fixed', 'Фиксированный процент', agent.paymentType)
-            + '</select><small>Повышенная стартовая шкала — более мягкий special-вариант. Фиксированный процент — самый рискованный вариант, если комиссия агента нестабильна.</small></label>'
+            + '</select><small>Повышенная шкала мягче. Фиксированный процент рискованнее, если комиссия агента нестабильна.</small></label>'
           : '')
         + fixedControl
         + '<label class="field"><span>Приведённый агент</span><select data-agent-id="' + agent.id + '" data-agent-field="introduced">'
         + option('false', 'Нет', String(agent.introduced))
         + option('true', 'Да', String(agent.introduced))
-        + '</select><small>Если выбрать “Да”, офис дополнительно платит 2,5% реферала от комиссии этого агента. Это уменьшает итог по офису.</small></label>'
+        + '</select><small>Если выбрать “Да”, офис дополнительно платит 2,5% от комиссии этого агента.</small></label>'
         + '</div>'
         + (agent.status === 'partner' && getPartnerSystem(agent) === 'special' ? boostedControls : '')
         + renderMotivationControls(agent)
