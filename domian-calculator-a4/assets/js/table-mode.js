@@ -459,6 +459,9 @@
       render();
     }
     if (action.dataset.action === 'clear-table') {
+      if (!window.confirm('Очистить табличный расчёт? Данные на этой странице будут сброшены, A4-калькулятор не изменится.')) {
+        return;
+      }
       state = createBlankState();
       elements.snapshotNotice.textContent = 'Таблица очищена. Данные основной A4-страницы не изменены.';
       render();

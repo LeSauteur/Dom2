@@ -239,7 +239,9 @@ select:focus,
 
 .table-wrap {
   width: 100%;
+  max-height: 58vh;
   overflow-x: auto;
+  overflow-y: auto;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: #fff;
@@ -261,9 +263,20 @@ select:focus,
 }
 
 .office-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   background: #f2f5fa;
   color: var(--ink);
   font-weight: 900;
+}
+
+.office-table th small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.25;
 }
 
 .office-table td {
