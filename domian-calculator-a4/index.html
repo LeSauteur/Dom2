@@ -104,7 +104,7 @@
           </div>
           <label class="field">
             <span>Комиссия личных сделок за месяц</span>
-            <input id="ownerSalesInput" type="number" min="0" step="1000">
+            <input id="ownerSalesInput" type="text" inputmode="numeric" autocomplete="off" data-money-input="true">
           </label>
         </section>
 
@@ -211,7 +211,7 @@
           <div class="form-grid checker-grid">
             <label class="field">
               <span>Комиссия агента в месяц</span>
-              <input id="schemeCommission" type="number" min="0" step="1000" data-scheme-field="commission">
+              <input id="schemeCommission" type="text" inputmode="numeric" autocomplete="off" data-money-input="true" data-scheme-field="commission">
             </label>
             <label class="field">
               <span>Количество сделок</span>
@@ -233,12 +233,12 @@
             </label>
             <label class="field">
               <span>Ручная доля расходов</span>
-              <input id="schemeManualExpenseShare" type="number" min="0" step="1000" data-scheme-field="manualExpenseShare">
+              <input id="schemeManualExpenseShare" type="text" inputmode="numeric" autocomplete="off" data-money-input="true" data-scheme-field="manualExpenseShare">
               <small>Это доля офисных расходов, которую вы временно проверяете на одном агенте. Сейчас в расчёте используется: <b id="schemeExpenseShare">0 ₽</b></small>
             </label>
             <label class="field">
               <span>Мотивации учитывать</span>
-              <input id="schemeMotivationReserve" type="number" min="0" step="500" data-scheme-field="motivationReserve">
+              <input id="schemeMotivationReserve" type="text" inputmode="numeric" autocomplete="off" data-money-input="true" data-scheme-field="motivationReserve">
               <small>Поле нужно только для проверки сценария, если при высоком проценте вы ещё хотите закладывать мотивационный резерв.</small>
             </label>
             <label class="field">

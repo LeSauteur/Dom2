@@ -159,9 +159,64 @@ h2 {
 
 .top-inputs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(640px, 1.45fr) minmax(260px, .6fr) minmax(240px, .5fr);
   gap: 12px;
+  align-items: start;
   margin-top: 14px;
+}
+
+.top-inputs > .field,
+.top-inputs > .royalty-chip {
+  align-self: start;
+}
+
+.top-inputs > .field input {
+  height: 42px;
+}
+
+.expense-list-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, .74);
+}
+
+.expense-list-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.expense-list-head span {
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.expense-list-head strong {
+  color: var(--ink);
+  font-size: 22px;
+}
+
+.expense-list {
+  display: grid;
+  gap: 8px;
+}
+
+.expense-item-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(160px, .45fr) auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.expense-list-actions {
+  display: flex;
+  justify-content: flex-start;
 }
 
 .field {
@@ -239,17 +294,15 @@ select:focus,
 
 .table-wrap {
   width: 100%;
-  max-height: 58vh;
-  overflow-x: auto;
-  overflow-y: auto;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: #fff;
+  overflow: visible;
 }
 
 .office-table {
   width: 100%;
-  min-width: 1860px;
+  table-layout: fixed;
   border-collapse: collapse;
 }
 
@@ -259,13 +312,10 @@ select:focus,
   border: 1px solid var(--line);
   text-align: left;
   vertical-align: top;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .office-table th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
   background: #f2f5fa;
   color: var(--ink);
   font-weight: 900;
@@ -289,11 +339,231 @@ select:focus,
   min-height: 34px;
   padding: 6px 7px;
   border-radius: 5px;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .office-table td:first-child input {
-  min-width: 160px;
+  min-width: 0;
+}
+
+.office-table th:nth-child(1),
+.office-table td:nth-child(1) {
+  width: 13%;
+}
+
+.office-table th:nth-child(2),
+.office-table td:nth-child(2),
+.office-table th:nth-child(3),
+.office-table td:nth-child(3),
+.office-table th:nth-child(4),
+.office-table td:nth-child(4) {
+  width: 10%;
+}
+
+.office-table th:nth-child(5),
+.office-table td:nth-child(5),
+.office-table th:nth-child(6),
+.office-table td:nth-child(6),
+.office-table th:nth-child(7),
+.office-table td:nth-child(7),
+.office-table th:nth-child(8),
+.office-table td:nth-child(8) {
+  width: 8%;
+}
+
+.office-table th:nth-child(9),
+.office-table td:nth-child(9),
+.office-table th:nth-child(10),
+.office-table td:nth-child(10) {
+  width: 9%;
+}
+
+.office-table th:nth-child(11),
+.office-table td:nth-child(11) {
+  width: 7%;
+}
+
+.deal-mode-cell {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.deal-mode-cell small {
+  color: var(--blue);
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+.exact-details {
+  display: grid;
+  gap: 10px;
+}
+
+.boosted-details {
+  display: grid;
+  gap: 10px;
+}
+
+.motivation-details {
+  display: grid;
+  gap: 10px;
+}
+
+.exact-details-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  color: var(--blue);
+}
+
+.boosted-details-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  color: var(--orange);
+}
+
+.motivation-details-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  color: var(--green);
+}
+
+.exact-details-head span {
+  color: var(--muted);
+}
+
+.boosted-details-head span {
+  color: var(--muted);
+}
+
+.motivation-details-head span {
+  color: var(--muted);
+}
+
+.exact-details-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.boosted-rates-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.motivation-details-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.motivation-details-grid div {
+  display: grid;
+  gap: 3px;
+  padding: 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .72);
+}
+
+.agent-detail-row td {
+  background: #f7fbff;
+}
+
+.agent-detail-panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.detail-section {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, .86);
+}
+
+.detail-section h3 {
+  margin: 0;
+  color: var(--blue);
+  font-size: 16px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.detail-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.detail-metrics div {
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 6px;
+  background: #f7f8fb;
+}
+
+.detail-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.detail-toggle {
+  color: var(--blue);
+  border-color: rgba(36, 92, 153, .28);
+}
+
+.danger-button:hover,
+.danger-button:focus {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.exact-deal-field {
+  display: grid;
+  grid-template-columns: minmax(70px, .7fr) minmax(90px, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.boosted-rate-field {
+  display: grid;
+  grid-template-columns: minmax(74px, .85fr) minmax(72px, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+
+.exact-deal-field span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.boosted-rate-field span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.exact-add-button {
+  justify-self: start;
 }
 
 .office-table tr.positive .strong-value {
@@ -435,6 +705,12 @@ dd {
   .summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .expense-item-row,
+  .detail-grid,
+  .detail-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 520px) {
@@ -453,6 +729,12 @@ dd {
   }
 
   .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .expense-item-row,
+  .detail-grid,
+  .detail-metrics {
     grid-template-columns: 1fr;
   }
 }

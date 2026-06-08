@@ -40,13 +40,14 @@ select {
 }
 
 .page {
-  width: min(1180px, calc(100% - 28px));
+  width: min(1260px, calc(100% - 28px));
   margin: 22px auto;
-  padding: 28px;
+  padding: 32px;
   background: var(--paper);
   border: 1px solid rgba(23, 32, 51, .1);
   border-radius: 10px;
   box-shadow: var(--shadow);
+  font-size: 17px;
 }
 
 .hero {
@@ -83,12 +84,12 @@ h1 {
 
 h2 {
   margin-bottom: 0;
-  font-size: 24px;
+  font-size: 26px;
 }
 
 h3 {
   margin-bottom: 0;
-  font-size: 18px;
+  font-size: 19px;
 }
 
 .lead {
@@ -190,7 +191,7 @@ h3 {
   grid-template-columns: 260px minmax(0, 1fr);
   gap: 18px;
   margin: 20px 0;
-  padding: 16px 18px;
+  padding: 18px 20px;
   border-left: 4px solid var(--blue);
   border-radius: var(--radius);
   background:
@@ -209,6 +210,7 @@ h3 {
 .route-note p {
   margin-bottom: 0;
   color: var(--muted);
+  font-size: 15px;
 }
 
 .route-list {
@@ -250,12 +252,12 @@ h3 {
 }
 
 .route-list strong {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .route-list span {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .sheet-grid {
@@ -370,8 +372,8 @@ h3 {
 input,
 select {
   width: 100%;
-  min-height: 42px;
-  padding: 9px 10px;
+  min-height: 46px;
+  padding: 11px 12px;
   border: 1px solid #c8cfda;
   border-radius: 6px;
   background: #fff;
@@ -487,6 +489,11 @@ select:focus {
 .agent-body {
   display: grid;
   gap: 0;
+}
+
+.agent-body[hidden],
+.agent-collapsed[hidden] {
+  display: none !important;
 }
 
 .agent-collapsed {
@@ -1281,6 +1288,7 @@ dd {
   cursor: pointer;
   color: var(--blue);
   list-style: none;
+  background: linear-gradient(180deg, rgba(232, 241, 251, .72), rgba(255, 255, 255, .96));
 }
 
 .retention-checker-summary::-webkit-details-marker {
@@ -1306,7 +1314,7 @@ dd {
 
 .retention-checker-main strong {
   color: var(--ink);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 900;
 }
 
@@ -1318,14 +1326,15 @@ dd {
 
 .retention-checker-action {
   flex: 0 0 auto;
-  padding: 7px 10px;
-  border: 1px solid rgba(36, 92, 153, .28);
+  padding: 9px 14px;
+  border: 1px solid rgba(36, 92, 153, .34);
   border-radius: 999px;
-  background: #fff;
+  background: var(--blue-soft);
   color: var(--blue);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 900;
   white-space: nowrap;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .6);
 }
 
 .retention-checker[open] .summary-closed {

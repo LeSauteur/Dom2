@@ -26,10 +26,16 @@
     <section class="notice info" id="snapshotNotice">Данные из A4 не найдены. Можно заполнить таблицу вручную.</section>
 
     <section class="top-inputs" aria-label="Общие вводные офиса">
-      <label class="field">
-        <span>Общие расходы офиса, ₽</span>
-        <input id="officeExpensesInput" type="number" min="0" step="1000" data-office-field="expenses">
-      </label>
+      <div class="expense-list-card">
+        <div class="expense-list-head">
+          <span>Расходы офиса</span>
+          <strong id="officeExpensesTotal">0 ₽</strong>
+        </div>
+        <div class="expense-list" id="officeExpensesList"></div>
+        <div class="expense-list-actions">
+          <button class="row-button" type="button" data-action="add-expense">Добавить расход</button>
+        </div>
+      </div>
       <label class="field">
         <span>Личные сделки собственника, ₽</span>
         <input id="ownerSalesInput" type="number" min="0" step="1000" data-office-field="ownerSales">
@@ -43,8 +49,8 @@
     <section class="table-shell" aria-labelledby="agentsTableTitle">
       <div class="table-head">
         <div>
-          <h2 id="agentsTableTitle">Агенты и условия</h2>
-          <p>Пустая или нулевая доля расходов в строке означает автоматическое распределение общих расходов между агентами.</p>
+          <h2 id="agentsTableTitle">Обзор офиса</h2>
+          <p>Основная таблица показывает только ключевые управленческие показатели. Настройки агента, точные сделки, повышенные ставки и мотивации раскрываются кнопкой “Настроить”.</p>
         </div>
       </div>
       <div class="table-wrap">
@@ -54,20 +60,14 @@
               <th>Агент</th>
               <th>Комиссия, ₽</th>
               <th>Сделки</th>
-              <th>Схема выплаты</th>
-              <th>Статус</th>
-              <th>Фикс, %</th>
-              <th>Приведённый</th>
-              <th>Мотивации, ₽/мес</th>
-              <th>Доля расходов, ₽<small>0 ₽ означает автоматическое распределение расходов офиса.</small></th>
-              <th>Выплата агенту</th>
-              <th>Реферал 2,5%</th>
-              <th>Роялти-оценка</th>
-              <th>До расходов</th>
+              <th>Схема</th>
+              <th>Выплата</th>
+              <th>Реферал</th>
+              <th>Мотивации</th>
+              <th>Расходы</th>
               <th>Вклад</th>
               <th>Окупаемость</th>
-              <th>Комментарий</th>
-              <th>Действие</th>
+              <th>Детали</th>
             </tr>
           </thead>
           <tbody id="agentsTableBody"></tbody>
@@ -93,7 +93,7 @@
       </section>
     </section>
 
-    <section class="notice warning">В этой версии таблица использует быстрый ввод по агентам. Для точного расчёта неравных сделок и детальной настройки мотиваций используйте A4-карточки.</section>
+    <section class="notice warning">Таблица поддерживает быстрый и точный ввод сделок, фиксированные условия, рефералы, роялти, повышенные шкалы и импорт мотиваций из A4. Для глубокой настройки мотивационных правил удобнее использовать A4-карточки, а затем загрузить данные сюда.</section>
   </main>
 
   <script src="assets/js/constants.js"></script>
