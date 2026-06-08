@@ -215,7 +215,7 @@ test('office totals separate owner sales and show owner dependency warning', () 
 test('motivation reserve supports stipend and annual trip reserves', () => {
   const noReserve = calculator.calculateMotivationReserve({
     paymentType: 'standard',
-    stipendMode: 'off',
+    mode: 'off',
     quarterlyResult: 1500000,
     quarterlyDeposits: 250000,
     mountainSeaEnabled: false,
@@ -226,7 +226,6 @@ test('motivation reserve supports stipend and annual trip reserves', () => {
 
   const reserve = calculator.calculateMotivationReserve({
     paymentType: 'standard',
-    stipendMode: 'auto',
     quarterlyResult: 1500000,
     quarterlyDeposits: 250000,
     halfYearCommission: 1600000,
@@ -255,6 +254,30 @@ test('motivation reserve supports stipend and annual trip reserves', () => {
   closeTo(reserve.starMonthly, 416.6666666666667);
   closeTo(reserve.annualReserveMonthly, 21541.666666666668);
   closeTo(reserve.monthly, 28541.666666666668);
+});
+
+test('rules mode applies stipend automatically and manual override replaces it', () => {
+  const automatic = calculator.calculateMotivationReserve({
+    paymentType: 'standard',
+    quarterlyCommission: 1000000,
+    quarterlyDeposits: 250000
+  });
+
+  const overridden = calculator.calculateMotivationReserve({
+    paymentType: 'standard',
+    quarterlyCommission: 1000000,
+    quarterlyDeposits: 250000,
+    motivation: {
+      stipendManualEnabled: true,
+      manualStipendMonthly: 3500
+    }
+  });
+
+  assert.equal(automatic.stipendAvailable, true);
+  assert.equal(automatic.stipendMode, 'auto');
+  assert.equal(automatic.stipendMonthly, 5000);
+  assert.equal(overridden.stipendMode, 'manual');
+  assert.equal(overridden.stipendMonthly, 3500);
 });
 
 test('motivation reserve preserves explicit zero values', () => {
@@ -479,6 +502,116 @@ test('scheme checker compares variants and finds break-even commission', () => {
     expenseShare: 20000,
     motivationReserve: 0
   }).variants.find((item) => item.id === 'fixed-80').contribution);
+});
+
+test('agent retention scenarios baseline matches step 5 contribution', () => {
+  const source = {
+    id: 'baseline-agent',
+    name: 'База',
+    commissionMode: 'exact',
+    dealsInput: [100000, 100000, 100000, 100000],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  };
+  const calculated = calculator.calculateAgent(source);
+  const economics = calculator.calculateAgentEconomics([calculated], 20000, [source])[0];
+  const result = calculator.compareAgentRetentionScenarios(source, economics);
+  const baseline = result.scenarios.find((item) => item.id === 'current');
+
+  assert.equal(baseline.payout, 210000);
+  assert.equal(baseline.contribution, economics.contribution);
+  assert.equal(baseline.status, 'база');
+});
+
+test('agent retention scenarios preserve exact deals and fixed 80 payout', () => {
+  const source = {
+    id: 'exact-agent',
+    name: 'Точный',
+    commissionMode: 'exact',
+    dealsInput: [10000, 10000, 10000, 370000],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  };
+  const calculated = calculator.calculateAgent(source);
+  const economics = calculator.calculateAgentEconomics([calculated], 20000, [source])[0];
+  const result = calculator.compareAgentRetentionScenarios(source, economics);
+  const baseline = result.scenarios.find((item) => item.id === 'current');
+  const fixed80 = result.scenarios.find((item) => item.id === 'fixed-80');
+
+  assert.equal(baseline.payout, 237000);
+  assert.equal(fixed80.payout, 320000);
+});
+
+test('agent retention scenarios preserve quick mode logic', () => {
+  const source = {
+    id: 'quick-agent',
+    name: 'Быстрый',
+    commissionMode: 'quick',
+    commission: 400000,
+    dealCount: 4,
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  };
+  const calculated = calculator.calculateAgent(source);
+  const economics = calculator.calculateAgentEconomics([calculated], 20000, [source])[0];
+  const result = calculator.compareAgentRetentionScenarios(source, economics);
+  const baseline = result.scenarios.find((item) => item.id === 'current');
+
+  assert.equal(baseline.payout, 210000);
+  assert.equal(baseline.contribution, economics.contribution);
+});
+
+test('agent retention scenarios do not duplicate baseline loads', () => {
+  const source = {
+    id: 'load-agent',
+    name: 'Нагрузка',
+    commissionMode: 'quick',
+    commission: 400000,
+    dealCount: 4,
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: true,
+    motivation: {
+      mode: 'manual',
+      manualReserveMonthly: 5000
+    }
+  };
+  const calculated = calculator.calculateAgent(source);
+  const economics = calculator.calculateAgentEconomics([calculated], 20000, [source])[0];
+  const result = calculator.compareAgentRetentionScenarios(source, economics);
+  const fixed80 = result.scenarios.find((item) => item.id === 'fixed-80');
+
+  assert.equal(fixed80.referral, economics.referral);
+  assert.equal(fixed80.motivationReserve, economics.motivationReserve);
+  assert.equal(fixed80.royaltyShare, economics.royaltyShare);
+  assert.equal(fixed80.expenseShare, economics.expenseShare);
+  assert.equal(
+    fixed80.contribution,
+    fixed80.commission - fixed80.payout - fixed80.referral - fixed80.royaltyShare - fixed80.motivationReserve - fixed80.expenseShare
+  );
+});
+
+test('agent retention scenarios mark negative contribution as unprofitable', () => {
+  const source = {
+    id: 'negative-agent',
+    name: 'Минус',
+    commissionMode: 'quick',
+    commission: 100000,
+    dealCount: 1,
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  };
+  const calculated = calculator.calculateAgent(source);
+  const economics = calculator.calculateAgentEconomics([calculated], 20000, [source])[0];
+  const result = calculator.compareAgentRetentionScenarios(source, economics);
+  const fixed90 = result.scenarios.find((item) => item.id === 'fixed-90');
+
+  assert.equal(fixed90.status, 'убыточно');
+  assert.ok(fixed90.contribution < 0);
 });
 
 test('partnership is confirmed by quarterly deposits threshold', () => {

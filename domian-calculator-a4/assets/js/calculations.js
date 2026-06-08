@@ -248,6 +248,14 @@
     return context.motivationOverride || Boolean(context[overrideField]);
   }
 
+  function resolveStipendMode(source) {
+    if (source && (source.stipendMode === 'manual' || source.stipendManualEnabled)) {
+      return 'manual';
+    }
+
+    return 'auto';
+  }
+
   function inferMotivationMode(agent, source, context) {
     if (source && source.mode) {
       return source.mode;
@@ -328,21 +336,21 @@
     }
 
     var quarterlyResult = context.quarterlyCommission;
-    var stipendMode = source.stipendMode || 'off';
+    var stipendMode = resolveStipendMode(source);
     var stipendLevel = getStipendLevel(quarterlyResult);
     var stipendEligibility = getStipendEligibility(Object.assign({}, agent || {}, source));
     var motivationEligibility = getMotivationEligibility(Object.assign({}, agent || {}, source));
     var travelEligibility = getTravelEligibility(Object.assign({}, agent || {}, source));
-    var stipendAllowed = stipendEligibility.available || canUseBlockedMotivation(context, 'stipendOverride');
+    var stipendManualEnabled = stipendMode === 'manual' || canUseBlockedMotivation(context, 'stipendOverride');
     var mountainSeaAllowed = motivationEligibility.available || canUseBlockedMotivation(context, 'mountainSeaOverride');
     var travelAllowed = travelEligibility.available || canUseBlockedMotivation(context, 'travelOverride');
     var corporateAllowed = motivationEligibility.available || canUseBlockedMotivation(context, 'eventsOverride');
     var stipendMonthly = 0;
 
-    if (stipendAllowed && stipendMode === 'auto') {
-      stipendMonthly = stipendLevel.monthly;
-    } else if (stipendAllowed && stipendMode === 'manual') {
+    if (stipendManualEnabled) {
       stipendMonthly = positiveNumber(source.manualStipendMonthly);
+    } else if (stipendEligibility.available) {
+      stipendMonthly = stipendLevel.monthly;
     }
 
     var annualReserveMode = source.annualReserveMode || DEFAULT_MOTIVATION.annualReserveMode;
@@ -383,7 +391,7 @@
       stipendLevel: stipendLevel.level,
       stipendAvailable: stipendEligibility.available,
       stipendReason: stipendEligibility.reason,
-      stipendOverride: canUseBlockedMotivation(context, 'stipendOverride'),
+      stipendOverride: stipendManualEnabled,
       stipendMonthly: stipendMonthly,
       annualReserveMode: annualReserveMode,
       annualReserveTotal: annualReserveTotal,
@@ -596,6 +604,106 @@
     };
   }
 
+  function getRetentionScenarioVariants() {
+    return [
+      { id: 'boosted-55', label: 'Повышенная 55 / 55 / 55 / 60', paymentType: 'boosted', boostedRates: [55, 55, 55, 60] },
+      { id: 'boosted-55-60-65', label: 'Повышенная 55 / 55 / 60 / 65', paymentType: 'boosted', boostedRates: [55, 55, 60, 65] },
+      { id: 'fixed-70', label: 'Фикс 70%', paymentType: 'fixed', fixedRate: 70 },
+      { id: 'fixed-80', label: 'Фикс 80%', paymentType: 'fixed', fixedRate: 80 },
+      { id: 'fixed-90', label: 'Фикс 90%', paymentType: 'fixed', fixedRate: 90 }
+    ];
+  }
+
+  function cloneAgentForScenario(agentSource) {
+    var agent = Object.assign({}, agentSource || {});
+
+    if (Array.isArray(agent.dealsInput)) {
+      agent.dealsInput = agent.dealsInput.slice();
+    }
+    if (Array.isArray(agent.boostedRates)) {
+      agent.boostedRates = agent.boostedRates.slice();
+    }
+    if (agent.motivation && typeof agent.motivation === 'object') {
+      agent.motivation = Object.assign({}, agent.motivation);
+    }
+
+    return agent;
+  }
+
+  function getRetentionScenarioStatus(contribution, isBaseline) {
+    if (isBaseline) {
+      return 'база';
+    }
+    if (contribution < 0) {
+      return 'убыточно';
+    }
+    if (contribution < 50000) {
+      return 'риск';
+    }
+    if (contribution <= 100000) {
+      return 'осторожно';
+    }
+    return 'можно';
+  }
+
+  function buildRetentionScenario(agentSource, baselineEconomics, variant) {
+    var scenarioAgent = cloneAgentForScenario(agentSource);
+    scenarioAgent.paymentType = variant.paymentType;
+
+    if (variant.paymentType === 'boosted') {
+      scenarioAgent.boostedRates = (variant.boostedRates || []).slice();
+    }
+    if (variant.paymentType === 'fixed') {
+      scenarioAgent.fixedRate = positiveNumber(variant.fixedRate);
+    }
+
+    var calculated = calculateAgent(scenarioAgent);
+    var contribution = roundMoney(baselineEconomics.commission
+      - calculated.payout
+      - baselineEconomics.referral
+      - baselineEconomics.royaltyShare
+      - baselineEconomics.motivationReserve
+      - baselineEconomics.expenseShare);
+
+    return {
+      id: variant.id,
+      label: variant.label,
+      payout: calculated.payout,
+      commission: baselineEconomics.commission,
+      referral: baselineEconomics.referral,
+      royaltyShare: baselineEconomics.royaltyShare,
+      motivationReserve: baselineEconomics.motivationReserve,
+      expenseShare: baselineEconomics.expenseShare,
+      contribution: contribution,
+      deltaFromCurrent: roundMoney(contribution - baselineEconomics.contribution),
+      status: getRetentionScenarioStatus(contribution, false)
+    };
+  }
+
+  function compareAgentRetentionScenarios(agentSource, agentEconomics) {
+    var source = cloneAgentForScenario(agentSource);
+    var baseline = {
+      id: 'current',
+      label: 'Текущие условия',
+      payout: roundMoney(agentEconomics.payout),
+      commission: roundMoney(agentEconomics.commission),
+      referral: roundMoney(agentEconomics.referral),
+      royaltyShare: roundMoney(agentEconomics.royaltyShare),
+      motivationReserve: roundMoney(agentEconomics.motivationReserve),
+      expenseShare: roundMoney(agentEconomics.expenseShare),
+      contribution: roundMoney(agentEconomics.contribution),
+      deltaFromCurrent: 0,
+      status: getRetentionScenarioStatus(agentEconomics.contribution, true)
+    };
+
+    return {
+      baseline: baseline,
+      scenarios: [baseline].concat(getRetentionScenarioVariants().map(function (variant) {
+        return buildRetentionScenario(source, baseline, variant);
+      }))
+    };
+  }
+
   function findBreakEvenCommission(config, variant) {
     var step = 1000;
     var maximum = 10000000;
@@ -678,6 +786,7 @@
   window.calculateOffice = calculateOffice;
   window.calculateSchemeVariant = calculateSchemeVariant;
   window.comparePaymentSchemes = comparePaymentSchemes;
+  window.compareAgentRetentionScenarios = compareAgentRetentionScenarios;
   window.money = money;
   window.moneyPrecise = moneyPrecise;
   window.percent = percent;

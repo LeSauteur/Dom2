@@ -36,9 +36,9 @@
         <li><strong>Введите расходы офиса</strong><span>Сюда идут только постоянные расходы: аренда, реклама, связь, зарплаты и другие траты.</span></li>
         <li><strong>Добавьте агентов и условия</strong><span>Укажите комиссию, количество сделок и схему выплаты. От этих выборов зависит итог по офису.</span></li>
         <li><strong>Укажите личные сделки собственника</strong><span>Они считаются отдельно: агентской выплаты нет, но роялти остаётся.</span></li>
-        <li><strong>Сначала посмотрите итог без собственника</strong><span>Так видно, живёт ли офис сам как система.</span></li>
+        <li><strong>Посмотрите результат собственника</strong><span>Так видно, живёт ли офис сам как система и как личные сделки меняют итог.</span></li>
         <li><strong>Проверьте окупаемость агентов</strong><span>Здесь видно, кто оставляет офису вклад, а кто съедает долю расходов.</span></li>
-        <li><strong>Сравните процент агенту</strong><span>Это отдельная проверка условий, а не основной ввод.</span></li>
+        <li><strong>Сравните условия дополнительно</strong><span>Это отдельная проверка процента для гипотетического агента, а не основной ввод.</span></li>
       </ol>
     </section>
 
@@ -108,10 +108,45 @@
           </label>
         </section>
 
+        <section class="section-card result-card" aria-labelledby="resultTitle">
+          <div class="section-head">
+            <div>
+              <span class="step-label">Результат 1</span>
+              <h2 id="resultTitle">Что осталось собственнику</h2>
+            </div>
+            <p class="hint">Сначала смотрите итог без личных сделок собственника, а потом с ними. Разница между этими двумя строками показывает, насколько офис зависит от собственника.</p>
+          </div>
+          <div id="resultStatus" class="result-status">Офис около нуля</div>
+          <dl class="totals">
+            <div><dt>Агенты продали</dt><dd id="agentTurnover">0 ₽</dd></div>
+            <div><dt>Личные сделки собственника</dt><dd id="ownerSales">0 ₽</dd></div>
+            <div><dt>Общий оборот</dt><dd id="totalTurnover">0 ₽</dd></div>
+            <div><dt>Выплаты агентам</dt><dd id="agentPayouts">0 ₽</dd></div>
+            <div><dt>Рефералы</dt><dd id="referrals">0 ₽</dd></div>
+            <div><dt>Мотивационные резервы</dt><dd id="motivationReserves">0 ₽</dd></div>
+            <div><dt>Роялти</dt><dd id="royalty">0 ₽</dd></div>
+            <div><dt>Расходы офиса</dt><dd id="officeExpenses">0 ₽</dd></div>
+            <div><dt>Без собственника до резервов</dt><dd id="resultWithoutOwnerBeforeReserves">0 ₽</dd></div>
+            <div><dt>Итог без личных сделок</dt><dd id="resultWithoutOwner">0 ₽</dd></div>
+            <div><dt>С собственником до резервов</dt><dd id="resultWithOwnerBeforeReserves">0 ₽</dd></div>
+            <div class="total-line"><dt>Итог с личными сделками</dt><dd id="resultWithOwner">0 ₽</dd></div>
+          </dl>
+        </section>
+
+        <section class="section-card warning-card" aria-labelledby="warningsTitle">
+          <div class="section-head">
+            <div>
+              <span class="step-label">Контроль</span>
+              <h2 id="warningsTitle">Опасные места</h2>
+            </div>
+          </div>
+          <div id="warningsList" class="warnings-list"></div>
+        </section>
+
         <section class="section-card" aria-labelledby="profitabilityTitle">
           <div class="section-head">
             <div>
-              <span class="step-label">Шаг 5</span>
+              <span class="step-label">Результат 2</span>
               <h2 id="profitabilityTitle">Кто окупает своё место</h2>
             </div>
             <p class="hint">Здесь видно, сколько агент оставляет офису после выплаты, реферала, мотивационного резерва и своей доли расходов. Агент с оборотом тоже может быть убыточным, если условия слишком щедрые.</p>
@@ -167,8 +202,8 @@
         <section class="section-card" aria-labelledby="schemeTitle">
           <div class="section-head">
             <div>
-              <span class="step-label">Шаг 6</span>
-              <h2 id="schemeTitle">Какой процент агенту выдержит офис?</h2>
+              <span class="step-label">Дополнительно</span>
+              <h2 id="schemeTitle">Проверка процента агенту</h2>
             </div>
             <p class="hint">Это проверка условий, а не основной ввод. Смотрите прежде всего на колонки «Вклад» и «Окупится от»: если вклад отрицательный, такие условия опасны для офиса.</p>
           </div>
@@ -233,43 +268,6 @@
           <div id="schemeAdvice" class="scheme-advice"></div>
         </section>
       </div>
-
-      <aside class="result-column">
-        <section class="section-card result-card" aria-labelledby="resultTitle">
-          <div class="section-head">
-            <div>
-              <span class="step-label">Шаг 4</span>
-              <h2 id="resultTitle">Что осталось собственнику</h2>
-            </div>
-            <p class="hint">Сначала смотрите итог без личных сделок собственника, а потом с ними. Разница между этими двумя строками показывает, насколько офис зависит от собственника.</p>
-          </div>
-          <div id="resultStatus" class="result-status">Офис около нуля</div>
-          <dl class="totals">
-            <div><dt>Агенты продали</dt><dd id="agentTurnover">0 ₽</dd></div>
-            <div><dt>Личные сделки собственника</dt><dd id="ownerSales">0 ₽</dd></div>
-            <div><dt>Общий оборот</dt><dd id="totalTurnover">0 ₽</dd></div>
-            <div><dt>Выплаты агентам</dt><dd id="agentPayouts">0 ₽</dd></div>
-            <div><dt>Рефералы</dt><dd id="referrals">0 ₽</dd></div>
-            <div><dt>Мотивационные резервы</dt><dd id="motivationReserves">0 ₽</dd></div>
-            <div><dt>Роялти</dt><dd id="royalty">0 ₽</dd></div>
-            <div><dt>Расходы офиса</dt><dd id="officeExpenses">0 ₽</dd></div>
-            <div><dt>Без собственника до резервов</dt><dd id="resultWithoutOwnerBeforeReserves">0 ₽</dd></div>
-            <div><dt>Итог без личных сделок</dt><dd id="resultWithoutOwner">0 ₽</dd></div>
-            <div><dt>С собственником до резервов</dt><dd id="resultWithOwnerBeforeReserves">0 ₽</dd></div>
-            <div class="total-line"><dt>Итог с личными сделками</dt><dd id="resultWithOwner">0 ₽</dd></div>
-          </dl>
-        </section>
-
-        <section class="section-card warning-card" aria-labelledby="warningsTitle">
-          <div class="section-head">
-            <div>
-              <span class="step-label">Контроль</span>
-              <h2 id="warningsTitle">Опасные места</h2>
-            </div>
-          </div>
-          <div id="warningsList" class="warnings-list"></div>
-        </section>
-      </aside>
     </section>
   </main>
 

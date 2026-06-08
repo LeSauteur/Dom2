@@ -2,9 +2,11 @@
   'use strict';
 
   var state = null;
+  var uiState = null;
   var idCounter = 1;
   var expenseCounter = 100;
   var elements = {};
+  var DEFAULT_AGENT_NAME = 'Новый агент';
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -156,6 +158,12 @@
     };
   }
 
+  function createUiState() {
+    return {
+      collapsedAgents: {}
+    };
+  }
+
   function escapeHtml(value) {
     return String(value)
       .replace(/&/g, '&amp;')
@@ -177,10 +185,41 @@
     return value ? ' disabled' : '';
   }
 
+  function ensureUiState() {
+    if (!uiState) {
+      uiState = createUiState();
+    }
+    if (!uiState.collapsedAgents) {
+      uiState.collapsedAgents = {};
+    }
+    return uiState;
+  }
+
   function findAgent(agentId) {
     return state.agents.find(function (agent) {
       return agent.id === agentId;
     });
+  }
+
+  function getAgentIndex(agentId) {
+    return state.agents.findIndex(function (agent) {
+      return agent.id === agentId;
+    });
+  }
+
+  function isAgentCollapsed(agentId) {
+    return Boolean(ensureUiState().collapsedAgents[agentId]);
+  }
+
+  function setAgentCollapsed(agentId, collapsed) {
+    if (!agentId) {
+      return;
+    }
+    if (collapsed) {
+      ensureUiState().collapsedAgents[agentId] = true;
+    } else if (uiState && uiState.collapsedAgents) {
+      delete uiState.collapsedAgents[agentId];
+    }
   }
 
   function motivationAnnuals(motivation) {
@@ -355,6 +394,295 @@
     return mode;
   }
 
+  function getAgentDisplayName(agent) {
+    var name = String(agent && agent.name || '').trim();
+    return name || DEFAULT_AGENT_NAME;
+  }
+
+  function hasMeaningfulAgentData(agent, result) {
+    var motivation = Object.assign(createMotivation(), agent && agent.motivation || {});
+
+    return getAgentDisplayName(agent) !== DEFAULT_AGENT_NAME
+      || positiveNumber(result && result.commission) > 0
+      || roundMoney(result && result.contribution) !== 0
+      || positiveNumber(result && result.payout) > 0
+      || positiveNumber(result && result.referral) > 0
+      || positiveNumber(result && result.motivationReserve) > 0
+      || positiveNumber(agent && agent.commission) > 0
+      || positiveNumber(agent && agent.dealCount) > 1
+      || hasMeaningfulDeals(agent && agent.dealsInput)
+      || (agent && agent.status === 'trainee')
+      || (agent && getPartnerSystem(agent) === 'special')
+      || Boolean(agent && agent.introduced)
+      || Boolean(agent && agent.partnerConfirmed)
+      || positiveNumber(agent && agent.quarterlyCommission) > 0
+      || positiveNumber(agent && agent.quarterlyDeposits) > 0
+      || positiveNumber(agent && agent.halfYearCommission) > 0
+      || positiveNumber(agent && agent.preTripQuarterDeposits) > 0
+      || Boolean(agent && agent.motivationOverride)
+      || Boolean(agent && agent.stipendOverride)
+      || Boolean(agent && agent.mountainSeaOverride)
+      || Boolean(agent && agent.travelOverride)
+      || Boolean(agent && agent.eventsOverride)
+      || Boolean(agent && agent.specialTermsOverride)
+      || positiveNumber(motivation.manualReserveMonthly) > 0
+      || positiveNumber(motivation.manualStipendMonthly) > 0
+      || positiveNumber(motivation.manualAnnualReserveMonthly) > 0
+      || Boolean(motivation.specialManualReserveEnabled)
+      || Boolean(motivation.stipendManualEnabled)
+      || Boolean(motivation.mountainSeaEnabled)
+      || Boolean(motivation.travelEnabled)
+      || Boolean(motivation.corporateEnabled)
+      || Boolean(motivation.congressEnabled)
+      || Boolean(motivation.starEnabled);
+  }
+
+  function isAgentDraft(agent, result) {
+    return !hasMeaningfulAgentData(agent, result);
+  }
+
+  function getAgentRoleLabel(agent) {
+    return agent.status === 'trainee' ? 'Стажёр' : 'Партнёр';
+  }
+
+  function getAgentSystemLabel(agent) {
+    if (agent.status !== 'partner') {
+      return '';
+    }
+    return getPartnerSystem(agent) === 'special' ? 'Особые условия' : 'Стандарт';
+  }
+
+  function getCardStatusInfo(agent, result) {
+    if (isAgentDraft(agent, result)) {
+      return {
+        label: 'черновик',
+        className: 'draft'
+      };
+    }
+    if (result.status === 'Окупается') {
+      return {
+        label: 'окупается',
+        className: 'positive'
+      };
+    }
+    if (result.status === 'На грани') {
+      return {
+        label: 'на грани',
+        className: 'warning'
+      };
+    }
+    return {
+      label: 'не окупается',
+      className: 'danger'
+    };
+  }
+
+  function formatSignedMoney(value) {
+    var amount = roundMoney(value);
+    return (amount > 0 ? '+' : '') + money(amount);
+  }
+
+  function renderAgentHeaderMeta(agent, index, result) {
+    var statusInfo = getCardStatusInfo(agent, result);
+    var parts = ['Агент ' + (index + 1), getAgentDisplayName(agent), getAgentRoleLabel(agent)];
+    var systemLabel = getAgentSystemLabel(agent);
+
+    if (systemLabel) {
+      parts.push(systemLabel);
+    }
+    if (!isAgentDraft(agent, result) && positiveNumber(result.commission) > 0) {
+      parts.push(money(result.commission));
+    }
+    if (!isAgentDraft(agent, result) && roundMoney(result.contribution) !== 0) {
+      parts.push(formatSignedMoney(result.contribution));
+    }
+    parts.push(statusInfo.label);
+
+    return parts.join(' · ');
+  }
+
+  function renderCollapsedSummary(agent, result) {
+    var topLine = [getAgentDisplayName(agent), getAgentRoleLabel(agent)];
+    var statusInfo = getCardStatusInfo(agent, result);
+    var systemLabel = getAgentSystemLabel(agent);
+
+    if (systemLabel) {
+      topLine.push(systemLabel);
+    }
+
+    if (isAgentDraft(agent, result)) {
+      return '<p class="agent-collapsed-line agent-collapsed-line--title">' + escapeHtml(topLine.join(' · ')) + '</p>'
+        + '<p class="agent-collapsed-line agent-collapsed-line--status">Статус: ' + escapeHtml(statusInfo.label) + '</p>'
+        + '<p class="agent-collapsed-hint">Заполните сделки или комиссию, чтобы увидеть расчёт.</p>';
+    }
+
+    return '<p class="agent-collapsed-line agent-collapsed-line--title">' + escapeHtml(topLine.join(' · ')) + '</p>'
+      + '<p class="agent-collapsed-line">Комиссия: ' + escapeHtml(money(result.commission)) + ' · Выплата: ' + escapeHtml(money(result.payout)) + ' · Вклад: ' + escapeHtml(formatSignedMoney(result.contribution)) + '</p>'
+      + '<p class="agent-collapsed-line agent-collapsed-line--status">Статус: ' + escapeHtml(statusInfo.label) + '</p>';
+  }
+
+  function syncAgentCardChrome(agentId) {
+    var agent = findAgent(agentId);
+    var cardNode = document.querySelector('[data-agent-card][data-agent-id="' + agentId + '"]');
+    var headerMetaNode = document.querySelector('[data-agent-header-meta][data-agent-id="' + agentId + '"]');
+    var collapsedSummaryNode = document.querySelector('[data-agent-collapsed-summary][data-agent-id="' + agentId + '"]');
+    var bodyNode = document.querySelector('[data-agent-body][data-agent-id="' + agentId + '"]');
+    var toggleButtons = document.querySelectorAll('[data-action="toggle-agent-collapse"][data-agent-id="' + agentId + '"]');
+    var result;
+    var statusInfo;
+
+    if (!agent) {
+      return;
+    }
+
+    result = calculateAgent(agent);
+    statusInfo = getCardStatusInfo(agent, result);
+
+    if (headerMetaNode) {
+      headerMetaNode.textContent = renderAgentHeaderMeta(agent, getAgentIndex(agentId), result);
+    }
+    if (collapsedSummaryNode) {
+      collapsedSummaryNode.innerHTML = renderCollapsedSummary(agent, result);
+    }
+    if (cardNode) {
+      cardNode.className = 'agent-card agent-card--' + statusInfo.className + (isAgentCollapsed(agentId) ? ' is-collapsed' : '');
+    }
+    if (bodyNode) {
+      bodyNode.hidden = isAgentCollapsed(agentId);
+    }
+    if (collapsedSummaryNode) {
+      collapsedSummaryNode.hidden = !isAgentCollapsed(agentId);
+    }
+    Array.prototype.forEach.call(toggleButtons, function (button) {
+      button.textContent = isAgentCollapsed(agentId) ? 'Редактировать' : 'Свернуть';
+    });
+  }
+
+  function enhanceAgentCards() {
+    Array.prototype.forEach.call(elements.agentsList.querySelectorAll('.agent-card'), function (cardNode) {
+      var removeButton = cardNode.querySelector('[data-action="remove-agent"]');
+      var agentId = removeButton ? removeButton.dataset.agentId : '';
+      var headNode;
+      var titleNode;
+      var headMainNode;
+      var headActionsNode;
+      var toggleButton;
+      var bottomActionsNode;
+      var bottomToggleButton;
+      var collapsedSummaryNode;
+      var bodyNode;
+
+      if (!agentId) {
+        return;
+      }
+
+      headNode = cardNode.querySelector('.agent-head');
+      titleNode = headNode ? headNode.querySelector('h3') : null;
+      headMainNode = headNode ? headNode.querySelector('.agent-head-main') : null;
+      headActionsNode = headNode ? headNode.querySelector('.agent-head-actions') : null;
+      toggleButton = headNode ? headNode.querySelector('[data-action="toggle-agent-collapse"]') : null;
+      collapsedSummaryNode = cardNode.querySelector('[data-agent-collapsed-summary]');
+      bodyNode = cardNode.querySelector('[data-agent-body]');
+
+      cardNode.dataset.agentCard = 'true';
+      cardNode.dataset.agentId = agentId;
+
+      if (headNode && titleNode && !headMainNode) {
+        headMainNode = document.createElement('div');
+        headMainNode.className = 'agent-head-main';
+        headNode.insertBefore(headMainNode, titleNode);
+        headMainNode.appendChild(titleNode);
+      }
+
+      if (headMainNode && !headMainNode.querySelector('[data-agent-header-meta]')) {
+        var metaNode = document.createElement('p');
+        metaNode.className = 'agent-head-meta';
+        metaNode.dataset.agentHeaderMeta = 'true';
+        metaNode.dataset.agentId = agentId;
+        headMainNode.appendChild(metaNode);
+      }
+
+      if (headNode && !headActionsNode) {
+        headActionsNode = document.createElement('div');
+        headActionsNode.className = 'agent-head-actions';
+        headNode.appendChild(headActionsNode);
+      }
+
+      if (headActionsNode && removeButton && removeButton.parentNode !== headActionsNode) {
+        headActionsNode.appendChild(removeButton);
+      }
+
+      if (headActionsNode && !toggleButton) {
+        toggleButton = document.createElement('button');
+        toggleButton.className = 'button ghost';
+        toggleButton.type = 'button';
+        toggleButton.dataset.action = 'toggle-agent-collapse';
+        toggleButton.dataset.agentId = agentId;
+        headActionsNode.insertBefore(toggleButton, headActionsNode.firstChild);
+      }
+
+      if (!collapsedSummaryNode) {
+        collapsedSummaryNode = document.createElement('div');
+        collapsedSummaryNode.className = 'agent-collapsed';
+        collapsedSummaryNode.dataset.agentCollapsedSummary = 'true';
+        collapsedSummaryNode.dataset.agentId = agentId;
+        cardNode.insertBefore(collapsedSummaryNode, headNode ? headNode.nextSibling : cardNode.firstChild);
+      }
+
+      if (!bodyNode) {
+        bodyNode = document.createElement('div');
+        bodyNode.className = 'agent-body';
+        bodyNode.dataset.agentBody = 'true';
+        bodyNode.dataset.agentId = agentId;
+        while (collapsedSummaryNode.nextSibling) {
+          bodyNode.appendChild(collapsedSummaryNode.nextSibling);
+        }
+        cardNode.appendChild(bodyNode);
+      }
+
+      bottomActionsNode = bodyNode ? bodyNode.querySelector('.agent-bottom-actions') : null;
+      bottomToggleButton = bodyNode ? bodyNode.querySelector('[data-agent-bottom-collapse]') : null;
+      if (bodyNode && !bottomActionsNode) {
+        bottomActionsNode = document.createElement('div');
+        bottomActionsNode.className = 'agent-bottom-actions';
+        bodyNode.appendChild(bottomActionsNode);
+      }
+      if (bottomActionsNode && !bottomToggleButton) {
+        bottomToggleButton = document.createElement('button');
+        bottomToggleButton.className = 'button ghost';
+        bottomToggleButton.type = 'button';
+        bottomToggleButton.dataset.action = 'toggle-agent-collapse';
+        bottomToggleButton.dataset.agentId = agentId;
+        bottomToggleButton.dataset.agentBottomCollapse = 'true';
+        bottomToggleButton.textContent = 'Свернуть';
+        bottomActionsNode.appendChild(bottomToggleButton);
+      }
+
+      syncAgentCardChrome(agentId);
+    });
+  }
+
+  function collapsePreviousAgentIfReady() {
+    var previousAgent = state.agents[state.agents.length - 1];
+
+    if (previousAgent && previousAgent.commissionMode === 'exact') {
+      syncAgentTotalsFromDeals(previousAgent);
+    }
+    if (previousAgent && !isAgentDraft(previousAgent, calculateAgent(previousAgent))) {
+      setAgentCollapsed(previousAgent.id, true);
+    }
+  }
+
+  function addAgentCard() {
+    var agent;
+
+    collapsePreviousAgentIfReady();
+    agent = createAgent();
+    state.agents.push(agent);
+    setAgentCollapsed(agent.id, false);
+    renderPreservingUiState('[data-agent-field="name"][data-agent-id="' + agent.id + '"]');
+  }
+
   function renderStandardScaleNote(agent) {
     var isTrainee = agent.status === 'trainee';
     var scale = isTrainee ? '30 / 35 / 40%' : '45 / 50 / 55 / 60%';
@@ -387,11 +715,24 @@
       + '</div>';
   }
 
+  function renderStipendStatus(reserve) {
+    if (reserve.stipendMode === 'manual') {
+      return '<p class="eligibility-note warning">Стипендия изменена вручную. В резерв заложено: ' + money(reserve.stipendMonthly) + ' / месяц.</p>';
+    }
+
+    if (reserve.stipendAvailable) {
+      return '<p class="eligibility-note ok">Стипендия доступна по текущим условиям. В резерв добавлено: ' + money(reserve.stipendMonthly) + ' / месяц.</p>';
+    }
+
+    return '<p class="eligibility-note blocked">' + getEligibilityText(reserve.stipendReason) + '</p>';
+  }
+
   function renderMotivationControls(agent) {
     var motivation = Object.assign(createMotivation(), agent.motivation || {});
     var motivationReserve = calculateAgent(agent).motivationReserve;
     var reserve = calculateMotivationReserve(agent);
     var currentMode = getVisibleMotivationMode(agent);
+    var stipendManualEnabled = reserve.stipendMode === 'manual' || motivation.stipendMode === 'manual' || Boolean(motivation.stipendManualEnabled);
     var headerText = agent.status === 'trainee'
       ? 'Для стажёра можно оставить только простой ручной резерв без партнёрских мотиваций.'
       : (hasSpecialPaymentTermsUi(agent)
@@ -486,20 +827,22 @@
           + '<label class="field"><span>Задатки перед поездкой, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="preTripQuarterDeposits" data-structural="true" value="' + positiveNumber(agent.preTripQuarterDeposits) + '"><small>Для поездки нужен квартал от 250 000 ₽ задатков.</small></label>'
           + '</div></section>'
           + '<section class="motivation-section"><h4>Дополнительные резервы</h4><div class="form-grid compact-grid">'
-          + '<label class="field wide-field"><span>Как учитывать стипендию?</span><select data-agent-id="' + agent.id + '" data-motivation-field="stipendMode">'
-          + option('off', 'Не считать', motivation.stipendMode)
-          + option('auto', 'Посчитать по кварталу', motivation.stipendMode)
-          + option('manual', 'Ввести сумму вручную', motivation.stipendMode)
-          + '</select><small>Стипендия — это будущая ежемесячная нагрузка по результатам квартала.</small></label>'
-          + renderEligibilityNote(reserve.stipendAvailable, reserve.stipendReason, reserve.stipendOverride)
-          + (!reserve.stipendAvailable ? renderOverrideCheckbox(agent, 'stipendOverride', 'Всё равно заложить стипендию') : '')
-          + '<label class="field"><span>Стипендия вручную, ₽ в месяц</span><input type="number" min="0" step="500" data-agent-id="' + agent.id + '" data-motivation-field="manualStipendMonthly" value="' + motivation.manualStipendMonthly + '"' + disabled(!reserve.stipendAvailable && !reserve.stipendOverride) + '></label>'
+          + '<div class="wide-field">'
+          + '<p class="hint compact">Стипендия в режиме “Рассчитать по правилам” считается автоматически, если выполнены условия партнёрства и уровня.</p>'
+          + renderStipendStatus(reserve)
+          + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-field="stipendManualEnabled" data-structural="true"' + checked(stipendManualEnabled) + '><span>Изменить сумму стипендии вручную</span></label>'
+          + (stipendManualEnabled
+            ? '<label class="field"><span>Стипендия вручную, ₽ в месяц</span><input type="number" min="0" step="500" data-agent-id="' + agent.id + '" data-motivation-field="manualStipendMonthly" value="' + motivation.manualStipendMonthly + '"></label>'
+            : '')
+          + '</div>'
           + '<label class="field"><span>Как учитывать годовые мотивации?</span><select data-agent-id="' + agent.id + '" data-motivation-field="annualReserveMode">'
           + option('monthly', 'Распределить по 12 месяцам', motivation.annualReserveMode)
           + option('full', 'Учесть всю сумму сейчас', motivation.annualReserveMode)
           + option('manual', 'Ввести свою сумму в месяц', motivation.annualReserveMode)
           + '</select><small>По умолчанию безопаснее распределять сумму на 12 месяцев. Полный учёт сразу делает текущий месяц строже.</small></label>'
-          + '<label class="field"><span>Своя сумма резерва, ₽ в месяц</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="manualAnnualReserveMonthly" value="' + motivation.manualAnnualReserveMonthly + '"><small>Работает только в режиме “Ввести свою сумму в месяц”.</small></label>'
+          + (reserve.annualReserveMode === 'manual'
+            ? '<label class="field"><span>Своя сумма резерва, ₽ в месяц</span><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-motivation-field="manualAnnualReserveMonthly" value="' + motivation.manualAnnualReserveMonthly + '"><small>Срабатывает только после включения ручной суммы на месяц.</small></label>'
+            : '')
           + '</div></section>'
           + '<section class="motivation-section"><h4>Годовые мотивации</h4><div class="motivation-card-grid">'
           + renderTripMotivationCard(agent, { key: 'mountainSea', enabledField: 'mountainSeaEnabled', amountField: 'mountainSeaPerTrip', countField: 'mountainSeaTripsPerYear', overrideField: 'mountainSeaOverride', overrideLabel: 'Всё равно заложить поездки по РФ', title: 'Горы / Море', description: 'Поездки по РФ для агента' })
@@ -586,6 +929,7 @@
         + '</dl>'
         + '</article>';
     }).join('');
+    enhanceAgentCards();
   }
 
   function setText(id, value) {
@@ -839,6 +1183,7 @@
           dealCountNode.textContent = agent.dealCount;
         }
       }
+      syncAgentCardChrome(agent.id);
     });
     updateMotivationCardMetrics();
   }
@@ -867,6 +1212,52 @@
   }
 
   function renderProfitability(totals) {
+    function getRetentionScenarioClass(status) {
+      if (status === 'можно') {
+        return 'positive';
+      }
+      if (status === 'осторожно' || status === 'риск') {
+        return 'warning';
+      }
+      if (status === 'убыточно') {
+        return 'danger';
+      }
+      return 'neutral';
+    }
+
+    function moneyDelta(value) {
+      var amount = roundMoney(value);
+      return (amount > 0 ? '+' : '') + money(amount);
+    }
+
+    function renderRetentionScenarios(agentEconomics) {
+      var source = findSourceAgent(agentEconomics.id);
+      var result = compareAgentRetentionScenarios(source, agentEconomics);
+
+      return '<details class="retention-checker" data-agent-id="' + agentEconomics.id + '">'
+        + '<summary class="retention-checker-summary">'
+        + '<span class="retention-checker-main">'
+        + '<strong>Можно ли дать этому агенту лучшие условия?</strong>'
+        + '<small>Сравните текущие условия с повышенной шкалой и фиксированными процентами. Калькулятор покажет, сколько офис потеряет или сохранит в каждом варианте.</small>'
+        + '</span>'
+        + '<span class="retention-checker-action"><span class="summary-closed">Показать сценарии</span><span class="summary-open">Скрыть сценарии</span></span>'
+        + '</summary>'
+        + '<div class="table-wrap retention-checker-wrap">'
+        + '<table class="scheme-table retention-checker-table">'
+        + '<thead><tr><th>Сценарий</th><th>Выплата агенту</th><th>Остаётся офису</th><th>Разница к текущим</th><th>Вывод</th></tr></thead>'
+        + '<tbody>'
+        + result.scenarios.map(function (scenario) {
+          return '<tr class="' + getRetentionScenarioClass(scenario.status) + '">'
+            + '<td>' + escapeHtml(scenario.label) + '</td>'
+            + '<td>' + money(scenario.payout) + '</td>'
+            + '<td>' + money(scenario.contribution) + '</td>'
+            + '<td>' + moneyDelta(scenario.deltaFromCurrent) + '</td>'
+            + '<td>' + escapeHtml(scenario.status) + '</td>'
+            + '</tr>';
+        }).join('')
+        + '</tbody></table></div>'
+        + '</details>';
+    }
     elements.profitabilityList.innerHTML = totals.agentEconomics.map(function (agent) {
       var statusClass = agent.status === 'Окупается' ? 'positive' : (agent.status === 'На грани' ? 'warning' : 'danger');
       return '<article class="economics-row ' + statusClass + '">'
@@ -880,6 +1271,7 @@
         + '<div><dt>Доля расходов</dt><dd>' + money(agent.expenseShare) + '</dd></div>'
         + '<div><dt>Вклад</dt><dd>' + money(agent.contribution) + '</dd></div>'
         + '</dl>'
+        + renderRetentionScenarios(agent)
         + '</article>';
     }).join('');
   }
@@ -1072,6 +1464,14 @@
     restoreUiState(uiState);
   }
 
+  function shouldRerenderStructuralField(target, eventType) {
+    if (!target || target.dataset.structural !== 'true') {
+      return false;
+    }
+
+    return !(eventType === 'input' && target.tagName === 'INPUT');
+  }
+
   function syncAgentTotalsFromDeals(agent) {
     if (!agent) {
       return;
@@ -1115,12 +1515,12 @@
     }
 
     if (target.dataset.agentField) {
-      updateAgentField(target);
+      updateAgentField(target, event.type);
       return;
     }
 
     if (target.dataset.motivationField) {
-      updateMotivationField(target);
+      updateMotivationField(target, event.type);
       return;
     }
 
@@ -1149,7 +1549,7 @@
     }
   }
 
-  function updateAgentField(target) {
+  function updateAgentField(target, eventType) {
     var agent = findAgent(target.dataset.agentId);
     var field = target.dataset.agentField;
     if (!agent) {
@@ -1197,14 +1597,14 @@
       agent.dealsInput = splitCommissionIntoDeals(agent.commission, agent.dealCount);
     }
 
-    if (target.dataset.structural === 'true') {
+    if (shouldRerenderStructuralField(target, eventType)) {
       renderPreservingUiState();
     } else {
       updateTotalsOnly();
     }
   }
 
-  function updateMotivationField(target) {
+  function updateMotivationField(target, eventType) {
     var agent = findAgent(target.dataset.agentId);
     if (!agent) {
       return;
@@ -1213,6 +1613,9 @@
 
     if (target.dataset.motivationField === 'stipendMode' || target.dataset.motivationField === 'annualReserveMode' || target.dataset.motivationField === 'mode') {
       agent.motivation[target.dataset.motivationField] = target.value;
+    } else if (target.dataset.motivationField === 'stipendManualEnabled') {
+      agent.motivation[target.dataset.motivationField] = target.checked;
+      agent.motivation.stipendMode = target.checked ? 'manual' : 'auto';
     } else if (target.dataset.motivationField === 'specialManualReserveEnabled') {
       agent.motivation[target.dataset.motivationField] = target.checked;
       agent.motivation.mode = target.checked ? 'manual' : 'off';
@@ -1220,7 +1623,10 @@
       agent.motivation[target.dataset.motivationField] = positiveNumber(target.value);
     }
 
-    if (target.dataset.structural === 'true' || target.dataset.motivationField === 'mode' || target.dataset.motivationField === 'specialManualReserveEnabled') {
+    if (
+      shouldRerenderStructuralField(target, eventType)
+      || (eventType !== 'input' && (target.dataset.motivationField === 'mode' || target.dataset.motivationField === 'specialManualReserveEnabled' || target.dataset.motivationField === 'stipendManualEnabled'))
+    ) {
       renderPreservingUiState();
     } else {
       updateTotalsOnly();
@@ -1278,10 +1684,20 @@
       state.agents = state.agents.filter(function (agent) {
         return agent.id !== target.dataset.agentId;
       });
+      setAgentCollapsed(target.dataset.agentId, false);
       if (!state.agents.length) {
         state.agents.push(createAgent());
+        setAgentCollapsed(state.agents[0].id, false);
       }
       renderPreservingUiState();
+    }
+
+    if (target.dataset.action === 'toggle-agent-collapse') {
+      var nextCollapsed = !isAgentCollapsed(target.dataset.agentId);
+      setAgentCollapsed(target.dataset.agentId, nextCollapsed);
+      renderPreservingUiState(nextCollapsed
+        ? '[data-action="toggle-agent-collapse"][data-agent-id="' + target.dataset.agentId + '"]'
+        : '[data-agent-field="name"][data-agent-id="' + target.dataset.agentId + '"]');
     }
 
     if (target.dataset.action === 'add-deal') {
@@ -1311,6 +1727,7 @@
         return;
       }
       state = createBlankState();
+      uiState = createUiState();
       window.domianA4State = state;
       render();
     }
@@ -1320,6 +1737,7 @@
         return;
       }
       state = createState();
+      uiState = createUiState();
       window.domianA4State = state;
       render();
     }
@@ -1384,17 +1802,12 @@
   document.addEventListener('DOMContentLoaded', function () {
     collectElements();
     state = createState();
+    uiState = createUiState();
     document.body.addEventListener('input', onInput);
     document.body.addEventListener('change', onInput);
     document.body.addEventListener('click', onClick);
-    elements.addAgentBtn.addEventListener('click', function () {
-      state.agents.push(createAgent());
-      renderPreservingUiState('[data-agent-field="name"][data-agent-id="' + state.agents[state.agents.length - 1].id + '"]');
-    });
-    elements.addAgentBottomBtn.addEventListener('click', function () {
-      state.agents.push(createAgent());
-      renderPreservingUiState('[data-agent-field="name"][data-agent-id="' + state.agents[state.agents.length - 1].id + '"]');
-    });
+    elements.addAgentBtn.addEventListener('click', addAgentCard);
+    elements.addAgentBottomBtn.addEventListener('click', addAgentCard);
     render();
     window.domianA4State = state;
   });
