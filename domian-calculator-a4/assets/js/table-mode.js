@@ -2,6 +2,7 @@
   'use strict';
 
   var SNAPSHOT_KEY = 'domianA4TableSnapshot';
+  var SNAPSHOT_VERSION = 1;
   var DEFAULT_AGENT_ROWS = 10;
   var DEFAULT_TABLE_EXPENSE_CATEGORIES = [
     { id: 'rent', label: 'Аренда', amount: 0 },
@@ -42,6 +43,71 @@
 
   function option(value, label, current) {
     return '<option value="' + value + '"' + (String(value) === String(current) ? ' selected' : '') + '>' + label + '</option>';
+  }
+
+  function normalizeInputNumber(value) {
+    return String(value === null || value === undefined ? '' : value)
+      .replace(/[\s\u00a0\u202f]+/g, '')
+      .replace(',', '.');
+  }
+
+  function inputNumber(value) {
+    return positiveNumber(normalizeInputNumber(value));
+  }
+
+  function formatMoneyInputValue(value) {
+    var amount = inputNumber(value);
+    return amount > 0 ? Math.round(amount).toLocaleString('ru-RU').replace(/\u00a0/g, ' ') : '';
+  }
+
+  function formatMoneyInputRaw(value) {
+    var normalized = normalizeInputNumber(value);
+    var amount = positiveNumber(normalized);
+    if (!normalized) {
+      return '';
+    }
+    return amount > 0 ? formatMoneyInputValue(amount) : '0';
+  }
+
+  function moneyInput(attributes, value) {
+    return '<input type="text" inputmode="numeric" autocomplete="off" data-money-input="true" ' + attributes + ' value="' + formatMoneyInputValue(value) + '">';
+  }
+
+  function getMoneyCaretPosition(value, digitsBeforeCaret) {
+    var digitsSeen = 0;
+    for (var index = 0; index < value.length; index += 1) {
+      if (/\d/.test(value.charAt(index))) {
+        digitsSeen += 1;
+      }
+      if (digitsSeen >= digitsBeforeCaret) {
+        return index + 1;
+      }
+    }
+    return value.length;
+  }
+
+  function formatMoneyInputElement(input) {
+    if (!input || !input.dataset || input.dataset.moneyInput !== 'true') {
+      return;
+    }
+    if (input.dataset.composing === 'true') {
+      return;
+    }
+
+    var previousValue = input.value;
+    var selectionStart = typeof input.selectionStart === 'number' ? input.selectionStart : previousValue.length;
+    var digitsBeforeCaret = previousValue.slice(0, selectionStart).replace(/\D/g, '').length;
+    var nextValue = formatMoneyInputRaw(previousValue);
+
+    if (nextValue === previousValue) {
+      return;
+    }
+
+    input.value = nextValue;
+    if (typeof input.setSelectionRange === 'function') {
+      var nextCaret = getMoneyCaretPosition(nextValue, digitsBeforeCaret);
+      input.setSelectionRange(nextCaret, nextCaret);
+    }
   }
 
   function createBlankAgent() {
@@ -243,7 +309,7 @@
   }
 
   function getDealDisplayValue(deal) {
-    return deal === '' || deal === null || deal === undefined ? '' : positiveNumber(deal);
+    return deal === '' || deal === null || deal === undefined ? '' : formatMoneyInputValue(deal);
   }
 
   function splitCommissionIntoDeals(commission, dealCount) {
@@ -272,9 +338,31 @@
     if (!source || !source.motivation) {
       motivation.mode = positiveNumber(reserve) > 0 ? 'manual' : 'off';
       motivation.manualReserveMonthly = positiveNumber(reserve);
+      motivation.congressEnabled = false;
     }
 
     return motivation;
+  }
+
+  function normalizeStarSelection(agentSources) {
+    var starAssigned = false;
+
+    return (agentSources || []).map(function (source) {
+      var agent = Object.assign({}, source || {});
+
+      if (agent.motivation && typeof agent.motivation === 'object') {
+        agent.motivation = Object.assign({}, agent.motivation);
+        if (agent.motivation.starEnabled) {
+          if (starAssigned) {
+            agent.motivation.starEnabled = false;
+          } else {
+            starAssigned = true;
+          }
+        }
+      }
+
+      return agent;
+    });
   }
 
   function syncExactAgentTotals(agent) {
@@ -371,6 +459,15 @@
 
     try {
       var snapshot = JSON.parse(raw);
+      if (snapshot && snapshot.version !== undefined) {
+        if (snapshot.version !== SNAPSHOT_VERSION || !snapshot.state) {
+          return null;
+        }
+        snapshot = snapshot.state;
+      }
+      if (!snapshot || typeof snapshot !== 'object') {
+        return null;
+      }
       var agents = Array.isArray(snapshot.agents) && snapshot.agents.length
         ? snapshot.agents.map(toTableAgent)
         : createBlankAgents(DEFAULT_AGENT_ROWS);
@@ -455,7 +552,7 @@
   }
 
   function calculateTable() {
-    var activeSources = state.agents.filter(isActiveAgent);
+    var activeSources = normalizeStarSelection(state.agents.filter(isActiveAgent));
     var calculatedAgents = activeSources.map(function (agent) {
       return calculateAgent(getCalculationAgent(agent));
     });
@@ -592,7 +689,7 @@
 
   function renderCommissionCell(agent) {
     var exactMode = agent.commissionMode === 'exact';
-    return '<td><input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-agent-field="commission" value="' + positiveNumber(agent.commission) + '"' + (exactMode ? ' disabled' : '') + '></td>';
+    return '<td>' + moneyInput('data-agent-id="' + agent.id + '" data-agent-field="commission"' + (exactMode ? ' disabled' : ''), agent.commission) + '</td>';
   }
 
   function renderDealModeCell(agent) {
@@ -611,7 +708,7 @@
       + deals.map(function (deal, index) {
         return '<label class="exact-deal-field">'
           + '<span>Сделка ' + (index + 1) + '</span>'
-          + '<input type="number" min="0" step="1000" data-agent-id="' + agent.id + '" data-deal-index="' + index + '" value="' + getDealDisplayValue(deal) + '">'
+          + moneyInput('data-agent-id="' + agent.id + '" data-deal-index="' + index + '"', getDealDisplayValue(deal))
           + '<button class="row-button" type="button" data-action="remove-deal" data-agent-id="' + agent.id + '" data-deal-index="' + index + '"' + (deals.length === 1 ? ' disabled' : '') + '>Удалить</button>'
           + '</label>';
       }).join('')
@@ -680,15 +777,16 @@
       + option('false', 'Нет', String(Boolean(source.introduced)))
       + option('true', 'Да', String(Boolean(source.introduced)))
       + '</select></label>'
-      + '<label class="field"><span>Резерв мотиваций, ₽/мес</span><input type="number" min="0" step="500" data-agent-id="' + source.id + '" data-agent-field="motivationReserve" value="' + positiveNumber(source.motivationReserve) + '"></label>'
-      + '<label class="field"><span>Доля расходов, ₽</span><input type="number" min="0" step="1000" data-agent-id="' + source.id + '" data-agent-field="manualExpenseShare" value="' + positiveNumber(source.manualExpenseShare) + '"></label>'
+      + '<label class="field"><span>Резерв мотиваций, ₽/мес</span>' + moneyInput('data-agent-id="' + source.id + '" data-agent-field="motivationReserve"', source.motivationReserve) + '</label>'
+      + '<label class="field"><span>Доля расходов, ₽</span>' + moneyInput('data-agent-id="' + source.id + '" data-agent-field="manualExpenseShare"', source.manualExpenseShare) + '</label>'
       + '<label class="field"><span>Партнёрство подтверждено</span><select data-agent-id="' + source.id + '" data-agent-field="partnerConfirmed">'
       + option('false', 'Нет', String(Boolean(source.partnerConfirmed)))
       + option('true', 'Да', String(Boolean(source.partnerConfirmed)))
       + '</select></label>'
-      + '<label class="field"><span>Комиссия за квартал</span><input type="number" min="0" step="1000" data-agent-id="' + source.id + '" data-agent-field="quarterlyCommission" value="' + positiveNumber(source.quarterlyCommission) + '"></label>'
-      + '<label class="field"><span>Депозиты за квартал</span><input type="number" min="0" step="1000" data-agent-id="' + source.id + '" data-agent-field="quarterlyDeposits" value="' + positiveNumber(source.quarterlyDeposits) + '"></label>'
-      + '<label class="field"><span>Комиссия за полгода</span><input type="number" min="0" step="1000" data-agent-id="' + source.id + '" data-agent-field="halfYearCommission" value="' + positiveNumber(source.halfYearCommission) + '"></label>'
+      + '<label class="field"><span>Комиссия за квартал</span>' + moneyInput('data-agent-id="' + source.id + '" data-agent-field="quarterlyCommission"', source.quarterlyCommission) + '</label>'
+      + '<label class="field"><span>Депозиты за квартал</span>' + moneyInput('data-agent-id="' + source.id + '" data-agent-field="quarterlyDeposits"', source.quarterlyDeposits) + '</label>'
+      + '<label class="field"><span>Комиссия за полгода</span>' + moneyInput('data-agent-id="' + source.id + '" data-agent-field="halfYearCommission"', source.halfYearCommission) + '</label>'
+      + '<label class="field"><span>Депозиты перед поездкой</span>' + moneyInput('data-agent-id="' + source.id + '" data-agent-field="preTripQuarterDeposits"', source.preTripQuarterDeposits) + '</label>'
       + '</div></section>'
       + '<section class="detail-section"><h3>Расчётная справка</h3><dl class="detail-metrics">'
       + '<div><dt>Роялти-оценка</dt><dd>' + money(row ? row.royaltyShare : 0) + '</dd></div>'
@@ -746,7 +844,7 @@
     elements.officeExpensesList.innerHTML = state.expenseItems.map(function (item) {
       return '<div class="expense-item-row">'
         + '<label class="field"><span>Название расхода</span><input type="text" data-expense-item-id="' + item.id + '" data-expense-item-field="name" value="' + escapeHtml(item.name) + '"></label>'
-        + '<label class="field"><span>Сумма, ₽</span><input type="number" min="0" step="1000" data-expense-item-id="' + item.id + '" data-expense-item-field="amount" value="' + positiveNumber(item.amount) + '"></label>'
+        + '<label class="field"><span>Сумма, ₽</span>' + moneyInput('data-expense-item-id="' + item.id + '" data-expense-item-field="amount"', item.amount) + '</label>'
         + '<button class="row-button" type="button" data-action="remove-expense" data-expense-item-id="' + item.id + '"' + (state.expenseItems.length === 1 ? ' disabled' : '') + '>Удалить</button>'
         + '</div>';
     }).join('');
@@ -758,7 +856,7 @@
       elements.officeExpensesTotal.textContent = money(totals.expenses);
     }
     renderExpenseItems();
-    elements.ownerSalesInput.value = positiveNumber(state.ownerSales);
+    elements.ownerSalesInput.value = formatMoneyInputValue(state.ownerSales);
     elements.officeRoyalty.textContent = money(totals.royaltyWithOwner);
     elements.agentsTableBody.innerHTML = state.agents.map(function (agent) {
       var row = totals.rows.find(function (item) {
@@ -832,8 +930,9 @@
 
   function onInput(event) {
     var target = event.target;
+    formatMoneyInputElement(target);
     if (target.dataset.officeField === 'expenses') {
-      state.expenses = positiveNumber(target.value);
+      state.expenses = inputNumber(target.value);
       state.expenseItems = [];
       state.expenseCategories = [];
       renderPreservingFocus();
@@ -846,7 +945,7 @@
       });
       if (expenseItem) {
         if (target.dataset.expenseItemField === 'amount') {
-          expenseItem.amount = positiveNumber(target.value);
+          expenseItem.amount = inputNumber(target.value);
         } else {
           expenseItem.name = target.value;
         }
@@ -856,7 +955,7 @@
       return;
     }
     if (target.dataset.officeField === 'ownerSales') {
-      state.ownerSales = positiveNumber(target.value);
+      state.ownerSales = inputNumber(target.value);
       renderPreservingFocus();
       return;
     }
@@ -867,7 +966,7 @@
       }
       dealAgent.commissionMode = 'exact';
       dealAgent.dealsInput = normalizeDealsInput(dealAgent.dealsInput);
-      dealAgent.dealsInput[Number(target.dataset.dealIndex)] = target.value === '' ? '' : positiveNumber(target.value);
+      dealAgent.dealsInput[Number(target.dataset.dealIndex)] = normalizeInputNumber(target.value) === '' ? '' : inputNumber(target.value);
       syncExactAgentTotals(dealAgent);
       renderPreservingFocus();
       return;
@@ -879,7 +978,7 @@
       }
       rateAgent.paymentType = 'boosted';
       rateAgent.boostedRates = normalizeBoostedRates(rateAgent.boostedRates);
-      rateAgent.boostedRates[Number(target.dataset.rateIndex)] = positiveNumber(target.value);
+      rateAgent.boostedRates[Number(target.dataset.rateIndex)] = inputNumber(target.value);
       renderPreservingFocus();
       return;
     }
@@ -909,13 +1008,13 @@
           agent.dealsInput = [];
         }
       } else if (field === 'dealCount') {
-        agent.dealCount = Math.max(1, Math.floor(positiveNumber(target.value)));
+        agent.dealCount = Math.max(1, Math.floor(inputNumber(target.value)));
       } else {
-        agent[field] = positiveNumber(target.value);
+        agent[field] = inputNumber(target.value);
         if (field === 'motivationReserve') {
           agent.motivation = Object.assign({}, DEFAULT_MOTIVATION, agent.motivation || {}, {
-            mode: positiveNumber(target.value) > 0 ? 'manual' : 'off',
-            manualReserveMonthly: positiveNumber(target.value)
+            mode: inputNumber(target.value) > 0 ? 'manual' : 'off',
+            manualReserveMonthly: inputNumber(target.value)
           });
         }
       }
@@ -1025,6 +1124,18 @@
     collectElements();
     state = createInitialState();
     elements.snapshotNotice.textContent = 'Таблица открыта пустой. Можно заполнить строки вручную или загрузить данные из A4 кнопкой выше.';
+    document.body.addEventListener('compositionstart', function (event) {
+      if (event.target && event.target.dataset && event.target.dataset.moneyInput === 'true') {
+        event.target.dataset.composing = 'true';
+      }
+    });
+    document.body.addEventListener('compositionend', function (event) {
+      if (event.target && event.target.dataset && event.target.dataset.moneyInput === 'true') {
+        event.target.dataset.composing = 'false';
+        formatMoneyInputElement(event.target);
+        onInput({ target: event.target, type: 'input' });
+      }
+    });
     document.body.addEventListener('input', onInput);
     document.body.addEventListener('change', onInput);
     document.body.addEventListener('click', onClick);

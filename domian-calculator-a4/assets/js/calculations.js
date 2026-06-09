@@ -279,8 +279,6 @@
       || source.mountainSeaEnabled
       || source.travelEnabled
       || source.corporateEnabled
-      || source.congressEnabled
-      || source.starEnabled
       || positiveNumber(source.manualAnnualReserveMonthly) > 0
     )) {
       return 'rules';
@@ -381,7 +379,10 @@
     var specialTermsOnlyManual = hasSpecialPaymentTerms(context);
 
     if (specialTermsOnlyManual) {
-      total = motivationMode === 'manual' && specialManualReserveEnabled ? manualReserveMonthly : 0;
+      total = annualReserveMonthly;
+      if (motivationMode === 'manual' && specialManualReserveEnabled) {
+        total += manualReserveMonthly;
+      }
     }
 
     return {
@@ -530,7 +531,8 @@
 
   function calculateOffice(state) {
     var sourceAgents = state.agents || [];
-    var agents = sourceAgents.map(calculateAgent);
+    var normalizedAgents = normalizeStarSelection(sourceAgents);
+    var agents = normalizedAgents.map(calculateAgent);
     var agentTurnover = agents.reduce(function (sum, agent) { return sum + agent.commission; }, 0);
     var ownerSales = positiveNumber(state.ownerSales);
     var totalTurnover = agentTurnover + ownerSales;
@@ -560,7 +562,7 @@
       resultWithOwnerBeforeReserves: resultWithOwnerBeforeReserves,
       resultWithoutOwner: resultWithoutOwner,
       resultWithOwner: resultWithOwner,
-      agentEconomics: calculateAgentEconomics(agents, expenses, sourceAgents),
+      agentEconomics: calculateAgentEconomics(agents, expenses, normalizedAgents),
       warningOwnerDependency: resultWithoutOwner < -0.5 && resultWithOwner > 0.5
     };
   }
@@ -628,6 +630,26 @@
     }
 
     return agent;
+  }
+
+  function normalizeStarSelection(agentSources) {
+    var starAssigned = false;
+
+    return (agentSources || []).map(function (source) {
+      var agent = cloneAgentForScenario(source);
+
+      if (agent.motivation && typeof agent.motivation === 'object') {
+        if (agent.motivation.starEnabled) {
+          if (starAssigned) {
+            agent.motivation.starEnabled = false;
+          } else {
+            starAssigned = true;
+          }
+        }
+      }
+
+      return agent;
+    });
   }
 
   function getRetentionScenarioStatus(contribution, isBaseline) {

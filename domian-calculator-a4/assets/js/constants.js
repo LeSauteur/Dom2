@@ -58,7 +58,7 @@
     travelTripsPerYear: 2,
     corporateEnabled: false,
     corporatePerYear: 20000,
-    congressEnabled: false,
+    congressEnabled: true,
     congressPerYear: 3500,
     starEnabled: false,
     starPerYear: 5000

@@ -21,6 +21,52 @@ function loadCalculator() {
   return context.window;
 }
 
+function loadAppHelpers() {
+  const context = {
+    window: {},
+    console,
+    document: {
+      addEventListener() {},
+      body: {
+        addEventListener() {}
+      },
+      getElementById() {
+        return null;
+      }
+    },
+    localStorage: {
+      setItem() {},
+      removeItem() {}
+    }
+  };
+  vm.createContext(context);
+
+  [
+    'assets/js/constants.js',
+    'assets/js/calculations.js'
+  ].forEach((fileName) => {
+    const source = fs.readFileSync(path.join(rootDir, fileName), 'utf8');
+    vm.runInContext(source, context, { filename: fileName });
+    Object.assign(context, context.window);
+  });
+
+  const source = fs.readFileSync(path.join(rootDir, 'assets/js/app.js'), 'utf8')
+    .replace(/\}\(\)\);\s*$/, [
+      'window.__appTest = {',
+      '  normalizeInputNumber: normalizeInputNumber,',
+      '  inputNumber: inputNumber,',
+      '  formatMoneyInputRaw: formatMoneyInputRaw,',
+      '  createState: createState,',
+      '  createBlankState: createBlankState',
+      '};',
+      '}());'
+    ].join('\n'));
+
+  vm.runInContext(source, context, { filename: 'assets/js/app.js' });
+  Object.assign(context, context.window);
+  return context.window.__appTest;
+}
+
 function test(name, fn) {
   try {
     fn();
@@ -37,7 +83,54 @@ function closeTo(actual, expected) {
 }
 
 const calculator = loadCalculator();
+const appHelpers = loadAppHelpers();
 const appSource = fs.readFileSync(path.join(rootDir, 'assets/js/app.js'), 'utf8');
+
+test('A4 money parser accepts regular, non-breaking and narrow non-breaking spaces', () => {
+  [
+    '1500000',
+    '1 500 000',
+    '1\u00a0500\u00a0000',
+    '1\u202f500\u202f000',
+    '1500 000'
+  ].forEach((value) => {
+    assert.equal(appHelpers.inputNumber(value), 1500000);
+  });
+  assert.equal(appHelpers.inputNumber('0'), 0);
+  assert.equal(appHelpers.inputNumber(''), 0);
+  assert.equal(appHelpers.formatMoneyInputRaw(''), '');
+  assert.equal(appHelpers.formatMoneyInputRaw('0'), '0');
+});
+
+test('A4 state factories create current versioned state', () => {
+  assert.equal(appHelpers.createState().version, 1);
+  assert.equal(appHelpers.createBlankState().version, 1);
+});
+
+test('stipend recalculates when quarterly commission changes from 650000 to 1500000', () => {
+  const baseAgent = {
+    id: 'stipend-agent',
+    name: 'Stipend agent',
+    commission: 0,
+    dealCount: 1,
+    paymentType: 'standard',
+    status: 'partner',
+    partnerConfirmed: true,
+    quarterlyDeposits: 0,
+    motivation: Object.assign({}, calculator.DEFAULT_MOTIVATION, {
+      mode: 'rules',
+      stipendMode: 'auto',
+      congressEnabled: false,
+      starEnabled: false
+    })
+  };
+
+  const low = calculator.calculateAgent(Object.assign({}, baseAgent, { quarterlyCommission: 650000 }));
+  const high = calculator.calculateAgent(Object.assign({}, baseAgent, { quarterlyCommission: 1500000 }));
+
+  assert.equal(low.motivation.stipendMonthly, 3000);
+  assert.equal(high.motivation.stipendMonthly, 7000);
+});
 
 test('royalty boundaries use strict less-than limits', () => {
   [
@@ -352,6 +445,24 @@ test('mountain sea override is independent and legacy travel override still unlo
   closeTo(legacy.mountainSeaAnnual, 30000);
 });
 
+test('special payment terms keep congress and star as separate annual expenses', () => {
+  const reserve = calculator.calculateMotivationReserve({
+    paymentType: 'fixed',
+    motivation: {
+      annualReserveMode: 'monthly',
+      congressEnabled: true,
+      congressPerYear: 3500,
+      starEnabled: true,
+      starPerYear: 5000
+    }
+  });
+
+  closeTo(reserve.congressAnnual, 3500);
+  closeTo(reserve.starAnnual, 5000);
+  closeTo(reserve.annualReserveMonthly, (3500 + 5000) / 12);
+  closeTo(reserve.monthly, (3500 + 5000) / 12);
+});
+
 test('travel reserve defaults to two international trips per year', () => {
   assert.equal(calculator.DEFAULT_MOTIVATION.travelPerTrip, 100000);
   assert.equal(calculator.DEFAULT_MOTIVATION.travelTripsPerYear, 2);
@@ -475,6 +586,45 @@ test('agent profitability distributes office expenses across active agents', () 
   assert.equal(first.royaltyShare, 7000);
   assert.equal(first.contribution, -87000);
   assert.equal(first.status, 'Не окупается');
+});
+
+test('office calculations keep star assigned to a single agent', () => {
+  const totals = calculator.calculateOffice({
+    expenses: [],
+    ownerSales: 0,
+    agents: [
+      {
+        id: 'star-a',
+        name: 'Star A',
+        commission: 0,
+        dealCount: 1,
+        paymentType: 'standard',
+        status: 'partner',
+        introduced: false,
+        motivation: {
+          congressEnabled: false,
+          starEnabled: true,
+          annualReserveMode: 'monthly'
+        }
+      },
+      {
+        id: 'star-b',
+        name: 'Star B',
+        commission: 0,
+        dealCount: 1,
+        paymentType: 'standard',
+        status: 'partner',
+        introduced: false,
+        motivation: {
+          congressEnabled: false,
+          starEnabled: true,
+          annualReserveMode: 'monthly'
+        }
+      }
+    ]
+  });
+
+  closeTo(totals.motivationReserves, 5000 / 12);
 });
 
 test('scheme checker compares variants and finds break-even commission', () => {

@@ -6,6 +6,7 @@ const vm = require('node:vm');
 const rootDir = path.resolve(__dirname, '..');
 
 function loadTableMode() {
+  const localStorageStore = {};
   const context = {
     window: {},
     console,
@@ -20,8 +21,14 @@ function loadTableMode() {
       }
     },
     localStorage: {
-      getItem() {
-        return null;
+      getItem(key) {
+        return Object.prototype.hasOwnProperty.call(localStorageStore, key) ? localStorageStore[key] : null;
+      },
+      setItem(key, value) {
+        localStorageStore[key] = String(value);
+      },
+      removeItem(key) {
+        delete localStorageStore[key];
       }
     }
   };
@@ -46,6 +53,9 @@ function loadTableMode() {
       '  getState: function () { return state; },',
       '  setElements: function (nextElements) { elements = nextElements; },',
       '  onInput: onInput,',
+      '  inputNumber: inputNumber,',
+      '  formatMoneyInputRaw: formatMoneyInputRaw,',
+      '  loadSnapshotState: loadSnapshotState,',
       '  isActiveAgent: isActiveAgent,',
       '  createInitialState: createInitialState,',
       '  mapSnapshotExpenses: mapSnapshotExpenses,',
@@ -57,6 +67,7 @@ function loadTableMode() {
 
   vm.runInContext(tableSource, context, { filename: 'assets/js/table-mode.js' });
   Object.assign(context, context.window);
+  context.window.__localStorageStore = localStorageStore;
   return context.window;
 }
 
@@ -107,6 +118,76 @@ function createRenderElements() {
     diagnosisBox: { className: '', innerHTML: '' }
   };
 }
+
+test('table money parser accepts spaces and preserves zero and blank input semantics', () => {
+  [
+    '1500000',
+    '1 500 000',
+    '1\u00a0500\u00a0000',
+    '1\u202f500\u202f000',
+    '1500 000'
+  ].forEach((value) => {
+    assert.equal(table.inputNumber(value), 1500000);
+  });
+  assert.equal(table.inputNumber('0'), 0);
+  assert.equal(table.inputNumber(''), 0);
+  assert.equal(table.formatMoneyInputRaw(''), '');
+  assert.equal(table.formatMoneyInputRaw('0'), '0');
+});
+
+test('table input stores formatted money fields as normalized numbers', () => {
+  const elements = createRenderElements();
+  const state = table.createInitialState();
+  const agent = state.agents[0];
+
+  table.setElements(elements);
+  table.setState(state);
+  tableInput({
+    value: '1 500 000',
+    dataset: {
+      agentId: agent.id,
+      agentField: 'commission',
+      moneyInput: 'true'
+    },
+    setSelectionRange() {},
+    selectionStart: 9
+  });
+
+  assert.equal(table.getState().agents[0].commission, 1500000);
+});
+
+test('table loadSnapshotState accepts current versioned A4 snapshot and rejects incompatible versions', () => {
+  const currentSnapshot = {
+    version: 1,
+    state: makeA4State([
+      {
+        id: 'snapshot-agent',
+        name: 'Snapshot agent',
+        commissionMode: 'exact',
+        dealsInput: [100000, 200000],
+        paymentType: 'fixed',
+        fixedRate: 80,
+        motivation: Object.assign({}, tableWindow.DEFAULT_MOTIVATION, {
+          mode: 'rules',
+          congressEnabled: true,
+          starEnabled: true
+        })
+      }
+    ], { expenses: 123000, ownerSales: 456000 })
+  };
+
+  tableWindow.__localStorageStore.domianA4TableSnapshot = JSON.stringify(currentSnapshot);
+  const loaded = table.loadSnapshotState();
+
+  assert.equal(loaded.ownerSales, 456000);
+  assert.equal(loaded.agents[0].commissionMode, 'exact');
+  assert.deepEqual(Array.from(loaded.agents[0].dealsInput), [100000, 200000]);
+  assert.equal(loaded.agents[0].motivation.congressEnabled, true);
+  assert.equal(loaded.agents[0].motivation.starEnabled, true);
+
+  tableWindow.__localStorageStore.domianA4TableSnapshot = JSON.stringify({ version: 999, state: currentSnapshot.state });
+  assert.equal(table.loadSnapshotState(), null);
+});
 
 const parityFields = [
   'agentTurnover',
@@ -425,6 +506,47 @@ test('A4 and table-mode office totals match across required parity scenarios', (
       fixedRate: 70
     })
   ], { expenses: 200000, ownerSales: 500000 });
+});
+
+test('table-mode keeps only one star assignment across active rows', () => {
+  const totals = table.calculateTableWithState({
+    expenses: 0,
+    ownerSales: 0,
+    agents: [
+      table.toTableAgent({
+        id: 'table-star-a',
+        name: 'Table Star A',
+        commissionMode: 'quick',
+        commission: 0,
+        dealCount: 1,
+        paymentType: 'standard',
+        status: 'partner',
+        introduced: false,
+        motivation: {
+          congressEnabled: false,
+          starEnabled: true,
+          annualReserveMode: 'monthly'
+        }
+      }),
+      table.toTableAgent({
+        id: 'table-star-b',
+        name: 'Table Star B',
+        commissionMode: 'quick',
+        commission: 0,
+        dealCount: 1,
+        paymentType: 'standard',
+        status: 'partner',
+        introduced: false,
+        motivation: {
+          congressEnabled: false,
+          starEnabled: true,
+          annualReserveMode: 'monthly'
+        }
+      })
+    ]
+  });
+
+  closeTo(totals.motivationReserves, 5000 / 12);
 });
 
 test('table-mode empty row is not active only because dealCount is greater than one', () => {

@@ -6,6 +6,9 @@
   var idCounter = 1;
   var expenseCounter = 100;
   var elements = {};
+  var STATE_VERSION = 1;
+  var TABLE_SNAPSHOT_VERSION = 1;
+  var TABLE_SNAPSHOT_KEY = 'domianA4TableSnapshot';
   var DEFAULT_AGENT_NAME = 'Новый агент';
 
   function clone(value) {
@@ -50,7 +53,9 @@
       travelOverride: false,
       eventsOverride: false,
       specialTermsOverride: false,
-      motivation: createMotivation()
+      motivation: Object.assign(createMotivation(), {
+        congressEnabled: false
+      })
     };
   }
 
@@ -75,8 +80,6 @@
       || motivation.mountainSeaEnabled
       || motivation.travelEnabled
       || motivation.corporateEnabled
-      || motivation.congressEnabled
-      || motivation.starEnabled
       || positiveNumber(motivation.manualAnnualReserveMonthly) > 0
     ) {
       return 'rules';
@@ -134,6 +137,7 @@
     });
 
     return {
+      version: STATE_VERSION,
       expenses: clone(DEFAULT_EXPENSES),
       agents: agents,
       ownerSales: 150000,
@@ -151,6 +155,7 @@
 
   function createBlankState() {
     return {
+      version: STATE_VERSION,
       expenses: [createBlankExpense()],
       agents: [normalizeAgent(createAgent())],
       ownerSales: 0,
@@ -187,7 +192,7 @@
 
   function normalizeInputNumber(value) {
     return String(value === null || value === undefined ? '' : value)
-      .replace(/\s+/g, '')
+      .replace(/[\s\u00a0\u202f]+/g, '')
       .replace(',', '.');
   }
 
@@ -228,6 +233,9 @@
 
   function formatMoneyInputElement(input) {
     if (!input || !input.dataset || input.dataset.moneyInput !== 'true') {
+      return;
+    }
+    if (input.dataset.composing === 'true') {
       return;
     }
 
@@ -375,13 +383,24 @@
     var available = config.alwaysAvailable ? true : reserve[config.key + 'Available'];
     var reason = config.alwaysAvailable ? 'available' : reserve[config.key + 'Reason'];
     var overridden = !available && (agent[config.overrideField] || agent.motivationOverride);
-    var locked = !available && !overridden;
+    var selectedStarAgentId = getSelectedStarAgentId();
+    var starTakenByAnotherAgent = config.key === 'star'
+      && Boolean(selectedStarAgentId)
+      && selectedStarAgentId !== agent.id
+      && !motivation.starEnabled;
+    var locked = (!available && !overridden) || starTakenByAnotherAgent;
 
     return '<article class="motivation-card' + (locked ? ' is-blocked' : '') + '">'
       + '<label class="motivation-card-toggle"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="' + config.enabledField + '"' + checked(motivation[config.enabledField]) + disabled(locked) + '>'
       + '<span><strong>' + config.title + '</strong><small>' + config.description + '</small></span></label>'
-      + (config.alwaysAvailable ? '<p class="eligibility-note ok">Конгресс и Звезда учитываются как обязательный годовой расход собственника и доступны независимо от условий агента.</p>' : renderEligibilityNote(available, reason, overridden))
-      + (!available ? renderOverrideCheckbox(agent, config.overrideField, config.overrideLabel) : '')
+      + (config.key === 'congress'
+        ? '<p class="eligibility-note ok">Конгресс включён по умолчанию. Снимите галочку, если его нужно исключить из резерва этого агента.</p>'
+        : (config.key === 'star'
+          ? (starTakenByAnotherAgent
+            ? '<p class="eligibility-note blocked">Звезда уже назначена другому агенту. Сначала снимите её там, чтобы выбрать здесь.</p>'
+            : '<p class="eligibility-note ok">Звезду можно назначить только одному агенту. Если это не лучший агент, оставьте её выключенной.</p>')
+          : (config.alwaysAvailable ? '<p class="eligibility-note ok">Звезда и конгресс учитываются как отдельные годовые расходы и не зависят от стандартных мотиваций.</p>' : renderEligibilityNote(available, reason, overridden))))
+      + (!available && !starTakenByAnotherAgent ? renderOverrideCheckbox(agent, config.overrideField, config.overrideLabel) : '')
       + '<div class="motivation-card-fields single">'
       + '<label class="field"><span>Сумма в год, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-motivation-field="' + config.amountField + '"' + disabled(locked), motivation[config.amountField]) + '</label>'
       + '</div>'
@@ -464,6 +483,18 @@
     return mode;
   }
 
+  function getSelectedStarAgentId() {
+    var selected = null;
+    (state && state.agents || []).some(function (agent) {
+      if (agent && agent.motivation && agent.motivation.starEnabled) {
+        selected = agent.id;
+        return true;
+      }
+      return false;
+    });
+    return selected;
+  }
+
   function getAgentDisplayName(agent) {
     var name = String(agent && agent.name || '').trim();
     return name || DEFAULT_AGENT_NAME;
@@ -502,9 +533,7 @@
       || Boolean(motivation.stipendManualEnabled)
       || Boolean(motivation.mountainSeaEnabled)
       || Boolean(motivation.travelEnabled)
-      || Boolean(motivation.corporateEnabled)
-      || Boolean(motivation.congressEnabled)
-      || Boolean(motivation.starEnabled);
+      || Boolean(motivation.corporateEnabled);
   }
 
   function isAgentDraft(agent, result) {
@@ -1711,7 +1740,19 @@
       return;
     }
     agent.motivation = Object.assign(createMotivation(), agent.motivation || {});
+    if (target.dataset.motivationFlag === 'starEnabled' && target.checked) {
+      state.agents.forEach(function (otherAgent) {
+        if (otherAgent.id !== agent.id) {
+          otherAgent.motivation = Object.assign(createMotivation(), otherAgent.motivation || {});
+          otherAgent.motivation.starEnabled = false;
+        }
+      });
+    }
     agent.motivation[target.dataset.motivationFlag] = target.checked;
+    if (target.dataset.motivationFlag === 'starEnabled') {
+      renderPreservingUiState('[data-agent-id="' + agent.id + '"][data-motivation-flag="starEnabled"]');
+      return;
+    }
     updateTotalsOnly();
   }
 
@@ -1730,7 +1771,10 @@
 
   function openTableModePage() {
     try {
-      localStorage.setItem('domianA4TableSnapshot', JSON.stringify(clone(state)));
+      localStorage.setItem(TABLE_SNAPSHOT_KEY, JSON.stringify({
+        version: TABLE_SNAPSHOT_VERSION,
+        state: clone(Object.assign({}, state, { version: STATE_VERSION }))
+      }));
     } catch (error) {
       console.warn('Не удалось сохранить данные для табличного режима.', error);
     }
@@ -1800,6 +1844,11 @@
       }
       state = createBlankState();
       uiState = createUiState();
+      try {
+        localStorage.removeItem(TABLE_SNAPSHOT_KEY);
+      } catch (error) {
+        console.warn('Could not clear table snapshot.', error);
+      }
       window.domianA4State = state;
       render();
     }
@@ -1875,6 +1924,18 @@
     collectElements();
     state = createState();
     uiState = createUiState();
+    document.body.addEventListener('compositionstart', function (event) {
+      if (event.target && event.target.dataset && event.target.dataset.moneyInput === 'true') {
+        event.target.dataset.composing = 'true';
+      }
+    });
+    document.body.addEventListener('compositionend', function (event) {
+      if (event.target && event.target.dataset && event.target.dataset.moneyInput === 'true') {
+        event.target.dataset.composing = 'false';
+        formatMoneyInputElement(event.target);
+        onInput({ target: event.target, type: 'input' });
+      }
+    });
     document.body.addEventListener('input', onInput);
     document.body.addEventListener('change', onInput);
     document.body.addEventListener('click', onClick);
