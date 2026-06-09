@@ -302,34 +302,149 @@
     var motivationMode = inferMotivationMode(agent, source, context);
     var manualReserveMonthly = positiveNumber(source.manualReserveMonthly);
     var specialManualReserveEnabled = Boolean(source.specialManualReserveEnabled);
+    var annualReserveMode = source.annualReserveMode || DEFAULT_MOTIVATION.annualReserveMode;
+    var meaningfulAgent = isMeaningfulAgentSource(agent || {}, null) || Boolean(source.starEnabled);
+    var hasMotivationObject = Boolean(agent && agent.motivation);
+    var congressEnabled = source.congressEnabled === true || (hasMotivationObject && source.congressEnabled !== false);
+    var congressAnnual = meaningfulAgent && congressEnabled
+      ? readNumberOrFallback(agent, source, 'congressPerYear', DEFAULT_MOTIVATION.congressPerYear)
+      : 0;
+    var starAnnual = source.starEnabled
+      ? readNumberOrFallback(agent, source, 'starPerYear', DEFAULT_MOTIVATION.starPerYear)
+      : 0;
+    var mandatoryAnnualTotal = congressAnnual + starAnnual;
+    var mandatoryAnnualMonthly = annualReserveMode === 'full' ? mandatoryAnnualTotal : mandatoryAnnualTotal / 12;
+    var emptyEligibility = getBlockedResult('specialTerms');
 
     if (agent && agent.status === 'trainee') {
+      var traineeManualMonthly = motivationMode === 'manual' ? manualReserveMonthly : 0;
+      var traineeTotal = traineeManualMonthly + mandatoryAnnualMonthly;
       return {
         mode: motivationMode === 'manual' ? 'manual' : 'off',
-        total: motivationMode === 'manual' ? manualReserveMonthly : 0,
-        monthly: motivationMode === 'manual' ? manualReserveMonthly : 0,
+        stipendMode: 'off',
+        quarterlyResult: context.quarterlyCommission,
+        stipendLevel: 0,
+        stipendAvailable: false,
+        stipendReason: 'specialTerms',
+        stipendOverride: false,
+        stipendMonthly: 0,
+        annualReserveMode: annualReserveMode,
+        annualReserveTotal: mandatoryAnnualTotal,
+        annualReserveMonthly: mandatoryAnnualMonthly,
+        partnershipConfirmed: context.partnerConfirmed,
+        partnershipConfirmedAuto: context.partnerConfirmedAuto,
+        quarterlyDeposits: context.quarterlyDeposits,
+        halfYearCommission: context.halfYearCommission,
+        preTripQuarterDeposits: context.preTripQuarterDeposits,
+        mountainSeaAvailable: false,
+        mountainSeaReason: emptyEligibility.reason,
+        mountainSeaAnnual: 0,
+        mountainSeaMonthly: 0,
+        travelAvailable: false,
+        travelReason: emptyEligibility.reason,
+        travelAnnual: 0,
+        travelMonthly: 0,
+        corporateAvailable: false,
+        corporateReason: emptyEligibility.reason,
+        corporateAnnual: 0,
+        corporateMonthly: 0,
+        congressAvailable: true,
+        congressAnnual: congressAnnual,
+        congressMonthly: annualReserveMode === 'full' ? congressAnnual : congressAnnual / 12,
+        starAvailable: true,
+        starAnnual: starAnnual,
+        starMonthly: annualReserveMode === 'full' ? starAnnual : starAnnual / 12,
         manualReserveMonthly: manualReserveMonthly,
-        specialManualReserveEnabled: false
+        specialManualReserveEnabled: false,
+        total: traineeTotal,
+        monthly: traineeTotal
       };
     }
 
     if (motivationMode === 'off' && !hasSpecialPaymentTerms(context)) {
       return {
         mode: 'off',
-        total: 0,
-        monthly: 0,
+        stipendMode: 'off',
+        quarterlyResult: context.quarterlyCommission,
+        stipendLevel: 0,
+        stipendAvailable: false,
+        stipendReason: 'specialTerms',
+        stipendOverride: false,
+        stipendMonthly: 0,
+        annualReserveMode: annualReserveMode,
+        annualReserveTotal: mandatoryAnnualTotal,
+        annualReserveMonthly: mandatoryAnnualMonthly,
+        partnershipConfirmed: context.partnerConfirmed,
+        partnershipConfirmedAuto: context.partnerConfirmedAuto,
+        quarterlyDeposits: context.quarterlyDeposits,
+        halfYearCommission: context.halfYearCommission,
+        preTripQuarterDeposits: context.preTripQuarterDeposits,
+        mountainSeaAvailable: false,
+        mountainSeaReason: 'specialTerms',
+        mountainSeaAnnual: 0,
+        mountainSeaMonthly: 0,
+        travelAvailable: false,
+        travelReason: 'specialTerms',
+        travelAnnual: 0,
+        travelMonthly: 0,
+        corporateAvailable: false,
+        corporateReason: 'specialTerms',
+        corporateAnnual: 0,
+        corporateMonthly: 0,
+        congressAvailable: true,
+        congressAnnual: congressAnnual,
+        congressMonthly: annualReserveMode === 'full' ? congressAnnual : congressAnnual / 12,
+        starAvailable: true,
+        starAnnual: starAnnual,
+        starMonthly: annualReserveMode === 'full' ? starAnnual : starAnnual / 12,
         manualReserveMonthly: manualReserveMonthly,
-        specialManualReserveEnabled: specialManualReserveEnabled
+        specialManualReserveEnabled: specialManualReserveEnabled,
+        total: mandatoryAnnualMonthly,
+        monthly: mandatoryAnnualMonthly
       };
     }
 
     if (motivationMode === 'manual' && !hasSpecialPaymentTerms(context)) {
+      var manualTotal = manualReserveMonthly + mandatoryAnnualMonthly;
       return {
         mode: 'manual',
-        total: manualReserveMonthly,
-        monthly: manualReserveMonthly,
+        stipendMode: 'off',
+        quarterlyResult: context.quarterlyCommission,
+        stipendLevel: 0,
+        stipendAvailable: false,
+        stipendReason: 'specialTerms',
+        stipendOverride: false,
+        stipendMonthly: 0,
+        annualReserveMode: annualReserveMode,
+        annualReserveTotal: mandatoryAnnualTotal,
+        annualReserveMonthly: mandatoryAnnualMonthly,
+        partnershipConfirmed: context.partnerConfirmed,
+        partnershipConfirmedAuto: context.partnerConfirmedAuto,
+        quarterlyDeposits: context.quarterlyDeposits,
+        halfYearCommission: context.halfYearCommission,
+        preTripQuarterDeposits: context.preTripQuarterDeposits,
+        mountainSeaAvailable: false,
+        mountainSeaReason: 'specialTerms',
+        mountainSeaAnnual: 0,
+        mountainSeaMonthly: 0,
+        travelAvailable: false,
+        travelReason: 'specialTerms',
+        travelAnnual: 0,
+        travelMonthly: 0,
+        corporateAvailable: false,
+        corporateReason: 'specialTerms',
+        corporateAnnual: 0,
+        corporateMonthly: 0,
+        congressAvailable: true,
+        congressAnnual: congressAnnual,
+        congressMonthly: annualReserveMode === 'full' ? congressAnnual : congressAnnual / 12,
+        starAvailable: true,
+        starAnnual: starAnnual,
+        starMonthly: annualReserveMode === 'full' ? starAnnual : starAnnual / 12,
         manualReserveMonthly: manualReserveMonthly,
-        specialManualReserveEnabled: specialManualReserveEnabled
+        specialManualReserveEnabled: specialManualReserveEnabled,
+        total: manualTotal,
+        monthly: manualTotal
       };
     }
 
@@ -351,7 +466,6 @@
       stipendMonthly = stipendLevel.monthly;
     }
 
-    var annualReserveMode = source.annualReserveMode || DEFAULT_MOTIVATION.annualReserveMode;
     var mountainSeaAnnual = source.mountainSeaEnabled && mountainSeaAllowed
       ? readNumberOrFallback(agent, source, 'mountainSeaPerTrip', DEFAULT_MOTIVATION.mountainSeaPerTrip) * readNumberOrFallback(agent, source, 'mountainSeaTripsPerYear', DEFAULT_MOTIVATION.mountainSeaTripsPerYear)
       : 0;
@@ -359,15 +473,13 @@
       ? readNumberOrFallback(agent, source, 'travelPerTrip', DEFAULT_MOTIVATION.travelPerTrip) * readNumberOrFallback(agent, source, 'travelTripsPerYear', DEFAULT_MOTIVATION.travelTripsPerYear)
       : 0;
     var corporateAnnual = source.corporateEnabled && corporateAllowed ? readNumberOrFallback(agent, source, 'corporatePerYear', DEFAULT_MOTIVATION.corporatePerYear) : 0;
-    var congressAnnual = source.congressEnabled ? readNumberOrFallback(agent, source, 'congressPerYear', DEFAULT_MOTIVATION.congressPerYear) : 0;
-    var starAnnual = source.starEnabled ? readNumberOrFallback(agent, source, 'starPerYear', DEFAULT_MOTIVATION.starPerYear) : 0;
-    var annualReserveTotal = mountainSeaAnnual + travelAnnual + corporateAnnual + congressAnnual + starAnnual;
-    var annualReserveMonthly = annualReserveTotal / 12;
+    var standardAnnualTotal = mountainSeaAnnual + travelAnnual + corporateAnnual;
+    var standardAnnualMonthly = standardAnnualTotal / 12;
 
     if (annualReserveMode === 'full') {
-      annualReserveMonthly = annualReserveTotal;
+      standardAnnualMonthly = standardAnnualTotal;
     } else if (annualReserveMode === 'manual') {
-      annualReserveMonthly = positiveNumber(source.manualAnnualReserveMonthly);
+      standardAnnualMonthly = positiveNumber(source.manualAnnualReserveMonthly);
     }
 
     var mountainSeaMonthly = annualReserveMode === 'full' ? mountainSeaAnnual : mountainSeaAnnual / 12;
@@ -375,23 +487,22 @@
     var corporateMonthly = annualReserveMode === 'full' ? corporateAnnual : corporateAnnual / 12;
     var congressMonthly = annualReserveMode === 'full' ? congressAnnual : congressAnnual / 12;
     var starMonthly = annualReserveMode === 'full' ? starAnnual : starAnnual / 12;
+    var annualReserveTotal = standardAnnualTotal + mandatoryAnnualTotal;
+    var annualReserveMonthly = standardAnnualMonthly + mandatoryAnnualMonthly;
     var total = stipendMonthly + annualReserveMonthly;
     var specialTermsOnlyManual = hasSpecialPaymentTerms(context);
 
-    if (specialTermsOnlyManual) {
-      total = annualReserveMonthly;
-      if (motivationMode === 'manual' && specialManualReserveEnabled) {
-        total += manualReserveMonthly;
-      }
+    if (specialTermsOnlyManual && motivationMode === 'manual' && specialManualReserveEnabled) {
+      total += manualReserveMonthly;
     }
 
     return {
-      mode: 'rules',
+      mode: specialTermsOnlyManual ? (motivationMode === 'manual' ? 'manual' : 'off') : 'rules',
       stipendMode: stipendMode,
       quarterlyResult: quarterlyResult,
       stipendLevel: stipendLevel.level,
-      stipendAvailable: stipendEligibility.available,
-      stipendReason: stipendEligibility.reason,
+      stipendAvailable: specialTermsOnlyManual ? false : stipendEligibility.available,
+      stipendReason: specialTermsOnlyManual ? 'specialTerms' : stipendEligibility.reason,
       stipendOverride: stipendManualEnabled,
       stipendMonthly: stipendMonthly,
       annualReserveMode: annualReserveMode,
@@ -402,16 +513,16 @@
       quarterlyDeposits: context.quarterlyDeposits,
       halfYearCommission: context.halfYearCommission,
       preTripQuarterDeposits: context.preTripQuarterDeposits,
-      mountainSeaAvailable: motivationEligibility.available,
-      mountainSeaReason: motivationEligibility.reason,
+      mountainSeaAvailable: specialTermsOnlyManual ? false : motivationEligibility.available,
+      mountainSeaReason: specialTermsOnlyManual ? 'specialTerms' : motivationEligibility.reason,
       mountainSeaAnnual: mountainSeaAnnual,
       mountainSeaMonthly: mountainSeaMonthly,
-      travelAvailable: travelEligibility.available,
-      travelReason: travelEligibility.reason,
+      travelAvailable: specialTermsOnlyManual ? false : travelEligibility.available,
+      travelReason: specialTermsOnlyManual ? 'specialTerms' : travelEligibility.reason,
       travelAnnual: travelAnnual,
       travelMonthly: travelMonthly,
-      corporateAvailable: motivationEligibility.available,
-      corporateReason: motivationEligibility.reason,
+      corporateAvailable: specialTermsOnlyManual ? false : motivationEligibility.available,
+      corporateReason: specialTermsOnlyManual ? 'specialTerms' : motivationEligibility.reason,
       corporateAnnual: corporateAnnual,
       corporateMonthly: corporateMonthly,
       congressAvailable: true,

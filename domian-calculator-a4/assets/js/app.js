@@ -53,9 +53,7 @@
       travelOverride: false,
       eventsOverride: false,
       specialTermsOverride: false,
-      motivation: Object.assign(createMotivation(), {
-        congressEnabled: false
-      })
+      motivation: createMotivation()
     };
   }
 
@@ -826,6 +824,15 @@
     return '<p class="eligibility-note blocked">' + getEligibilityText(reserve.stipendReason) + '</p>';
   }
 
+  function renderMandatoryAnnualMotivationSection(agent) {
+    return '<section class="motivation-section"><h4>Обязательные годовые расходы</h4>'
+      + '<p class="hint compact">Конгресс и Звезда считаются отдельно от стандартных мотиваций. Фикс, повышенная шкала, ручной режим и отключение стандартных мотиваций не должны убирать эти расходы.</p>'
+      + '<div class="motivation-card-grid">'
+      + renderAnnualMotivationCard(agent, { key: 'congress', enabledField: 'congressEnabled', amountField: 'congressPerYear', alwaysAvailable: true, title: 'Конгресс', description: 'Участие агента в годовом мероприятии' })
+      + renderAnnualMotivationCard(agent, { key: 'star', enabledField: 'starEnabled', amountField: 'starPerYear', alwaysAvailable: true, title: 'Звезда', description: 'Награда для лучшего агента офиса' })
+      + '</div></section>';
+  }
+
   function renderMotivationControls(agent) {
     var motivation = Object.assign(createMotivation(), agent.motivation || {});
     var motivationReserve = calculateAgent(agent).motivationReserve;
@@ -857,9 +864,10 @@
           { value: 'manual', label: 'Заложить вручную' }
         ])
         + (currentMode === 'off'
-          ? renderReserveSummary('Мотивации не учитываются.', 0)
+          ? renderReserveSummary('Стандартные мотивации не учитываются. Обязательные расходы ниже считаются отдельно.', reserve.congressMonthly + reserve.starMonthly)
           : '<label class="field wide-field"><span>Резерв мотиваций в месяц, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-motivation-field="manualReserveMonthly"', motivation.manualReserveMonthly) + '<small>Укажите сумму, которую собственник хочет ежемесячно закладывать на будущие мотивации этого агента.</small></label>')
         + '</div>'
+        + renderMandatoryAnnualMotivationSection(agent)
         + '</div>'
         + '</details>';
     }
@@ -881,7 +889,8 @@
         + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-field="specialManualReserveEnabled" data-structural="true"' + checked(Boolean(motivation.specialManualReserveEnabled)) + '><span>Заложить ручной резерв мотиваций при особых условиях</span></label>'
         + (motivation.specialManualReserveEnabled
           ? '<label class="field"><span>Резерв мотиваций в месяц, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-motivation-field="manualReserveMonthly"', motivation.manualReserveMonthly) + '<small>Заполняйте только если хотите отдельно откладывать резерв сверх особых условий.</small></label>'
-          : renderReserveSummary('Ручной резерв не учитывается.', 0))
+          : renderReserveSummary('Ручной резерв не учитывается. Конгресс и Звезда считаются отдельно ниже.', reserve.congressMonthly + reserve.starMonthly))
+        + renderMandatoryAnnualMotivationSection(agent)
         + '</div>'
         + '</details>';
     }
@@ -906,10 +915,10 @@
       ])
       + '</div>'
       + (currentMode === 'off'
-        ? renderReserveSummary('Мотивации не учитываются.', 0)
+        ? renderReserveSummary('Стандартные мотивации не учитываются. Конгресс и Звезда считаются отдельно ниже.', reserve.congressMonthly + reserve.starMonthly)
         : '')
       + (currentMode === 'manual'
-        ? '<div class="form-grid compact-grid"><label class="field wide-field"><span>Резерв мотиваций в месяц, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-motivation-field="manualReserveMonthly"', motivation.manualReserveMonthly) + '<small>Укажите сумму, которую собственник хочет ежемесячно закладывать на будущие мотивации этого агента.</small></label></div>'
+        ? '<div class="form-grid compact-grid"><label class="field wide-field"><span>Резерв мотиваций в месяц, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-motivation-field="manualReserveMonthly"', motivation.manualReserveMonthly) + '<small>Укажите сумму, которую собственник хочет ежемесячно закладывать на будущие мотивации этого агента. Конгресс и Звезда считаются отдельно ниже.</small></label></div>'
         : '')
       + (currentMode === 'rules'
         ? '<section class="motivation-section"><h4>Квартальные условия</h4><div class="form-grid compact-grid">'
@@ -947,10 +956,9 @@
           + renderTripMotivationCard(agent, { key: 'mountainSea', enabledField: 'mountainSeaEnabled', amountField: 'mountainSeaPerTrip', countField: 'mountainSeaTripsPerYear', overrideField: 'mountainSeaOverride', overrideLabel: 'Всё равно заложить поездки по РФ', title: 'Горы / Море', description: 'Поездки по РФ для агента' })
           + renderTripMotivationCard(agent, { key: 'travel', enabledField: 'travelEnabled', amountField: 'travelPerTrip', countField: 'travelTripsPerYear', overrideField: 'travelOverride', overrideLabel: 'Всё равно заложить путешествие', title: 'Заграница / Путешествие', description: 'Зарубежные поездки для агента' })
           + renderAnnualMotivationCard(agent, { key: 'corporate', enabledField: 'corporateEnabled', amountField: 'corporatePerYear', overrideField: 'eventsOverride', overrideLabel: 'Всё равно заложить корпоратив', title: 'Корпоративы', description: 'Годовой резерв на мероприятия' })
-          + renderAnnualMotivationCard(agent, { key: 'congress', enabledField: 'congressEnabled', amountField: 'congressPerYear', alwaysAvailable: true, title: 'Конгресс', description: 'Участие агента в годовом мероприятии' })
-          + renderAnnualMotivationCard(agent, { key: 'star', enabledField: 'starEnabled', amountField: 'starPerYear', alwaysAvailable: true, title: 'Звезда', description: 'Награда для лучшего агента офиса' })
           + '</div></section>'
         : '')
+      + renderMandatoryAnnualMotivationSection(agent)
       + '</div>'
       + '</details>';
   }
