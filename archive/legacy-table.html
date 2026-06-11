@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Домиан — табличный расчёт офиса</title>
+  <link rel="stylesheet" href="assets/css/table-mode.css">
+</head>
+<body>
+  <main class="table-page">
+    <header class="table-hero">
+      <div>
+        <a class="back-home-link" href="index.html">← Вернуться к A4</a>
+        <p class="small-label">Табличный режим</p>
+        <h1>Домиан — табличный расчёт офиса</h1>
+        <p class="lead">Табличный режим нужен для быстрого управленческого моделирования. Основной A4-маршрут остаётся главным для подробной настройки агентов, точных сделок и мотиваций.</p>
+      </div>
+      <nav class="table-actions" aria-label="Действия табличного режима">
+        <button class="button primary" type="button" data-action="load-a4">Загрузить данные из A4</button>
+        <button class="button ghost" type="button" data-action="clear-table">Очистить таблицу</button>
+        <button class="button ghost" type="button" data-action="add-agent">Добавить агента</button>
+        <a class="button link-button" href="index.html">Вернуться к A4</a>
+      </nav>
+    </header>
+
+    <section class="notice info" id="snapshotNotice">Данные из A4 не найдены. Можно заполнить таблицу вручную.</section>
+
+    <section class="top-inputs" aria-label="Общие вводные офиса">
+      <div class="expense-list-card">
+        <div class="expense-list-head">
+          <span>Расходы офиса</span>
+          <strong id="officeExpensesTotal">0 ₽</strong>
+        </div>
+        <div class="expense-list" id="officeExpensesList"></div>
+        <div class="expense-list-actions">
+          <button class="row-button" type="button" data-action="add-expense">Добавить расход</button>
+        </div>
+      </div>
+      <label class="field">
+        <span>Личные сделки собственника, ₽</span>
+        <input id="ownerSalesInput" type="text" inputmode="numeric" autocomplete="off" data-money-input="true" data-office-field="ownerSales">
+      </label>
+      <div class="royalty-chip">
+        <span>Роялти офиса</span>
+        <strong id="officeRoyalty">0 ₽</strong>
+      </div>
+    </section>
+
+    <section class="table-shell" aria-labelledby="agentsTableTitle">
+      <div class="table-head">
+        <div>
+          <h2 id="agentsTableTitle">Обзор офиса</h2>
+          <p>Основная таблица показывает только ключевые управленческие показатели. Настройки агента, точные сделки, повышенные ставки и мотивации раскрываются кнопкой “Настроить”.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="office-table">
+          <thead>
+            <tr>
+              <th>Агент</th>
+              <th>Комиссия, ₽</th>
+              <th>Сделки</th>
+              <th>Схема</th>
+              <th>Выплата</th>
+              <th>Реферал</th>
+              <th>Мотивации</th>
+              <th>Расходы</th>
+              <th>Вклад</th>
+              <th>Окупаемость</th>
+              <th>Детали</th>
+            </tr>
+          </thead>
+          <tbody id="agentsTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="summary-layout">
+      <section class="summary-card" aria-labelledby="summaryTitle">
+        <div class="section-head">
+          <p class="small-label">Сводка</p>
+          <h2 id="summaryTitle">Итоговая сводка по офису</h2>
+        </div>
+        <dl class="summary-grid" id="officeSummary"></dl>
+      </section>
+
+      <section class="summary-card" aria-labelledby="diagnosisTitle">
+        <div class="section-head">
+          <p class="small-label">Вывод</p>
+          <h2 id="diagnosisTitle">Предупреждения и диагноз</h2>
+        </div>
+        <div id="diagnosisBox" class="diagnosis-box"></div>
+      </section>
+    </section>
+
+    <section class="notice warning">Таблица поддерживает быстрый и точный ввод сделок, фиксированные условия, рефералы, роялти, повышенные шкалы и импорт мотиваций из A4. Для глубокой настройки мотивационных правил удобнее использовать A4-карточки, а затем загрузить данные сюда.</section>
+  </main>
+
+  <script src="assets/js/constants.js"></script>
+  <script src="assets/js/calculations.js"></script>
+  <script src="assets/js/table-mode.js"></script>
+</body>
+</html>
