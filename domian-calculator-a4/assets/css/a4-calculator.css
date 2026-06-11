@@ -877,6 +877,20 @@ select:focus {
   border-style: dashed;
 }
 
+.motivation-card-note {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: rgba(36, 92, 153, .06);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.motivation-card-note p {
+  margin: 0;
+}
+
 .eligibility-panel {
   display: grid;
   gap: 10px;
@@ -995,6 +1009,10 @@ select:focus {
 
 .motivation-card-total dd {
   font-size: 16px;
+}
+
+.stipend-obligation {
+  margin-top: 10px;
 }
 
 .button {

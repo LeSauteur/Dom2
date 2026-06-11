@@ -995,6 +995,25 @@ test('new agents default to exact deals mode in app state', () => {
   assert.match(appSource, /commissionMode:\s*'exact'/);
 });
 
+test('A4 motivation UI explains quarter stipend obligation and calendar caveats', () => {
+  assert.match(appSource, /Обязательство следующего квартала/);
+  assert.match(appSource, /Стипендия выплачивается ежемесячно в следующем квартале/);
+  assert.match(appSource, /Горы и Море — разные сезонные акции/);
+  assert.match(appSource, /Корпоративы — это разные календарные события/);
+  assert.match(appSource, /Деление на 12 — это грубое управленческое распределение резерва/);
+});
+
+test('future mode entry pages exist as static scaffolds', () => {
+  [
+    'start.html',
+    'simple.html',
+    'extended.html',
+    'assets/css/modes.css'
+  ].forEach((fileName) => {
+    assert.equal(fs.existsSync(path.join(rootDir, fileName)), true, fileName);
+  });
+});
+
 test('example agent anna starts with placeholder deal only and no turnover', () => {
   const anna = calculator.DEFAULT_AGENTS[0];
 

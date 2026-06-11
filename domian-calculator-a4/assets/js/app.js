@@ -327,6 +327,16 @@
     return '<div><dt>' + label + '</dt><dd data-agent-id="' + agentId + '" data-motivation-metric="' + key + '">' + moneyPrecise(value) + '</dd></div>';
   }
 
+  function renderMotivationInfo(lines) {
+    if (!Array.isArray(lines) || !lines.length) {
+      return '';
+    }
+
+    return '<div class="motivation-card-note">' + lines.map(function (line) {
+      return '<p>' + line + '</p>';
+    }).join('') + '</div>';
+  }
+
   function getEligibilityText(reason) {
     if (reason === 'level') {
       return 'Мотивация не положена: агент не достиг нужного уровня по результатам.';
@@ -377,13 +387,14 @@
       + '<span><strong>' + config.title + '</strong><small>' + config.description + '</small></span></label>'
       + renderEligibilityNote(available, reason, overridden)
       + (!available ? renderOverrideCheckbox(agent, config.overrideField, config.overrideLabel) : '')
+      + renderMotivationInfo(config.infoLines)
       + '<div class="motivation-card-fields">'
       + '<label class="field"><span>Сумма за поездку, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-motivation-field="' + config.amountField + '"' + disabled(locked), motivation[config.amountField]) + '</label>'
       + '<label class="field"><span>Количество поездок в год</span><input type="number" min="0" step="1" data-agent-id="' + agent.id + '" data-motivation-field="' + config.countField + '" value="' + motivation[config.countField] + '"' + disabled(locked) + '></label>'
       + '</div>'
       + '<dl class="motivation-card-total">'
       + renderMotivationMetric(agent.id, config.key + 'Annual', 'Итого в год', annual)
-      + renderMotivationMetric(agent.id, config.key + 'Monthly', 'В месяц при делении на 12', annual / 12)
+      + renderMotivationMetric(agent.id, config.key + 'Monthly', 'Управленчески в месяц (÷12)', annual / 12)
       + '</dl>'
       + '</article>';
   }
@@ -413,12 +424,13 @@
             : '<p class="eligibility-note ok">Звезду можно назначить только одному агенту. Если это не лучший агент, оставьте её выключенной.</p>')
           : (config.alwaysAvailable ? '<p class="eligibility-note ok">Звезда и конгресс учитываются как отдельные годовые расходы и не зависят от стандартных мотиваций.</p>' : renderEligibilityNote(available, reason, overridden))))
       + (!available && !starTakenByAnotherAgent ? renderOverrideCheckbox(agent, config.overrideField, config.overrideLabel) : '')
+      + renderMotivationInfo(config.infoLines)
       + '<div class="motivation-card-fields single">'
       + '<label class="field"><span>Сумма в год, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-motivation-field="' + config.amountField + '"' + disabled(locked), motivation[config.amountField]) + '</label>'
       + '</div>'
       + '<dl class="motivation-card-total">'
       + renderMotivationMetric(agent.id, config.key + 'Annual', 'Итого в год', annual)
-      + renderMotivationMetric(agent.id, config.key + 'Monthly', 'В месяц при делении на 12', annual / 12)
+      + renderMotivationMetric(agent.id, config.key + 'Monthly', 'Управленчески в месяц (÷12)', annual / 12)
       + '</dl>'
       + '</article>';
   }
@@ -842,14 +854,27 @@
 
   function renderStipendStatus(reserve) {
     if (reserve.stipendMode === 'manual') {
-      return '<p class="eligibility-note warning">Стипендия изменена вручную. В резерв заложено: ' + money(reserve.stipendMonthly) + ' / месяц.</p>';
+      return '<p class="eligibility-note warning">Стипендия изменена вручную. В резерв заложено: ' + money(reserve.stipendMonthly) + ' / месяц. Стипендия выплачивается ежемесячно в следующем квартале по результатам текущего квартала.</p>';
     }
 
     if (reserve.stipendAvailable) {
-      return '<p class="eligibility-note ok">Стипендия доступна по текущим условиям. В резерв добавлено: ' + money(reserve.stipendMonthly) + ' / месяц.</p>';
+      return '<p class="eligibility-note ok">Стипендия доступна по текущим условиям. В резерв добавлено: ' + money(reserve.stipendMonthly) + ' / месяц. Стипендия выплачивается ежемесячно в следующем квартале по результатам текущего квартала.</p>';
     }
 
     return '<p class="eligibility-note blocked">' + getEligibilityText(reserve.stipendReason) + '</p>';
+  }
+
+  function renderStipendObligation(agent, reserve) {
+    var stipendMonthly = positiveNumber(reserve && reserve.stipendMonthly);
+
+    if (stipendMonthly <= 0) {
+      return '';
+    }
+
+    return '<dl class="motivation-card-total stipend-obligation">'
+      + renderMotivationMetric(agent.id, 'stipendMonthly', 'Стипендия в месяц', stipendMonthly)
+      + renderMotivationMetric(agent.id, 'stipendQuarterObligation', 'Обязательство следующего квартала', stipendMonthly * 3)
+      + '</dl>';
   }
 
   function renderMandatoryAnnualMotivationSection(agent) {
@@ -966,6 +991,7 @@
           + '<div class="wide-field">'
           + '<p class="hint compact">Стипендия в режиме “Рассчитать по правилам” считается автоматически, если выполнены условия партнёрства и уровня.</p>'
           + renderStipendStatus(reserve)
+          + renderStipendObligation(agent, reserve)
           + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-field="stipendManualEnabled" data-structural="true"' + checked(stipendManualEnabled) + '><span>Изменить сумму стипендии вручную</span></label>'
           + (stipendManualEnabled
             ? '<label class="field"><span>Стипендия вручную, ₽ в месяц</span>' + moneyInput('data-agent-id="' + agent.id + '" data-motivation-field="manualStipendMonthly"', motivation.manualStipendMonthly) + '</label>'
@@ -975,15 +1001,15 @@
           + option('monthly', 'Распределить по 12 месяцам', motivation.annualReserveMode)
           + option('full', 'Учесть всю сумму сейчас', motivation.annualReserveMode)
           + option('manual', 'Ввести свою сумму в месяц', motivation.annualReserveMode)
-          + '</select><small>По умолчанию безопаснее распределять сумму на 12 месяцев. Полный учёт сразу делает текущий месяц строже.</small></label>'
+          + '</select><small>Деление на 12 — это грубое управленческое распределение резерва, а не календарный расчёт. Реальные расходы могут приходиться на конкретные месяцы. Для точного календарного расчёта позже будет нужен расширенный режим.</small></label>'
           + (reserve.annualReserveMode === 'manual'
             ? '<label class="field"><span>Своя сумма резерва, ₽ в месяц</span>' + moneyInput('data-agent-id="' + agent.id + '" data-motivation-field="manualAnnualReserveMonthly"', motivation.manualAnnualReserveMonthly) + '<small>Срабатывает только после включения ручной суммы на месяц.</small></label>'
             : '')
           + '</div></section>'
           + '<section class="motivation-section"><h4>Годовые мотивации</h4><div class="motivation-card-grid">'
-          + renderTripMotivationCard(agent, { key: 'mountainSea', enabledField: 'mountainSeaEnabled', amountField: 'mountainSeaPerTrip', countField: 'mountainSeaTripsPerYear', overrideField: 'mountainSeaOverride', overrideLabel: 'Всё равно заложить поездки по РФ', title: 'Горы / Море', description: 'Поездки по РФ для агента' })
+          + renderTripMotivationCard(agent, { key: 'mountainSea', enabledField: 'mountainSeaEnabled', amountField: 'mountainSeaPerTrip', countField: 'mountainSeaTripsPerYear', overrideField: 'mountainSeaOverride', overrideLabel: 'Всё равно заложить поездки по РФ', title: 'Горы / Море', description: 'Поездки по РФ для агента', infoLines: ['Горы и Море — разные сезонные акции. Сейчас блок показывает укрупнённый резерв по поездкам, а не календарный расчёт.', 'Горы: акция 1 января – 28 февраля, поездка в апреле.', 'Море: акция 1 мая – 30 июня, поездка в сентябре.', 'План офиса считается отдельно для акции: количество партнёров × 350 000 ₽.'] })
           + renderTripMotivationCard(agent, { key: 'travel', enabledField: 'travelEnabled', amountField: 'travelPerTrip', countField: 'travelTripsPerYear', overrideField: 'travelOverride', overrideLabel: 'Всё равно заложить путешествие', title: 'Заграница / Путешествие', description: 'Зарубежные поездки для агента' })
-          + renderAnnualMotivationCard(agent, { key: 'corporate', enabledField: 'corporateEnabled', amountField: 'corporatePerYear', overrideField: 'eventsOverride', overrideLabel: 'Всё равно заложить корпоратив', title: 'Корпоративы', description: 'Годовой резерв на мероприятия' })
+          + renderAnnualMotivationCard(agent, { key: 'corporate', enabledField: 'corporateEnabled', amountField: 'corporatePerYear', overrideField: 'eventsOverride', overrideLabel: 'Всё равно заложить корпоратив', title: 'Корпоративы', description: 'Годовой резерв на мероприятия', infoLines: ['Корпоративы — это разные календарные события, а текущий блок показывает укрупнённый резерв.', 'Летний корпоратив проходит в середине июля по подтверждению партнёрства за предыдущий квартал.', 'Зимний корпоратив проходит примерно 25 декабря по подтверждению партнёрства за 3 квартал.', 'Оборот / сделки для корпоративов не требуются.'] })
           + '</div></section>'
         : '')
       + renderMandatoryAnnualMotivationSection(agent)

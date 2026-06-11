@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Домиан — расчёт периода</title>
+  <link rel="stylesheet" href="assets/css/modes.css">
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <p class="eyebrow">Каркас режима</p>
+      <h1>Домиан — расчёт периода</h1>
+      <p class="lead">Этот режим готовит пространство для будущего помесячного, квартального и годового расчёта с календарной логикой и сводками периода.</p>
+    </header>
+
+    <section class="section notice">
+      Это каркас расширенного режима. Расчёт по месяцам, сохранение черновика и календарная логика будут добавлены отдельными этапами.
+    </section>
+
+    <section class="section stack">
+      <section class="panel">
+        <h2>Шаг 1. Что считаем?</h2>
+        <div class="grid-2">
+          <div class="field-row">
+            <label>Период</label>
+            <select>
+              <option>месяц</option>
+              <option>квартал</option>
+              <option>полугодие</option>
+              <option>год</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <label>Начальный месяц</label>
+            <select>
+              <option>январь</option>
+              <option>февраль</option>
+              <option>март</option>
+              <option>апрель</option>
+              <option>май</option>
+              <option>июнь</option>
+              <option>июль</option>
+              <option>август</option>
+              <option>сентябрь</option>
+              <option>октябрь</option>
+              <option>ноябрь</option>
+              <option>декабрь</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Шаг 2. Способ ввода</h2>
+        <div class="choice-grid">
+          <article class="choice-card">
+            <h3>Общий ввод</h3>
+            <ul>
+              <li>быстрее;</li>
+              <li>по каждому месяцу вводятся итоговые суммы.</li>
+            </ul>
+          </article>
+          <article class="choice-card">
+            <h3>Подробный ввод</h3>
+            <ul>
+              <li>точнее;</li>
+              <li>по каждому месяцу вводятся агенты и сделки.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Шаг 3. Месяцы периода</h2>
+        <div class="month-tabs">
+          <div class="month-card">Январь</div>
+          <div class="month-card">Февраль</div>
+          <div class="month-card">Март</div>
+        </div>
+        <div class="section">
+          <div class="grid-2">
+            <div class="field-grid">
+              <div class="field-row">
+                <label>Оборот агентов</label>
+                <div class="placeholder-value">—</div>
+              </div>
+              <div class="field-row">
+                <label>Количество агентов</label>
+                <div class="placeholder-value">—</div>
+              </div>
+              <div class="field-row">
+                <label>Средняя схема выплат</label>
+                <div class="placeholder-value">—</div>
+              </div>
+            </div>
+            <div class="field-grid">
+              <div class="field-row">
+                <label>Личные сделки собственника</label>
+                <div class="placeholder-value">—</div>
+              </div>
+              <div class="field-row">
+                <label>Расходы месяца</label>
+                <div class="placeholder-value">—</div>
+              </div>
+              <div class="field-row">
+                <label>Мотивационный резерв</label>
+                <div class="placeholder-value">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Шаг 4. Подробный ввод агента</h2>
+        <div class="agent-demo">
+          <div class="field-row">
+            <label>Агент</label>
+            <div class="placeholder-value">Пётр</div>
+          </div>
+          <div class="grid-2">
+            <div class="field-row">
+              <label>Статус</label>
+              <div class="placeholder-value">партнёр</div>
+            </div>
+            <div class="field-row">
+              <label>Схема</label>
+              <div class="placeholder-value">стандарт</div>
+            </div>
+          </div>
+          <div class="agent-demo-row">
+            <strong>Сделка 1</strong>
+            <span>100 000 ₽ → 45%</span>
+            <span>45 000 ₽</span>
+          </div>
+          <div class="agent-demo-row">
+            <strong>Сделка 2</strong>
+            <span>100 000 ₽ → 50%</span>
+            <span>50 000 ₽</span>
+          </div>
+          <div class="button-row">
+            <a class="button" href="#">+ Агент</a>
+            <a class="button" href="#">+ Сделка</a>
+            <a class="button" href="#">Скопировать агентов из прошлого месяца</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Шаг 5. Сводка периода</h2>
+        <table class="placeholder-table">
+          <thead>
+            <tr>
+              <th>Месяц</th>
+              <th>Оборот</th>
+              <th>Роялти</th>
+              <th>Расходы</th>
+              <th>Итог</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Январь</td>
+              <td>—</td>
+              <td>—</td>
+              <td>—</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>Февраль</td>
+              <td>—</td>
+              <td>—</td>
+              <td>—</td>
+              <td>—</td>
+            </tr>
+            <tr>
+              <td>Март</td>
+              <td>—</td>
+              <td>—</td>
+              <td>—</td>
+              <td>—</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="lead">В будущей версии роялти должно считаться по каждому месяцу отдельно, а не от общей суммы периода.</p>
+      </section>
+    </section>
+
+    <nav class="nav-row">
+      <a class="button" href="start.html">Назад к выбору режимов</a>
+      <a class="button primary" href="index.html">Перейти в точный A4</a>
+    </nav>
+  </main>
+</body>
+</html>
