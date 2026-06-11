@@ -199,8 +199,58 @@ test('agent payout supports standard, boosted and fixed schemes', () => {
 
   closeTo(standardPartner.payout, 210000);
   closeTo(boosted.payout, 225000);
-  closeTo(boostedSecond.payout, 235000);
+  closeTo(boostedSecond.payout, 225000);
   closeTo(fixed.payout, 320000);
+});
+
+test('boosted starting rate is a floor over the standard partner scale', () => {
+  const starting55 = calculator.calculateAgent({
+    id: 'boosted-55',
+    commissionMode: 'exact',
+    dealsInput: [100000, 100000, 100000, 100000],
+    paymentType: 'boosted',
+    status: 'partner',
+    startingRate: 55
+  });
+  assert.deepEqual(Array.from(starting55.deals.map((deal) => deal.rate)), [0.55, 0.55, 0.55, 0.60]);
+  closeTo(starting55.payout, 225000);
+
+  const starting70 = calculator.calculateAgent({
+    id: 'boosted-70',
+    commissionMode: 'exact',
+    dealsInput: [100000, 100000, 100000, 100000],
+    paymentType: 'boosted',
+    status: 'partner',
+    startingRate: 70
+  });
+  assert.deepEqual(Array.from(starting70.deals.map((deal) => deal.rate)), [0.70, 0.70, 0.70, 0.70]);
+  closeTo(starting70.payout, 280000);
+
+  const starting50 = calculator.calculateAgent({
+    id: 'boosted-50',
+    commissionMode: 'exact',
+    dealsInput: [100000, 100000, 100000, 100000],
+    paymentType: 'boosted',
+    status: 'partner',
+    startingRate: 50
+  });
+  assert.deepEqual(Array.from(starting50.deals.map((deal) => deal.rate)), [0.50, 0.50, 0.55, 0.60]);
+  closeTo(starting50.payout, 215000);
+});
+
+test('legacy boostedRates migrates to startingRate from the first value', () => {
+  const legacy = calculator.calculateAgent({
+    id: 'legacy-boosted',
+    commissionMode: 'exact',
+    dealsInput: [100000, 100000, 100000, 100000],
+    paymentType: 'boosted',
+    status: 'partner',
+    boostedRates: [70, 55, 55, 60]
+  });
+
+  assert.equal(legacy.startingRate, 70);
+  assert.deepEqual(Array.from(legacy.deals.map((deal) => deal.rate)), [0.70, 0.70, 0.70, 0.70]);
+  closeTo(legacy.payout, 280000);
 });
 
 test('fixed scheme keeps explicit zero rate', () => {
@@ -520,8 +570,8 @@ test('annual reserves can be recognized immediately or manually', () => {
   assert.equal(full.annualReserveMonthly, 208500);
   assert.equal(full.monthly, 208500);
   assert.equal(manual.annualReserveTotal, 208500);
-  assert.equal(manual.annualReserveMonthly, 25000);
-  assert.equal(manual.monthly, 25000);
+  closeTo(manual.annualReserveMonthly, 25000 + 8500 / 12);
+  closeTo(manual.monthly, 25000 + 8500 / 12);
 });
 
 test('office totals distinguish profit before and after reserves', () => {
@@ -553,9 +603,9 @@ test('office totals distinguish profit before and after reserves', () => {
   });
 
   assert.equal(totals.agentPayouts, 210000);
-  assert.equal(totals.motivationReserves, 5500);
+  closeTo(totals.motivationReserves, 5500 + 3500 / 12);
   assert.equal(totals.resultWithoutOwnerBeforeReserves, 62000);
-  assert.equal(totals.resultWithoutOwner, 56500);
+  closeTo(totals.resultWithoutOwner, 62000 - (5500 + 3500 / 12));
 });
 
 test('agent profitability distributes office expenses across active agents', () => {
@@ -735,7 +785,7 @@ test('agent retention scenarios do not duplicate baseline loads', () => {
   const fixed80 = result.scenarios.find((item) => item.id === 'fixed-80');
 
   assert.equal(fixed80.referral, economics.referral);
-  assert.equal(fixed80.motivationReserve, economics.motivationReserve);
+  assert.equal(fixed80.motivationReserve, Math.round(economics.motivationReserve * 100) / 100);
   assert.equal(fixed80.royaltyShare, economics.royaltyShare);
   assert.equal(fixed80.expenseShare, economics.expenseShare);
   assert.equal(
@@ -945,11 +995,75 @@ test('new agents default to exact deals mode in app state', () => {
   assert.match(appSource, /commissionMode:\s*'exact'/);
 });
 
-test('example agent anna defaults to exact deals mode with preserved deal list', () => {
+test('example agent anna starts with placeholder deal only and no turnover', () => {
   const anna = calculator.DEFAULT_AGENTS[0];
 
   assert.equal(anna.commissionMode, 'exact');
-  assert.deepEqual(Array.from(anna.dealsInput), [100000, 100000, 100000, 100000]);
-  assert.equal(anna.commission, 400000);
-  assert.equal(anna.dealCount, 4);
+  assert.deepEqual(Array.from(anna.dealsInput), ['']);
+  assert.equal(anna.commission, 0);
+  assert.equal(anna.dealCount, 1);
+  assert.equal(calculator.calculateAgent(anna).commission, 0);
+});
+
+test('new A4 agent keeps congress ready by default but does not charge blank drafts', () => {
+  const blankState = appHelpers.createBlankState();
+  const agent = blankState.agents[0];
+  const blank = calculator.calculateAgent(agent);
+
+  assert.equal(agent.motivation.congressEnabled, true);
+  assert.equal(blank.motivation.congressAnnual, 0);
+  assert.equal(blank.motivationReserve, 0);
+
+  agent.name = 'Партнёр';
+  agent.commission = 100000;
+  agent.dealsInput = [100000];
+  const active = calculator.calculateAgent(agent);
+
+  assert.equal(active.motivation.congressAnnual, calculator.DEFAULT_MOTIVATION.congressPerYear);
+  closeTo(active.motivationReserve, calculator.DEFAULT_MOTIVATION.congressPerYear / 12);
+});
+
+test('mandatory congress and star survive off, manual and special payment modes', () => {
+  const off = calculator.calculateMotivationReserve({
+    name: 'Партнёр',
+    commission: 100000,
+    paymentType: 'standard',
+    motivation: {
+      mode: 'off',
+      congressEnabled: true,
+      congressPerYear: 3500,
+      starEnabled: true,
+      starPerYear: 5000
+    }
+  });
+  closeTo(off.monthly, (3500 + 5000) / 12);
+
+  const manual = calculator.calculateMotivationReserve({
+    name: 'Партнёр',
+    commission: 100000,
+    paymentType: 'standard',
+    motivation: {
+      mode: 'manual',
+      manualReserveMonthly: 1000,
+      congressEnabled: true,
+      congressPerYear: 3500,
+      starEnabled: true,
+      starPerYear: 5000
+    }
+  });
+  closeTo(manual.monthly, 1000 + (3500 + 5000) / 12);
+
+  const fixed = calculator.calculateMotivationReserve({
+    name: 'Партнёр',
+    commission: 100000,
+    paymentType: 'fixed',
+    motivation: {
+      mode: 'off',
+      congressEnabled: true,
+      congressPerYear: 3500,
+      starEnabled: true,
+      starPerYear: 5000
+    }
+  });
+  closeTo(fixed.monthly, (3500 + 5000) / 12);
 });

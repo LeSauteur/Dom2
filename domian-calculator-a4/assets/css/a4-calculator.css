@@ -575,8 +575,42 @@ select:focus {
 }
 
 .exact-deal-row {
-  grid-template-columns: minmax(180px, 1fr) minmax(140px, .5fr) auto;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(220px, .65fr) auto;
+  gap: 10px;
   align-items: end;
+}
+
+.deal-calculation {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.deal-calculation span {
+  min-height: 54px;
+  padding: 9px 10px;
+  border: 1px solid rgba(36, 92, 153, .16);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.deal-calculation strong,
+.deal-calculation small {
+  display: block;
+}
+
+.deal-calculation strong {
+  color: var(--blue);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.deal-calculation small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
 }
 
 .exact-deals-total {
@@ -1410,6 +1444,7 @@ dd {
   .rate-grid,
   .expense-row,
   .exact-deal-row,
+  .deal-calculation,
   .agent-summary,
   .exact-deals-total,
   .help-grid,

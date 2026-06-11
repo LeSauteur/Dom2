@@ -304,7 +304,7 @@ test('table-mode switches manual quick rows to exact mode without runtime errors
   closeTo(calculated.payout, 210000);
 });
 
-test('table-mode preserves imported custom boosted rates', () => {
+test('table-mode treats legacy custom boosted rates as a starting-rate source', () => {
   const agent = table.toTableAgent({
     id: 'boosted-agent',
     name: 'Boosted agent',
@@ -319,7 +319,8 @@ test('table-mode preserves imported custom boosted rates', () => {
   const calculated = tableWindow.calculateAgent(table.getCalculationAgent(agent));
 
   assert.deepEqual(Array.from(agent.boostedRates), [55, 55, 60, 65]);
-  closeTo(calculated.payout, 235000);
+  assert.equal(calculated.startingRate, 55);
+  closeTo(calculated.payout, 225000);
 });
 
 test('table-mode preserves imported motivation model details', () => {

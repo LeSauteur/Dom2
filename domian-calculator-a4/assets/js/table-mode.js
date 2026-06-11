@@ -396,7 +396,8 @@
       || Boolean(agent.mountainSeaOverride)
       || Boolean(agent.travelOverride)
       || Boolean(agent.eventsOverride)
-      || Boolean(agent.specialTermsOverride);
+      || Boolean(agent.specialTermsOverride)
+      || Boolean(agent.motivation && agent.motivation.starEnabled);
   }
 
   function toTableAgent(source) {
@@ -755,6 +756,7 @@
   function renderAgentDetailsRow(row, agent) {
     var source = row ? row.source : agent;
     var calculated = row ? row.calculated : calculateAgent(getCalculationAgent(source));
+    var motivation = Object.assign({}, DEFAULT_MOTIVATION, source.motivation || {});
 
     if (!expandedAgents[source.id]) {
       return '';
@@ -787,6 +789,16 @@
       + '<label class="field"><span>Депозиты за квартал</span>' + moneyInput('data-agent-id="' + source.id + '" data-agent-field="quarterlyDeposits"', source.quarterlyDeposits) + '</label>'
       + '<label class="field"><span>Комиссия за полгода</span>' + moneyInput('data-agent-id="' + source.id + '" data-agent-field="halfYearCommission"', source.halfYearCommission) + '</label>'
       + '<label class="field"><span>Депозиты перед поездкой</span>' + moneyInput('data-agent-id="' + source.id + '" data-agent-field="preTripQuarterDeposits"', source.preTripQuarterDeposits) + '</label>'
+      + '<label class="field"><span>Конгресс</span><select data-agent-id="' + source.id + '" data-agent-field="congressEnabled">'
+      + option('true', 'Включён', String(motivation.congressEnabled !== false))
+      + option('false', 'Исключён', String(motivation.congressEnabled !== false))
+      + '</select></label>'
+      + '<label class="field"><span>Конгресс, ₽/год</span>' + moneyInput('data-agent-id="' + source.id + '" data-agent-field="congressPerYear"', motivation.congressPerYear) + '</label>'
+      + '<label class="field"><span>Звезда</span><select data-agent-id="' + source.id + '" data-agent-field="starEnabled">'
+      + option('false', 'Нет', String(Boolean(motivation.starEnabled)))
+      + option('true', 'Да', String(Boolean(motivation.starEnabled)))
+      + '</select></label>'
+      + '<label class="field"><span>Звезда, ₽/год</span>' + moneyInput('data-agent-id="' + source.id + '" data-agent-field="starPerYear"', motivation.starPerYear) + '</label>'
       + '</div></section>'
       + '<section class="detail-section"><h3>Расчётная справка</h3><dl class="detail-metrics">'
       + '<div><dt>Роялти-оценка</dt><dd>' + money(row ? row.royaltyShare : 0) + '</dd></div>'
@@ -997,6 +1009,20 @@
         agent.introduced = target.value === 'true';
       } else if (field === 'partnerConfirmed') {
         agent.partnerConfirmed = target.value === 'true';
+      } else if (field === 'congressEnabled' || field === 'starEnabled') {
+        agent.motivation = Object.assign({}, DEFAULT_MOTIVATION, agent.motivation || {});
+        agent.motivation[field] = target.value === 'true';
+        if (field === 'starEnabled' && agent.motivation.starEnabled) {
+          state.agents.forEach(function (otherAgent) {
+            if (otherAgent.id !== agent.id) {
+              otherAgent.motivation = Object.assign({}, DEFAULT_MOTIVATION, otherAgent.motivation || {});
+              otherAgent.motivation.starEnabled = false;
+            }
+          });
+        }
+      } else if (field === 'congressPerYear' || field === 'starPerYear') {
+        agent.motivation = Object.assign({}, DEFAULT_MOTIVATION, agent.motivation || {});
+        agent.motivation[field] = inputNumber(target.value);
       } else if (field === 'commissionMode') {
         agent.commissionMode = target.value === 'exact' ? 'exact' : 'quick';
         if (agent.commissionMode === 'exact') {

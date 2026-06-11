@@ -25,6 +25,7 @@
       partner: [0.45, 0.50, 0.55, 0.60]
     },
     boostedDefault: [55, 55, 55, 60],
+    boostedStartingDefault: 55,
     fixedDefault: 80
   };
 
@@ -79,13 +80,14 @@
     {
       id: 'agent-1',
       name: 'Анна',
-      commission: 400000,
-      dealCount: 4,
+      commission: 0,
+      dealCount: 1,
       commissionMode: 'exact',
-      dealsInput: [100000, 100000, 100000, 100000],
+      dealsInput: [''],
       paymentType: 'standard',
       status: 'partner',
       boostedRates: [55, 55, 55, 60],
+      startingRate: 55,
       fixedRate: 80,
       introduced: false,
       partnerConfirmed: true,

@@ -10,6 +10,8 @@
   var TABLE_SNAPSHOT_VERSION = 1;
   var TABLE_SNAPSHOT_KEY = 'domianA4TableSnapshot';
   var DEFAULT_AGENT_NAME = 'Новый агент';
+  var DEAL_PLACEHOLDER = '100 000';
+  var hasUnsavedChanges = false;
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -40,6 +42,7 @@
       paymentType: 'standard',
       status: 'partner',
       boostedRates: clone(PAY_SCALES.boostedDefault),
+      startingRate: PAY_SCALES.boostedStartingDefault || PAY_SCALES.boostedDefault[0],
       fixedRate: PAY_SCALES.fixedDefault,
       introduced: false,
       partnerConfirmed: false,
@@ -53,9 +56,7 @@
       travelOverride: false,
       eventsOverride: false,
       specialTermsOverride: false,
-      motivation: Object.assign(createMotivation(), {
-        congressEnabled: false
-      })
+      motivation: createMotivation()
     };
   }
 
@@ -90,6 +91,11 @@
   function normalizeAgent(agent) {
     var normalized = Object.assign({}, agent || {});
     normalized.motivation = Object.assign(createMotivation(), normalized.motivation || {});
+    if (normalized.startingRate === undefined || normalized.startingRate === null || normalized.startingRate === '') {
+      normalized.startingRate = Array.isArray(normalized.boostedRates) && normalized.boostedRates.length
+        ? positiveNumber(normalized.boostedRates[0])
+        : positiveNumber(PAY_SCALES.boostedStartingDefault || PAY_SCALES.boostedDefault[0]);
+    }
     if (normalized.partnerConfirmed === undefined) {
       normalized.partnerConfirmed = positiveNumber(normalized.quarterlyDeposits) >= PARTNERSHIP_DEPOSIT_THRESHOLD;
     }
@@ -214,8 +220,10 @@
     return amount > 0 ? formatMoneyInputValue(amount) : '0';
   }
 
-  function moneyInput(attributes, value) {
-    return '<input type="text" inputmode="numeric" autocomplete="off" data-money-input="true" ' + attributes + ' value="' + formatMoneyInputValue(value) + '">';
+  function moneyInput(attributes, value, placeholder) {
+    return '<input type="text" inputmode="numeric" autocomplete="off" data-money-input="true" '
+      + (placeholder ? 'placeholder="' + escapeHtml(placeholder) + '" ' : '')
+      + attributes + ' value="' + formatMoneyInputValue(value) + '">';
   }
 
   function getMoneyCaretPosition(value, digitsBeforeCaret) {
@@ -253,6 +261,10 @@
       var nextCaret = getMoneyCaretPosition(nextValue, digitsBeforeCaret);
       input.setSelectionRange(nextCaret, nextCaret);
     }
+  }
+
+  function markStateDirty() {
+    hasUnsavedChanges = true;
   }
 
   function checked(value) {
@@ -413,15 +425,28 @@
 
   function renderExactDeals(agent, result) {
     var deals = normalizeExactDealsInput(agent.dealsInput);
+    var dealMetrics = result.deals || [];
+    var meaningfulDealIndex = 0;
     return '<div class="exact-deals-panel wide-field">'
       + '<p class="hint">Для точной зарплаты лучше ввести сделки отдельно. Особенно если одна сделка сильно больше других.</p>'
       + '<div class="exact-deals-list">'
       + deals.map(function (deal, index) {
-        return '<label class="field exact-deal-row">'
+        var amount = inputNumber(deal);
+        var metric = amount > 0 ? dealMetrics[meaningfulDealIndex] : null;
+        if (amount > 0) {
+          meaningfulDealIndex += 1;
+        }
+        return '<div class="exact-deal-row">'
+          + '<label class="field">'
           + '<span>Сделка ' + (index + 1) + ' — комиссия, ₽</span>'
-          + moneyInput('data-agent-id="' + agent.id + '" data-deal-index="' + index + '"', getDealDisplayValue(deal))
+          + moneyInput('data-agent-id="' + agent.id + '" data-deal-index="' + index + '"', getDealDisplayValue(deal), DEAL_PLACEHOLDER)
+          + '</label>'
+          + '<div class="deal-calculation" aria-live="polite">'
+          + '<span><strong>' + (metric ? Math.round(metric.rate * 100) + '%' : '—') + '</strong><small>Применённый процент</small></span>'
+          + '<span><strong>' + (metric ? money(metric.payout) : money(0)) + '</strong><small>Агенту</small></span>'
+          + '</div>'
           + '<button class="button ghost" type="button" data-action="remove-deal" data-agent-id="' + agent.id + '" data-deal-index="' + index + '"' + (deals.length === 1 ? ' disabled' : '') + '>Удалить</button>'
-          + '</label>';
+          + '</div>';
       }).join('')
       + '</div>'
       + '<button class="button ghost" type="button" data-action="add-deal" data-agent-id="' + agent.id + '">Добавить сделку</button>'
@@ -436,7 +461,7 @@
     return '<div class="exact-deals-panel wide-field quick-deals-panel">'
       + '<p class="deal-mode-hint">Быстрый расчёт — примерная оценка. Калькулятор делит общую комиссию поровну на сделки. Если сделки были разными по сумме, используйте точный расчёт.</p>'
       + '<div class="form-grid compact-grid deal-estimate-grid">'
-      + '<label class="field"><span>Сколько агент принёс комиссии</span>' + moneyInput('data-agent-id="' + agent.id + '" data-agent-field="commission"', result.commission) + '<small>Это вся комиссия за месяц.</small></label>'
+      + '<label class="field"><span>Сколько агент принёс комиссии</span>' + moneyInput('data-agent-id="' + agent.id + '" data-agent-field="commission"', result.commission, DEAL_PLACEHOLDER) + '<small>Это вся комиссия за месяц.</small></label>'
       + '<label class="field"><span>Количество сделок</span><input type="number" min="1" step="1" data-agent-id="' + agent.id + '" data-agent-field="dealCount" value="' + result.dealCount + '"><small>Если сделки были разными по сумме, используйте точный расчёт по сделкам.</small></label>'
       + '</div>'
       + '</div>';
@@ -777,6 +802,7 @@
 
     collapsePreviousAgentIfReady();
     agent = createAgent();
+    markStateDirty();
     state.agents.push(agent);
     setAgentCollapsed(agent.id, false);
     renderPreservingUiState('[data-agent-field="name"][data-agent-id="' + agent.id + '"]');
@@ -826,6 +852,15 @@
     return '<p class="eligibility-note blocked">' + getEligibilityText(reserve.stipendReason) + '</p>';
   }
 
+  function renderMandatoryAnnualMotivationSection(agent) {
+    return '<section class="motivation-section"><h4>Обязательные годовые расходы</h4>'
+      + '<p class="hint compact">Конгресс и Звезда считаются отдельно от стандартных мотиваций. Фикс, повышенная шкала, ручной режим и отключение стандартных мотиваций не должны убирать эти расходы.</p>'
+      + '<div class="motivation-card-grid">'
+      + renderAnnualMotivationCard(agent, { key: 'congress', enabledField: 'congressEnabled', amountField: 'congressPerYear', alwaysAvailable: true, title: 'Конгресс', description: 'Участие агента в годовом мероприятии' })
+      + renderAnnualMotivationCard(agent, { key: 'star', enabledField: 'starEnabled', amountField: 'starPerYear', alwaysAvailable: true, title: 'Звезда', description: 'Награда для лучшего агента офиса' })
+      + '</div></section>';
+  }
+
   function renderMotivationControls(agent) {
     var motivation = Object.assign(createMotivation(), agent.motivation || {});
     var motivationReserve = calculateAgent(agent).motivationReserve;
@@ -857,9 +892,10 @@
           { value: 'manual', label: 'Заложить вручную' }
         ])
         + (currentMode === 'off'
-          ? renderReserveSummary('Мотивации не учитываются.', 0)
+          ? renderReserveSummary('Стандартные мотивации не учитываются. Обязательные расходы ниже считаются отдельно.', reserve.congressMonthly + reserve.starMonthly)
           : '<label class="field wide-field"><span>Резерв мотиваций в месяц, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-motivation-field="manualReserveMonthly"', motivation.manualReserveMonthly) + '<small>Укажите сумму, которую собственник хочет ежемесячно закладывать на будущие мотивации этого агента.</small></label>')
         + '</div>'
+        + renderMandatoryAnnualMotivationSection(agent)
         + '</div>'
         + '</details>';
     }
@@ -881,7 +917,8 @@
         + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-field="specialManualReserveEnabled" data-structural="true"' + checked(Boolean(motivation.specialManualReserveEnabled)) + '><span>Заложить ручной резерв мотиваций при особых условиях</span></label>'
         + (motivation.specialManualReserveEnabled
           ? '<label class="field"><span>Резерв мотиваций в месяц, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-motivation-field="manualReserveMonthly"', motivation.manualReserveMonthly) + '<small>Заполняйте только если хотите отдельно откладывать резерв сверх особых условий.</small></label>'
-          : renderReserveSummary('Ручной резерв не учитывается.', 0))
+          : renderReserveSummary('Ручной резерв не учитывается. Конгресс и Звезда считаются отдельно ниже.', reserve.congressMonthly + reserve.starMonthly))
+        + renderMandatoryAnnualMotivationSection(agent)
         + '</div>'
         + '</details>';
     }
@@ -906,10 +943,10 @@
       ])
       + '</div>'
       + (currentMode === 'off'
-        ? renderReserveSummary('Мотивации не учитываются.', 0)
+        ? renderReserveSummary('Стандартные мотивации не учитываются. Конгресс и Звезда считаются отдельно ниже.', reserve.congressMonthly + reserve.starMonthly)
         : '')
       + (currentMode === 'manual'
-        ? '<div class="form-grid compact-grid"><label class="field wide-field"><span>Резерв мотиваций в месяц, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-motivation-field="manualReserveMonthly"', motivation.manualReserveMonthly) + '<small>Укажите сумму, которую собственник хочет ежемесячно закладывать на будущие мотивации этого агента.</small></label></div>'
+        ? '<div class="form-grid compact-grid"><label class="field wide-field"><span>Резерв мотиваций в месяц, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-motivation-field="manualReserveMonthly"', motivation.manualReserveMonthly) + '<small>Укажите сумму, которую собственник хочет ежемесячно закладывать на будущие мотивации этого агента. Конгресс и Звезда считаются отдельно ниже.</small></label></div>'
         : '')
       + (currentMode === 'rules'
         ? '<section class="motivation-section"><h4>Квартальные условия</h4><div class="form-grid compact-grid">'
@@ -947,10 +984,9 @@
           + renderTripMotivationCard(agent, { key: 'mountainSea', enabledField: 'mountainSeaEnabled', amountField: 'mountainSeaPerTrip', countField: 'mountainSeaTripsPerYear', overrideField: 'mountainSeaOverride', overrideLabel: 'Всё равно заложить поездки по РФ', title: 'Горы / Море', description: 'Поездки по РФ для агента' })
           + renderTripMotivationCard(agent, { key: 'travel', enabledField: 'travelEnabled', amountField: 'travelPerTrip', countField: 'travelTripsPerYear', overrideField: 'travelOverride', overrideLabel: 'Всё равно заложить путешествие', title: 'Заграница / Путешествие', description: 'Зарубежные поездки для агента' })
           + renderAnnualMotivationCard(agent, { key: 'corporate', enabledField: 'corporateEnabled', amountField: 'corporatePerYear', overrideField: 'eventsOverride', overrideLabel: 'Всё равно заложить корпоратив', title: 'Корпоративы', description: 'Годовой резерв на мероприятия' })
-          + renderAnnualMotivationCard(agent, { key: 'congress', enabledField: 'congressEnabled', amountField: 'congressPerYear', alwaysAvailable: true, title: 'Конгресс', description: 'Участие агента в годовом мероприятии' })
-          + renderAnnualMotivationCard(agent, { key: 'star', enabledField: 'starEnabled', amountField: 'starPerYear', alwaysAvailable: true, title: 'Звезда', description: 'Награда для лучшего агента офиса' })
           + '</div></section>'
         : '')
+      + renderMandatoryAnnualMotivationSection(agent)
       + '</div>'
       + '</details>';
   }
@@ -968,12 +1004,10 @@
 
       if (agent.paymentType === 'boosted') {
         boostedControls = '<div class="rate-grid">'
-          + [0, 1, 2, 3].map(function (rateIndex) {
-            var labels = ['1-я сделка, %', '2-я сделка, %', '3-я сделка, %', '4-я и далее, %'];
-            return '<label class="field"><span>' + labels[rateIndex] + '</span>'
-              + '<input type="number" min="0" max="100" step="1" data-agent-id="' + agent.id + '" data-rate-index="' + rateIndex + '" value="' + agent.boostedRates[rateIndex] + '"></label>';
-          }).join('')
-          + '</div><p class="hint compact">Компромиссный вариант: первые сделки оплачиваются выше стандарта, но это ещё не фиксированный процент.</p>';
+          + '<label class="field"><span>Стартовый процент</span>'
+          + '<input type="number" min="0" max="100" step="1" data-agent-id="' + agent.id + '" data-agent-field="startingRate" value="' + agent.startingRate + '">'
+          + '<small>Сделка считается по большему значению: стандартная шкала партнёра или этот стартовый процент.</small></label>'
+          + '</div><p class="hint compact">Например, 55% даст 55 / 55 / 55 / 60, 70% даст 70% на все сделки. Последующие сделки не падают ниже стартового процента.</p>';
       }
 
       if (agent.paymentType === 'fixed') {
@@ -1500,9 +1534,6 @@
     if (element.dataset.motivationFlag && element.dataset.agentId) {
       return '[data-motivation-flag="' + element.dataset.motivationFlag + '"][data-agent-id="' + element.dataset.agentId + '"]';
     }
-    if (element.dataset.rateIndex !== undefined && element.dataset.agentId) {
-      return '[data-rate-index="' + element.dataset.rateIndex + '"][data-agent-id="' + element.dataset.agentId + '"]';
-    }
     if (element.dataset.dealIndex !== undefined && element.dataset.agentId) {
       return '[data-deal-index="' + element.dataset.dealIndex + '"][data-agent-id="' + element.dataset.agentId + '"]';
     }
@@ -1589,6 +1620,7 @@
   function onInput(event) {
     var target = event.target;
     formatMoneyInputElement(target);
+    markStateDirty();
 
     if (target.dataset.expenseId && target.dataset.expenseField) {
       var expense = state.expenses.find(function (item) { return item.id === target.dataset.expenseId; });
@@ -1641,13 +1673,6 @@
       return;
     }
 
-    if (target.dataset.rateIndex !== undefined) {
-      var rateAgent = findAgent(target.dataset.agentId);
-      if (rateAgent) {
-        rateAgent.boostedRates[Number(target.dataset.rateIndex)] = inputNumber(target.value);
-        updateTotalsOnly();
-      }
-    }
   }
 
   function updateAgentField(target, eventType) {
@@ -1659,7 +1684,7 @@
 
     agent.motivation = Object.assign(createMotivation(), agent.motivation || {});
 
-    if (field === 'commission' || field === 'fixedRate' || field === 'quarterlyCommission' || field === 'quarterlyDeposits' || field === 'halfYearCommission' || field === 'preTripQuarterDeposits') {
+    if (field === 'commission' || field === 'fixedRate' || field === 'startingRate' || field === 'quarterlyCommission' || field === 'quarterlyDeposits' || field === 'halfYearCommission' || field === 'preTripQuarterDeposits') {
       agent[field] = inputNumber(target.value);
     } else if (field === 'dealCount') {
       agent[field] = Math.max(1, Math.floor(inputNumber(target.value)));
@@ -1668,6 +1693,9 @@
         agent.paymentType = 'standard';
       } else if (agent.paymentType === 'standard') {
         agent.paymentType = 'boosted';
+        if (agent.startingRate === undefined || agent.startingRate === null || agent.startingRate === '') {
+          agent.startingRate = positiveNumber(PAY_SCALES.boostedStartingDefault || PAY_SCALES.boostedDefault[0]);
+        }
       }
     } else if (field === 'introduced' || field === 'partnerConfirmed' || field === 'motivationOverride' || field === 'stipendOverride' || field === 'mountainSeaOverride' || field === 'travelOverride' || field === 'eventsOverride' || field === 'specialTermsOverride') {
       agent[field] = target.type === 'checkbox' ? target.checked : target.value === 'true';
@@ -1797,6 +1825,7 @@
     }
 
     if (target.dataset.action === 'remove-agent') {
+      markStateDirty();
       state.agents = state.agents.filter(function (agent) {
         return agent.id !== target.dataset.agentId;
       });
@@ -1819,6 +1848,7 @@
     if (target.dataset.action === 'add-deal') {
       var addDealAgent = findAgent(target.dataset.agentId);
       if (addDealAgent) {
+        markStateDirty();
         addDealAgent.dealsInput = normalizeExactDealsInput(addDealAgent.dealsInput);
         addDealAgent.dealsInput.push('');
         syncAgentTotalsFromDeals(addDealAgent);
@@ -1829,6 +1859,7 @@
     if (target.dataset.action === 'remove-deal') {
       var removeDealAgent = findAgent(target.dataset.agentId);
       if (removeDealAgent) {
+        markStateDirty();
         removeDealAgent.dealsInput = normalizeExactDealsInput(removeDealAgent.dealsInput);
         if (removeDealAgent.dealsInput.length > 1) {
           removeDealAgent.dealsInput.splice(Number(target.dataset.dealIndex), 1);
@@ -1842,6 +1873,7 @@
       if (!window.confirm('Очистить все текущие данные на странице? Это действие заменит текущий ввод пустым шаблоном.')) {
         return;
       }
+      markStateDirty();
       state = createBlankState();
       uiState = createUiState();
       try {
@@ -1857,6 +1889,7 @@
       if (!window.confirm('Вернуть демонстрационный пример и заменить им текущие данные?')) {
         return;
       }
+      markStateDirty();
       state = createState();
       uiState = createUiState();
       window.domianA4State = state;
@@ -1864,6 +1897,7 @@
     }
 
     if (target.dataset.action === 'add-expense') {
+      markStateDirty();
       state.expenses.push({
         id: nextExpenseId(),
         name: 'Новый расход',
@@ -1873,6 +1907,7 @@
     }
 
     if (target.dataset.action === 'remove-expense') {
+      markStateDirty();
       state.expenses = state.expenses.filter(function (expense) {
         return expense.id !== target.dataset.expenseId;
       });
@@ -1920,10 +1955,25 @@
     });
   }
 
+  function updateForecastNotice() {
+    var forecastNotice = document.querySelector('.forecast-card .notice.info');
+    if (forecastNotice) {
+      forecastNotice.textContent = 'Это условный прогноз от текущего месяца, а не полноценный годовой расчёт. Роялти считается как сумма одинаковых месяцев; если реальный оборот по месяцам будет отличаться, ставка роялти может измениться.';
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     collectElements();
+    updateForecastNotice();
     state = createState();
     uiState = createUiState();
+    window.addEventListener('beforeunload', function (event) {
+      if (!hasUnsavedChanges) {
+        return;
+      }
+      event.preventDefault();
+      event.returnValue = '';
+    });
     document.body.addEventListener('compositionstart', function (event) {
       if (event.target && event.target.dataset && event.target.dataset.moneyInput === 'true') {
         event.target.dataset.composing = 'true';
