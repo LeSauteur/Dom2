@@ -111,6 +111,9 @@
   }
 
   function createBlankAgent() {
+    var startingRate = PAY_SCALES.boostedStartingDefault || PAY_SCALES.boostedDefault[0];
+    var boostedRates = clone(PAY_SCALES.boostedDefault);
+    boostedRates[0] = startingRate;
     return {
       id: nextAgentId(),
       name: '',
@@ -120,7 +123,8 @@
       dealsInput: [],
       paymentType: 'standard',
       status: 'partner',
-      boostedRates: clone(PAY_SCALES.boostedDefault),
+      boostedRates: boostedRates,
+      startingRate: startingRate,
       fixedRate: PAY_SCALES.fixedDefault,
       introduced: false,
       partnerConfirmed: false,
@@ -404,11 +408,18 @@
     var commissionMode = source.commissionMode === 'exact' ? 'exact' : 'quick';
     var dealsInput = normalizeDealsInput(source.dealsInput);
     var boostedRates = normalizeBoostedRates(source.boostedRates);
+    var startingRate = source.startingRate;
+    if (startingRate === undefined || startingRate === null || startingRate === '') {
+      startingRate = boostedRates[0];
+    }
+    startingRate = positiveNumber(startingRate);
+    boostedRates[0] = startingRate;
     var motivation = normalizeMotivation(source, source.motivationReserve);
     var calculated = calculateAgent(Object.assign({}, source, {
       commissionMode: commissionMode,
       dealsInput: dealsInput,
       boostedRates: boostedRates,
+      startingRate: startingRate,
       motivation: motivation
     }));
     var fixedRate = source.fixedRate;
@@ -427,6 +438,7 @@
       paymentType: source.paymentType || calculated.paymentType || 'standard',
       status: source.status || calculated.status || 'partner',
       boostedRates: boostedRates,
+      startingRate: startingRate,
       fixedRate: positiveNumber(fixedRate),
       introduced: Boolean(source.introduced),
       partnerConfirmed: Boolean(source.partnerConfirmed),
@@ -517,6 +529,7 @@
       eventsOverride: Boolean(agent.eventsOverride),
       specialTermsOverride: Boolean(agent.specialTermsOverride),
       boostedRates: normalizeBoostedRates(agent.boostedRates),
+      startingRate: positiveNumber(agent.startingRate),
       motivation: normalizeMotivation(agent, agent.motivationReserve)
     };
   }
@@ -719,17 +732,16 @@
   }
 
   function renderBoostedRatesRow(agent) {
-    var rates = normalizeBoostedRates(agent.boostedRates);
+    var startingRate = agent.startingRate;
+    if (startingRate === undefined || startingRate === null || startingRate === '') {
+      startingRate = normalizeBoostedRates(agent.boostedRates)[0];
+    }
     return '<div class="boosted-details">'
-      + '<div class="boosted-details-head"><strong>Ставки повышенной шкалы</strong><span>Таблица считает выплаты по этим процентам для 1-й, 2-й, 3-й и 4-й+ сделки.</span></div>'
-      + '<div class="boosted-rates-list">'
-      + rates.map(function (rate, index) {
-        var label = index < rates.length - 1 ? (index + 1) + '-я сделка' : (index + 1) + '-я+ сделка';
-        return '<label class="boosted-rate-field">'
-          + '<span>' + label + '</span>'
-          + '<input type="number" min="0" max="100" step="1" data-agent-id="' + agent.id + '" data-rate-index="' + index + '" value="' + positiveNumber(rate) + '">'
-          + '</label>';
-      }).join('')
+      + '<div class="boosted-details-head"><strong>Стартовый процент</strong><span>Таблица считает по большему значению: стандартная шкала партнёра или этот стартовый процент.</span></div>'
+      + '<div class="rate-grid">'
+      + '<label class="field"><span>Стартовый процент</span>'
+      + '<input type="number" min="0" max="100" step="1" data-agent-id="' + agent.id + '" data-agent-field="startingRate" value="' + positiveNumber(startingRate) + '">'
+      + '<small>Если эта ставка выше стандартной, каждая сделка не опустится ниже неё.</small></label>'
       + '</div>'
       + '</div>';
   }
@@ -1035,6 +1047,12 @@
         }
       } else if (field === 'dealCount') {
         agent.dealCount = Math.max(1, Math.floor(inputNumber(target.value)));
+      } else if (field === 'startingRate') {
+        agent.startingRate = inputNumber(target.value);
+        if (agent.paymentType === 'boosted') {
+          agent.boostedRates = normalizeBoostedRates(agent.boostedRates);
+          agent.boostedRates[0] = agent.startingRate;
+        }
       } else {
         agent[field] = inputNumber(target.value);
         if (field === 'motivationReserve') {

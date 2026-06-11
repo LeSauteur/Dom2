@@ -441,9 +441,9 @@
           + '<span>Сделка ' + (index + 1) + ' — комиссия, ₽</span>'
           + moneyInput('data-agent-id="' + agent.id + '" data-deal-index="' + index + '"', getDealDisplayValue(deal), DEAL_PLACEHOLDER)
           + '</label>'
-          + '<div class="deal-calculation" aria-live="polite">'
-          + '<span><strong>' + (metric ? Math.round(metric.rate * 100) + '%' : '—') + '</strong><small>Применённый процент</small></span>'
-          + '<span><strong>' + (metric ? money(metric.payout) : money(0)) + '</strong><small>Агенту</small></span>'
+          + '<div class="deal-calculation" aria-live="polite" data-agent-id="' + agent.id + '" data-agent-deal-index="' + index + '">'
+          + '<span><strong data-agent-deal-rate>' + (metric ? Math.round(metric.rate * 100) + '%' : '—') + '</strong><small>Применённый процент</small></span>'
+          + '<span><strong data-agent-deal-payout>' + (metric ? money(metric.payout) : '—') + '</strong><small>Агенту</small></span>'
           + '</div>'
           + '<button class="button ghost" type="button" data-action="remove-deal" data-agent-id="' + agent.id + '" data-deal-index="' + index + '"' + (deals.length === 1 ? ' disabled' : '') + '>Удалить</button>'
           + '</div>';
@@ -1289,6 +1289,7 @@
 
   function updateAgentSummaries() {
     calculateOffice(state).agents.forEach(function (agent) {
+      var sourceAgent = findAgent(agent.id);
       [
         ['payout', agent.payout],
         ['commission', agent.commission],
@@ -1314,6 +1315,31 @@
         var dealCountNode = document.querySelector('[data-agent-summary="dealCount"][data-agent-id="' + agent.id + '"]');
         if (dealCountNode) {
           dealCountNode.textContent = agent.dealCount;
+        }
+        if (sourceAgent && sourceAgent.commissionMode === 'exact') {
+          var sourceDeals = normalizeExactDealsInput(sourceAgent.dealsInput);
+          var meaningfulDealIndex = 0;
+          sourceDeals.forEach(function (deal, index) {
+            var rowNode = document.querySelector('[data-agent-deal-index="' + index + '"][data-agent-id="' + agent.id + '"]');
+            if (!rowNode) {
+              if (positiveNumber(deal) > 0) {
+                meaningfulDealIndex += 1;
+              }
+              return;
+            }
+            var metric = positiveNumber(deal) > 0 ? agent.deals[meaningfulDealIndex] : null;
+            if (positiveNumber(deal) > 0) {
+              meaningfulDealIndex += 1;
+            }
+            var rateNode = rowNode.querySelector('[data-agent-deal-rate]');
+            var payoutNode = rowNode.querySelector('[data-agent-deal-payout]');
+            if (rateNode) {
+              rateNode.textContent = metric ? Math.round(metric.rate * 100) + '%' : '—';
+            }
+            if (payoutNode) {
+              payoutNode.textContent = metric ? money(metric.payout) : '—';
+            }
+          });
         }
       }
       syncAgentCardChrome(agent.id);
