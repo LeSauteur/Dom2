@@ -34,7 +34,7 @@
   function createAgent() {
     return {
       id: nextId(),
-      name: 'Новый агент',
+      name: '',
       commission: 0,
       dealCount: 1,
       commissionMode: 'exact',
@@ -1031,7 +1031,7 @@
         + '<button class="button ghost" type="button" data-action="remove-agent" data-agent-id="' + agent.id + '"' + (state.agents.length === 1 ? ' disabled' : '') + '>Удалить</button>'
         + '</div>'
         + '<div class="form-grid">'
-        + '<label class="field agent-main-field"><span>Имя</span><input type="text" data-agent-id="' + agent.id + '" data-agent-field="name" value="' + escapeHtml(agent.name) + '"></label>'
+        + '<label class="field agent-main-field"><span>Имя</span><input type="text" data-agent-id="' + agent.id + '" data-agent-field="name" value="' + escapeHtml(agent.name || '') + '" placeholder="Новый агент"></label>'
         + statusControl
         + renderStandardScaleNote(agent)
         + partnerSystemControl
