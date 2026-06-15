@@ -57,6 +57,7 @@ function loadAppHelpers() {
       '  inputNumber: inputNumber,',
       '  formatMoneyInputRaw: formatMoneyInputRaw,',
       '  createState: createState,',
+      '  createExampleState: createExampleState,',
       '  createBlankState: createBlankState',
       '};',
       '}());'
@@ -104,7 +105,28 @@ test('A4 money parser accepts regular, non-breaking and narrow non-breaking spac
 
 test('A4 state factories create current versioned state', () => {
   assert.equal(appHelpers.createState().version, 1);
+  assert.equal(appHelpers.createExampleState().version, 1);
   assert.equal(appHelpers.createBlankState().version, 1);
+});
+
+test('A4 blank state starts empty while example state keeps demo data', () => {
+  const blank = appHelpers.createState();
+  const example = appHelpers.createExampleState();
+
+  assert.equal(blank.ownerSales, 0);
+  assert.equal(blank.expenses.length, 1);
+  assert.equal(blank.expenses[0].amount, 0);
+  assert.equal(blank.agents.length, 1);
+  assert.equal(blank.agents[0].commission, 0);
+  assert.equal(blank.schemeCheck.commission, 0);
+  assert.equal(blank.schemeCheck.manualRate, 80);
+
+  assert.equal(example.ownerSales, 150000);
+  assert.ok(example.expenses.some((item) => item.amount > 0));
+  assert.equal(example.agents[0].name, 'Анна');
+  assert.equal(example.agents[0].commission, 0);
+  assert.equal(example.schemeCheck.commission, 400000);
+  assert.equal(example.schemeCheck.manualRate, 75);
 });
 
 test('stipend recalculates when quarterly commission changes from 650000 to 1500000', () => {
@@ -1025,7 +1047,7 @@ test('example agent anna starts with placeholder deal only and no turnover', () 
 });
 
 test('new A4 agent keeps congress ready by default but does not charge blank drafts', () => {
-  const blankState = appHelpers.createBlankState();
+  const blankState = appHelpers.createState();
   const agent = blankState.agents[0];
   const blank = calculator.calculateAgent(agent);
 
@@ -1040,6 +1062,11 @@ test('new A4 agent keeps congress ready by default but does not charge blank dra
 
   assert.equal(active.motivation.congressAnnual, calculator.DEFAULT_MOTIVATION.congressPerYear);
   closeTo(active.motivationReserve, calculator.DEFAULT_MOTIVATION.congressPerYear / 12);
+});
+
+test('restore-example path keeps the demo state separate from the blank starter', () => {
+  assert.match(appSource, /state = createExampleState\(\);/);
+  assert.match(appSource, /state = createState\(\);/);
 });
 
 test('mandatory congress and star survive off, manual and special payment modes', () => {

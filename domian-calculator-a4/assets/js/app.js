@@ -138,6 +138,24 @@
   }
 
   function createState() {
+    return {
+      version: STATE_VERSION,
+      expenses: [createBlankExpense()],
+      agents: [normalizeAgent(createAgent())],
+      ownerSales: 0,
+      schemeCheck: {
+        commission: 0,
+        dealCount: 1,
+        introduced: false,
+        expenseShareMode: 'manual',
+        manualExpenseShare: 0,
+        motivationReserve: 0,
+        manualRate: 80
+      }
+    };
+  }
+
+  function createExampleState() {
     var agents = clone(DEFAULT_AGENTS).map(function (agent) {
       return normalizeAgent(agent);
     });
@@ -1942,7 +1960,7 @@
         return;
       }
       markStateDirty();
-      state = createState();
+      state = createExampleState();
       uiState = createUiState();
       window.domianA4State = state;
       render();
