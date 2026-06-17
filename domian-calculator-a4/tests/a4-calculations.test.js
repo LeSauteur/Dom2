@@ -98,14 +98,21 @@ test('A4 money parser accepts regular, non-breaking and narrow non-breaking spac
     '1 500 000',
     '1\u00a0500\u00a0000',
     '1\u202f500\u202f000',
-    '1500 000'
+    '1500 000',
+    '1,500,000',
+    '1.500.000'
   ].forEach((value) => {
     assert.equal(appHelpers.inputNumber(value), 1500000);
   });
+  assert.equal(appHelpers.inputNumber('1,300,000'), 1300000);
+  assert.equal(appHelpers.inputNumber('1.300.000'), 1300000);
   assert.equal(appHelpers.inputNumber('0'), 0);
   assert.equal(appHelpers.inputNumber(''), 0);
   assert.equal(appHelpers.formatMoneyInputRaw(''), '');
   assert.equal(appHelpers.formatMoneyInputRaw('0'), '0');
+  assert.equal(appHelpers.formatMoneyInputRaw('1300000'), '1 300 000');
+  assert.equal(appHelpers.formatMoneyInputRaw('1,300,000'), '1 300 000');
+  assert.equal(appHelpers.formatMoneyInputRaw('1.300.000'), '1 300 000');
 });
 
 test('A4 state factories create current versioned state', () => {
@@ -160,15 +167,40 @@ test('stipend recalculates when quarterly commission changes from 650000 to 1500
   assert.equal(high.motivation.stipendMonthly, 7000);
 });
 
+test('stipend uses the current scale for quarterly commission 1300000', () => {
+  const agent = calculator.calculateAgent({
+    id: 'stipend-1300',
+    name: 'Stipend 1300',
+    commission: 180000,
+    dealCount: 1,
+    paymentType: 'standard',
+    status: 'partner',
+    partnerConfirmed: true,
+    quarterlyCommission: 1300000,
+    motivation: Object.assign({}, calculator.DEFAULT_MOTIVATION, {
+      mode: 'rules',
+      stipendMode: 'auto',
+      congressEnabled: false,
+      starEnabled: false
+    })
+  });
+
+  assert.equal(agent.motivation.stipendLevel, 6);
+  assert.equal(agent.motivation.stipendAvailable, true);
+  assert.equal(agent.motivation.stipendMonthly, 6000);
+});
+
 test('royalty boundaries use strict less-than limits', () => {
   [
     [499999, 0.07],
     [500000, 0.065],
+    [749999, 0.065],
     [750000, 0.06],
     [1000000, 0.055],
     [1500000, 0.05],
     [2000000, 0.045],
     [2500000, 0.04],
+    [2509000, 0.04],
     [3000000, 0.035],
     [4000000, 0.03]
   ].forEach(([turnover, rate]) => {
@@ -264,6 +296,17 @@ test('boosted starting rate is a floor over the standard partner scale', () => {
   });
   assert.deepEqual(Array.from(starting50.deals.map((deal) => deal.rate)), [0.50, 0.50, 0.55, 0.60]);
   closeTo(starting50.payout, 215000);
+
+  const starting55WithLowDeal = calculator.calculateAgent({
+    id: 'boosted-55-low-deal',
+    commissionMode: 'exact',
+    dealsInput: [35000, 100000, 100000, 100000, 100000],
+    paymentType: 'boosted',
+    status: 'partner',
+    startingRate: 55
+  });
+  assert.deepEqual(Array.from(starting55WithLowDeal.deals.map((deal) => deal.rate)), [0.55, 0.55, 0.55, 0.55, 0.60]);
+  closeTo(starting55WithLowDeal.payout, 244250);
 });
 
 test('legacy boostedRates migrates to startingRate from the first value', () => {
@@ -309,7 +352,8 @@ test('exact deals mode pays standard partner by real deal amounts', () => {
 
   assert.equal(agent.commission, 400000);
   assert.equal(agent.dealCount, 4);
-  closeTo(agent.payout, 237000);
+  assert.deepEqual(Array.from(agent.deals.map((deal) => deal.rate)), [0.45, 0.45, 0.45, 0.45]);
+  closeTo(agent.payout, 180000);
 });
 
 test('exact deals mode pays boosted scale by real deal amounts', () => {
@@ -324,7 +368,8 @@ test('exact deals mode pays boosted scale by real deal amounts', () => {
 
   assert.equal(agent.commission, 400000);
   assert.equal(agent.dealCount, 4);
-  closeTo(agent.payout, 238500);
+  assert.deepEqual(Array.from(agent.deals.map((deal) => deal.rate)), [0.55, 0.55, 0.55, 0.55]);
+  closeTo(agent.payout, 220000);
 });
 
 test('exact deals mode pays fixed percent and referral from total commission', () => {
@@ -768,7 +813,7 @@ test('agent retention scenarios preserve exact deals and fixed 80 payout', () =>
   const baseline = result.scenarios.find((item) => item.id === 'current');
   const fixed80 = result.scenarios.find((item) => item.id === 'fixed-80');
 
-  assert.equal(baseline.payout, 237000);
+  assert.equal(baseline.payout, 180000);
   assert.equal(fixed80.payout, 320000);
 });
 
@@ -1041,6 +1086,77 @@ test('expense placeholders stay visual only and never seed state', () => {
   assert.equal(appSource.includes('Новый расход'), false);
 });
 
+test('standard partner exact deals use qualifying deal count for the rate scale', () => {
+  const allQualified = calculator.calculateAgent({
+    id: 'qualified-standard',
+    commissionMode: 'exact',
+    dealsInput: [100000, 100000, 100000, 100000],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  });
+  assert.deepEqual(Array.from(allQualified.deals.map((deal) => deal.rate)), [0.45, 0.50, 0.55, 0.60]);
+  closeTo(allQualified.payout, 210000);
+
+  const firstLow = calculator.calculateAgent({
+    id: 'first-low',
+    commissionMode: 'exact',
+    dealsInput: [35000, 100000],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  });
+  assert.deepEqual(Array.from(firstLow.deals.map((deal) => deal.rate)), [0.45, 0.45]);
+  closeTo(firstLow.payout, 60750);
+
+  const threeLowThenQualified = calculator.calculateAgent({
+    id: 'three-low-then-qualified',
+    commissionMode: 'exact',
+    dealsInput: [35000, 20000, 40000, 100000],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  });
+  assert.deepEqual(Array.from(threeLowThenQualified.deals.map((deal) => deal.rate)), [0.45, 0.45, 0.45, 0.45]);
+  closeTo(threeLowThenQualified.payout, 87750);
+
+  const fourthLow = calculator.calculateAgent({
+    id: 'fourth-low',
+    commissionMode: 'exact',
+    dealsInput: [100000, 100000, 100000, 35000],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  });
+  assert.deepEqual(Array.from(fourthLow.deals.map((deal) => deal.rate)), [0.45, 0.50, 0.55, 0.45]);
+  closeTo(fourthLow.payout, 165750);
+
+  const lowThenQualified = calculator.calculateAgent({
+    id: 'low-then-qualified',
+    commissionMode: 'exact',
+    dealsInput: [100000, 100000, 100000, 35000, 100000],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  });
+  assert.deepEqual(Array.from(lowThenQualified.deals.map((deal) => deal.rate)), [0.45, 0.50, 0.55, 0.45, 0.60]);
+  closeTo(lowThenQualified.payout, 225750);
+});
+
+test('standard trainee fourth exact deal gets 45 percent', () => {
+  const trainee = calculator.calculateAgent({
+    id: 'trainee-fourth',
+    commissionMode: 'exact',
+    dealsInput: [100000, 100000, 100000, 100000],
+    paymentType: 'standard',
+    status: 'trainee',
+    introduced: false
+  });
+
+  assert.deepEqual(Array.from(trainee.deals.map((deal) => deal.rate)), [0.30, 0.35, 0.40, 0.45]);
+  closeTo(trainee.payout, 150000);
+});
+
 test('motivation block uses the new warning wording and collapsed list', () => {
   assert.match(appSource, /Обязательно проверьте мотивации перед итогом/);
   assert.match(appSource, /Без проверки мотиваций расчёт может быть неполным\./);
@@ -1114,6 +1230,36 @@ test('quarterly result field is disabled until partnership is confirmed and stay
 
   assert.equal(blocked.stipendAvailable, false);
   assert.equal(blocked.stipendMonthly, 0);
+});
+
+test('quarterly result input renders from agent state after money input updates it', () => {
+  const agent = {
+    id: 'quarter-render-agent',
+    name: 'Quarter render agent',
+    commission: 180000,
+    dealCount: 1,
+    commissionMode: 'exact',
+    dealsInput: [180000],
+    paymentType: 'standard',
+    status: 'partner',
+    partnerConfirmed: true,
+    quarterlyCommission: 1300000,
+    quarterlyDeposits: 250000,
+    halfYearCommission: 0,
+    preTripQuarterDeposits: 0,
+    motivation: Object.assign({}, calculator.DEFAULT_MOTIVATION, {
+      mode: 'rules',
+      quarterlyCommission: 0,
+      stipendMode: 'auto',
+      congressEnabled: false,
+      starEnabled: false
+    })
+  };
+
+  const html = appHelpers.renderMotivationControls(agent);
+
+  assert.match(html, /data-agent-field="quarterlyCommission"[^>]*value="1 300 000"/);
+  assert.doesNotMatch(html, /data-agent-field="quarterlyCommission"[^>]*value=""/);
 });
 
 test('A4 motivation UI explains quarter stipend obligation and calendar caveats', () => {

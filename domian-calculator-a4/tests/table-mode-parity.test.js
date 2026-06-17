@@ -265,7 +265,7 @@ test('table-mode preserves uneven exact deals instead of recalculating as quick 
 
   assert.equal(row.calculated.commission, 400000);
   assert.equal(row.calculated.dealCount, 4);
-  closeTo(row.calculated.payout, 237000);
+  closeTo(row.calculated.payout, 180000);
 });
 
 test('table-mode switches manual quick rows to exact mode without runtime errors', () => {

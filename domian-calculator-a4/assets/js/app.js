@@ -215,9 +215,19 @@
   }
 
   function normalizeInputNumber(value) {
-    return String(value === null || value === undefined ? '' : value)
+    var normalized = String(value === null || value === undefined ? '' : value)
       .replace(/[\s\u00a0\u202f]+/g, '')
-      .replace(',', '.');
+      .trim();
+
+    if (!normalized) {
+      return '';
+    }
+
+    if (/[,.].*[,.]/.test(normalized) || /^\d{1,3}([,.]\d{3})+$/.test(normalized)) {
+      return normalized.replace(/[,.]/g, '');
+    }
+
+    return normalized.replace(',', '.');
   }
 
   function inputNumber(value) {
@@ -931,7 +941,7 @@
       + option('true', 'Да', String(partnershipConfirmed))
       + option('false', 'Нет', String(partnershipConfirmed))
       + '</select><small>Да — партнёрские бонусы можно учитывать. Нет — такие бонусы не считаются. 250 000 ₽ остаётся ориентиром правила.</small></label>'
-      + '<label class="field' + (quarterResultLocked ? ' is-muted' : '') + '"><span>Результат агента за квартал, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-agent-field="quarterlyCommission" data-structural="true"' + disabled(quarterResultLocked), motivation.quarterlyCommission) + '<small>' + (quarterResultLocked
+      + '<label class="field' + (quarterResultLocked ? ' is-muted' : '') + '"><span>Результат агента за квартал, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-agent-field="quarterlyCommission" data-structural="true"' + disabled(quarterResultLocked), agent.quarterlyCommission) + '<small>' + (quarterResultLocked
         ? 'Сначала подтвердите партнёрство. Без подтверждения квартальный результат не учитывается для мотиваций.'
         : 'Результат используется для уровня и стипендии по текущей логике.') + '</small></label>'
       + '</div></section>';
@@ -1030,7 +1040,7 @@
           + option('true', 'Да', String(Boolean(agent.partnerConfirmed)))
           + option('false', 'Нет', String(Boolean(agent.partnerConfirmed)))
           + '</select><small>Да — партнёрские бонусы можно учитывать. Нет — такие бонусы не считаются. 250 000 ₽ остаётся ориентиром правила.</small></label>'
-          + '<label class="field' + (reserve.partnershipConfirmed ? '' : ' is-muted') + '"><span>Результат агента за квартал, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-agent-field="quarterlyCommission" data-structural="true"' + disabled(!reserve.partnershipConfirmed), motivation.quarterlyCommission) + '<small>' + (!reserve.partnershipConfirmed ? 'Сначала подтвердите партнёрство. Без подтверждения квартальный результат не учитывается для мотиваций.' : 'Результат используется для уровня и стипендии по текущей логике.') + '</small></label>'
+          + '<label class="field' + (reserve.partnershipConfirmed ? '' : ' is-muted') + '"><span>Результат агента за квартал, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-agent-field="quarterlyCommission" data-structural="true"' + disabled(!reserve.partnershipConfirmed), agent.quarterlyCommission) + '<small>' + (!reserve.partnershipConfirmed ? 'Сначала подтвердите партнёрство. Без подтверждения квартальный результат не учитывается для мотиваций.' : 'Результат используется для уровня и стипендии по текущей логике.') + '</small></label>'
           + '</div></section>'
         : '')
       + (currentMode === 'rules'

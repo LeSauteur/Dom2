@@ -71,6 +71,17 @@
     return standardRate;
   }
 
+  function getRateScaleIndexForDeal(dealCommission, qualifiedDealCount) {
+    var threshold = positiveNumber(window.QUALIFYING_DEAL_COMMISSION_THRESHOLD || 50000);
+    var qualifiedCount = Math.max(0, Math.floor(positiveNumber(qualifiedDealCount)));
+
+    if (positiveNumber(dealCommission) >= threshold) {
+      return qualifiedCount;
+    }
+
+    return 0;
+  }
+
   function getStipendLevel(quarterlyResult) {
     var amount = positiveNumber(quarterlyResult);
     var matched = { threshold: 0, level: 0, monthly: 0 };
@@ -561,13 +572,18 @@
       : positiveNumber(agent.commission);
     var dealCount = exactMode ? Math.max(1, sourceDeals.length) : positiveInteger(agent.dealCount, 1);
     var dealCommission = dealCount ? commission / dealCount : 0;
+    var qualifiedDealCount = 0;
     var payout = 0;
     var deals = [];
 
     for (var i = 0; i < dealCount; i += 1) {
-      var rate = getDealRate(agent, i);
       var currentDealCommission = exactMode ? positiveNumber(sourceDeals[i]) : dealCommission;
+      var rateScaleIndex = getRateScaleIndexForDeal(currentDealCommission, qualifiedDealCount);
+      var rate = getDealRate(agent, rateScaleIndex);
       var dealPayout = currentDealCommission * rate;
+      if (currentDealCommission >= positiveNumber(window.QUALIFYING_DEAL_COMMISSION_THRESHOLD || 50000)) {
+        qualifiedDealCount += 1;
+      }
       payout += dealPayout;
       deals.push({
         index: i + 1,

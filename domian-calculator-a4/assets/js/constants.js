@@ -14,6 +14,7 @@
   ];
 
   window.REFERRAL_RATE = 0.025;
+  window.QUALIFYING_DEAL_COMMISSION_THRESHOLD = 50000;
   window.PARTNERSHIP_DEPOSIT_THRESHOLD = 250000;
   window.STIPEND_MIN_LEVEL = 3;
   window.STIPEND_MIN_QUARTERLY_COMMISSION = 600000;
@@ -21,7 +22,7 @@
 
   window.PAY_SCALES = {
     standard: {
-      trainee: [0.30, 0.35, 0.40],
+      trainee: [0.30, 0.35, 0.40, 0.45],
       partner: [0.45, 0.50, 0.55, 0.60]
     },
     boostedDefault: [55, 55, 55, 60],
