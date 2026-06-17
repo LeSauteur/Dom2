@@ -196,7 +196,12 @@
       dealsInput: dealsInput,
       paymentType: agent.paymentType,
       status: agent.status,
-      fixedRate: readMoney(agent.fixedRate) || PAY_SCALES.fixedDefault,
+      fixedRate: agent.fixedRate === undefined || agent.fixedRate === null || agent.fixedRate === ''
+        ? PAY_SCALES.fixedDefault
+        : readMoney(agent.fixedRate),
+      startingRate: agent.startingRate === undefined || agent.startingRate === null || agent.startingRate === ''
+        ? PAY_SCALES.boostedStartingDefault
+        : readMoney(agent.startingRate),
       boostedRates: agent.boostedRates || PAY_SCALES.boostedDefault,
       introduced: Boolean(agent.introduced),
       partnerConfirmed: Boolean(agent.partnerConfirmed),
@@ -210,7 +215,6 @@
       travelOverride: Boolean(agent.travelOverride),
       eventsOverride: Boolean(agent.eventsOverride),
       specialTermsOverride: Boolean(agent.specialTermsOverride),
-      manualExpenseShare: readMoney(agent.manualExpenseShare),
       motivation: Object.assign({}, DEFAULT_MOTIVATION, {
         mode: agent.motivationMode || DEFAULT_MOTIVATION.mode,
         stipendMode: agent.stipendMode || DEFAULT_MOTIVATION.stipendMode,
@@ -371,6 +375,7 @@
     var starDisabled = starTakenBy ? ' disabled' : '';
     var starTitle = starTakenBy ? ' title="Звезда уже назначена: ' + escapeHtml(starTakenBy.name || DEFAULT_AGENT_NAME) + '"' : '';
     var fixedDisabled = agent.paymentType === 'fixed' ? '' : ' disabled';
+    var startingDisabled = agent.paymentType === 'boosted' ? '' : ' disabled';
     var result = getAgentResult(agent);
     var motivation = result.motivation || {};
     var stipendText = motivation.stipendMonthly ? 'Стипендия: ' + moneyValue(motivation.stipendMonthly) : 'Стипендия: нет';
@@ -383,6 +388,7 @@
       + '<label>Агент<input class="text-cell" data-focus-key="agent-name-' + agent.id + '" data-agent-field="name" data-agent-id="' + agent.id + '" value="' + escapeHtml(agent.name || '') + '" placeholder="Агент"></label>'
       + '<label>Статус<select data-agent-field="status" data-agent-id="' + agent.id + '">' + option('partner', 'Партнёр', agent.status) + option('trainee', 'Стажёр', agent.status) + '</select></label>'
       + '<label>Схема<select data-agent-field="paymentType" data-agent-id="' + agent.id + '">' + option('standard', 'Стандарт', agent.paymentType) + option('boosted', 'Повышенная', agent.paymentType) + option('fixed', 'Фикс', agent.paymentType) + '</select></label>'
+      + '<label>Старт, %<input class="small-cell" inputmode="numeric" data-focus-key="starting-' + agent.id + '" data-agent-field="startingRate" data-agent-id="' + agent.id + '" value="' + escapeHtml(agent.startingRate) + '"' + startingDisabled + '></label>'
       + '<label>Фикс, %<input class="small-cell" inputmode="numeric" data-focus-key="fixed-' + agent.id + '" data-agent-field="fixedRate" data-agent-id="' + agent.id + '" value="' + escapeHtml(agent.fixedRate) + '"' + fixedDisabled + '></label>'
       + '<label>Режим сделок<select data-agent-field="commissionMode" data-agent-id="' + agent.id + '">' + option('exact', 'Точно', agent.commissionMode) + option('quick', 'Быстро', agent.commissionMode) + '</select></label>'
       + '<label class="flag-box"><input type="checkbox" data-agent-field="introduced" data-agent-id="' + agent.id + '"' + (agent.introduced ? ' checked' : '') + '> Приведённый</label>'
@@ -409,7 +415,6 @@
       + '<label class="flag-box"><input type="checkbox" data-agent-field="corporateEnabled" data-agent-id="' + agent.id + '"' + (agent.corporateEnabled ? ' checked' : '') + '> Корпоратив</label>'
       + '<label>Корпоратив, ₽/год<input class="money-cell" inputmode="numeric" data-focus-key="corporate-' + agent.id + '" data-agent-field="corporatePerYear" data-agent-id="' + agent.id + '" value="' + escapeHtml(formatInputMoney(agent.corporatePerYear)) + '"></label>'
       + '<label>Ручной резерв, ₽/мес<input class="money-cell" inputmode="numeric" data-focus-key="manual-reserve-' + agent.id + '" data-agent-field="manualReserveMonthly" data-agent-id="' + agent.id + '" value="' + escapeHtml(formatInputMoney(agent.manualReserveMonthly)) + '"></label>'
-      + '<label>Расходы агента, ₽<input class="money-cell" inputmode="numeric" data-focus-key="manual-expense-' + agent.id + '" data-agent-field="manualExpenseShare" data-agent-id="' + agent.id + '" value="' + escapeHtml(formatInputMoney(agent.manualExpenseShare)) + '" placeholder="авто"></label>'
       + '</div>'
       + '</details>'
       + '<div class="agent-row-actions"><button class="small danger" type="button" data-action="remove-agent" data-agent-id="' + agent.id + '"' + (state.agents.length === 1 ? ' disabled' : '') + '>Удалить агента</button></div>'
@@ -470,7 +475,7 @@
   function renderAgentTotalRow(agent, officeResult) {
     var result = getAgentResult(agent);
     var economics = getAgentEconomics(agent, officeResult) || {};
-    var contribution = economics.contributionAfterExpenses !== undefined ? economics.contributionAfterExpenses : result.officeBeforeRoyaltyAndReserve;
+    var contribution = economics.contribution !== undefined ? economics.contribution : 0;
     var contributionClass = contribution >= 0 ? 'positive' : 'negative';
     return '<tr class="agent-total-row" data-agent-id="' + agent.id + '">'
       + '<td class="agent-total-label" colspan="2">Итого ' + escapeHtml(agent.name || DEFAULT_AGENT_NAME) + '</td>'
@@ -478,11 +483,11 @@
       + '<td></td>'
       + '<td>' + moneyValue(result.payout) + '</td>'
       + '<td>' + moneyValue(result.referral) + '</td>'
-      + '<td>' + moneyValue(economics.royaltyEstimate || 0) + '</td>'
+      + '<td>' + moneyValue(economics.royaltyShare || 0) + '</td>'
       + '<td>' + moneyValue(getMotivationBreakdown(result).standard) + '</td>'
       + '<td>' + moneyValue(getMotivationBreakdown(result).congress) + '</td>'
       + '<td>' + moneyValue(getMotivationBreakdown(result).star) + '</td>'
-      + '<td>' + moneyValue(economics.expenseShare || readMoney(agent.manualExpenseShare)) + '</td>'
+      + '<td>' + moneyValue(economics.expenseShare || 0) + '</td>'
       + '<td class="' + contributionClass + '">' + moneyValue(contribution) + '</td>'
       + '<td colspan="2"><button class="small" type="button" data-action="add-deal-to-agent" data-agent-id="' + agent.id + '">+ Сделка</button></td>'
       + '</tr>';
@@ -673,7 +678,7 @@
       }
       return;
     }
-    if (['quarterlyCommission', 'quarterlyDeposits', 'halfYearCommission', 'preTripQuarterDeposits', 'manualStipendMonthly', 'manualReserveMonthly', 'manualAnnualReserveMonthly', 'mountainSeaPerTrip', 'mountainSeaTripsPerYear', 'travelPerTrip', 'travelTripsPerYear', 'corporatePerYear', 'manualExpenseShare', 'fixedRate', 'quickCommission', 'quickDealCount'].indexOf(field) !== -1) {
+    if (['quarterlyCommission', 'quarterlyDeposits', 'halfYearCommission', 'preTripQuarterDeposits', 'manualStipendMonthly', 'manualReserveMonthly', 'manualAnnualReserveMonthly', 'mountainSeaPerTrip', 'mountainSeaTripsPerYear', 'travelPerTrip', 'travelTripsPerYear', 'corporatePerYear', 'manualExpenseShare', 'fixedRate', 'startingRate', 'quickCommission', 'quickDealCount'].indexOf(field) !== -1) {
       agent[field] = readMoney(value);
       return;
     }
@@ -717,8 +722,9 @@
         var created = createAgent(agent.name || '');
         created.status = agent.status === 'trainee' ? 'trainee' : 'partner';
         created.paymentType = agent.paymentType || 'standard';
-        created.fixedRate = agent.fixedRate || PAY_SCALES.fixedDefault;
+        created.fixedRate = agent.fixedRate === undefined || agent.fixedRate === null || agent.fixedRate === '' ? PAY_SCALES.fixedDefault : readMoney(agent.fixedRate);
         created.boostedRates = agent.boostedRates || clone(PAY_SCALES.boostedDefault);
+        created.startingRate = agent.startingRate === undefined || agent.startingRate === null || agent.startingRate === '' ? PAY_SCALES.boostedStartingDefault : readMoney(agent.startingRate);
         created.introduced = Boolean(agent.introduced);
         created.commissionMode = agent.commissionMode === 'quick' ? 'quick' : 'exact';
         created.quickCommission = readMoney(agent.commission);

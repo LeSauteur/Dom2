@@ -5,9 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Домиан — лист А4 собственника</title>
   <link rel="stylesheet" href="assets/css/a4-calculator.css">
+  <link rel="stylesheet" href="assets/css/navigation.css">
 </head>
 <body>
   <main class="page">
+    <header class="mode-header">
+      <div class="mode-header__top">
+        <div>
+          <p class="mode-header__project">Домиан — калькулятор офиса</p>
+          <h1 class="mode-header__title">Основной A4-калькулятор</h1>
+          <p class="mode-header__subtitle">Текущий месяц: агенты, сделки, расходы, роялти, мотивации и итог собственнику.</p>
+        </div>
+        <div class="return-actions">
+          <a href="start.html">← На старт</a>
+          <a class="primary" href="table.html">Ведомость сделок</a>
+        </div>
+      </div>
+      <nav class="mode-nav" aria-label="Навигация по режимам">
+        <a href="start.html">На старт</a>
+        <a href="index.html" aria-current="page">A4</a>
+        <a href="table.html">Ведомость</a>
+        <a href="simple.html">Простой</a>
+        <a href="extended.html">Расширенный</a>
+      </nav>
+    </header>
     <header class="hero">
       <div>
         <p class="small-label">Новая A4-версия</p>
@@ -270,6 +291,16 @@
         </section>
       </div>
     </section>
+    <footer class="mode-footer">
+      <p>Расчёт является управленческой моделью и помогает оценить экономику офиса.</p>
+      <nav class="mode-footer__links" aria-label="Нижняя навигация">
+        <a href="start.html">На старт</a>
+        <a href="index.html" aria-current="page">Основной A4</a>
+        <a href="table.html">Ведомость сделок</a>
+        <a href="simple.html">Простой режим</a>
+        <a href="extended.html">Расширенный режим</a>
+      </nav>
+    </footer>
   </main>
 
   <script src="assets/js/constants.js"></script>

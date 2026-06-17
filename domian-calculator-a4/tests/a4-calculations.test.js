@@ -58,7 +58,12 @@ function loadAppHelpers() {
       '  formatMoneyInputRaw: formatMoneyInputRaw,',
       '  createState: createState,',
       '  createExampleState: createExampleState,',
-      '  createBlankState: createBlankState',
+      '  createBlankState: createBlankState,',
+      '  renderExpenses: renderExpenses,',
+      '  renderExactDeals: renderExactDeals,',
+      '  renderMotivationControls: renderMotivationControls,',
+      '  setState: function (nextState) { state = nextState; },',
+      '  setElements: function (nextElements) { elements = nextElements; }',
       '};',
       '}());'
     ].join('\n'));
@@ -116,6 +121,7 @@ test('A4 blank state starts empty while example state keeps demo data', () => {
   assert.equal(blank.ownerSales, 0);
   assert.equal(blank.expenses.length, 1);
   assert.equal(blank.expenses[0].amount, 0);
+  assert.equal(blank.expenses[0].name, '');
   assert.equal(blank.agents.length, 1);
   assert.equal(blank.agents[0].commission, 0);
   assert.equal(blank.schemeCheck.commission, 0);
@@ -1017,12 +1023,106 @@ test('new agents default to exact deals mode in app state', () => {
   assert.match(appSource, /commissionMode:\s*'exact'/);
 });
 
+test('expense placeholders stay visual only and never seed state', () => {
+  const state = appHelpers.createState();
+  const elements = {
+    expensesList: { innerHTML: '' }
+  };
+
+  appHelpers.setState(state);
+  appHelpers.setElements(elements);
+  appHelpers.renderExpenses();
+
+  assert.match(elements.expensesList.innerHTML, /Что можно добавить/);
+  assert.match(elements.expensesList.innerHTML, /Не добавляйте сюда роялти/);
+  assert.match(elements.expensesList.innerHTML, /placeholder="Например: аренда офиса"/);
+  assert.match(elements.expensesList.innerHTML, /placeholder="Введите сумму расхода"/);
+  assert.equal(state.expenses[0].name, '');
+  assert.equal(appSource.includes('Новый расход'), false);
+});
+
+test('motivation block uses the new warning wording and collapsed list', () => {
+  assert.match(appSource, /Обязательно проверьте мотивации перед итогом/);
+  assert.match(appSource, /Без проверки мотиваций расчёт может быть неполным\./);
+  assert.match(appSource, /Открыть и проверить мотивации/);
+  assert.match(appSource, /Проверьте: конгресс, звезда, море\/горы, путешествие, стипендия\./);
+});
+
+test('exact deals summary repeats agent payout with the same amount', () => {
+  const agent = {
+    id: 'exact-summary',
+    commissionMode: 'exact',
+    dealsInput: [500000, 480000],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  };
+  const result = calculator.calculateAgent(agent);
+  const html = appHelpers.renderExactDeals(agent, result);
+
+  assert.match(html, /Итого зарплата агенту/);
+  assert.match(html, /465\s?000/);
+  assert.match(html, /data-agent-summary="payout"/);
+});
+
+test('quarterly result field is disabled until partnership is confirmed and stays effective in rules mode', () => {
+  const agent = {
+    id: 'quarter-agent',
+    name: 'Quarter agent',
+    commission: 0,
+    dealCount: 1,
+    commissionMode: 'exact',
+    dealsInput: [''],
+    paymentType: 'standard',
+    status: 'partner',
+    partnerConfirmed: false,
+    quarterlyCommission: 1000000,
+    quarterlyDeposits: 0,
+    halfYearCommission: 0,
+    preTripQuarterDeposits: 0,
+    motivation: Object.assign({}, calculator.DEFAULT_MOTIVATION, {
+      mode: 'rules',
+      quarterlyCommission: 1000000,
+      congressEnabled: false,
+      starEnabled: false
+    })
+  };
+
+  appHelpers.setState({ agents: [agent] });
+  appHelpers.setElements({});
+
+  const lockedHtml = appHelpers.renderMotivationControls(agent);
+  assert.match(lockedHtml, /data-agent-field="quarterlyCommission"[^>]*disabled/);
+  assert.match(lockedHtml, /Сначала подтвердите партнёрство/);
+
+  const unlockedAgent = Object.assign({}, agent, { partnerConfirmed: true });
+  const unlockedHtml = appHelpers.renderMotivationControls(unlockedAgent);
+  assert.doesNotMatch(unlockedHtml, /data-agent-field="quarterlyCommission"[^>]*disabled/);
+  assert.match(unlockedHtml, /Результат используется для уровня и стипендии/);
+
+  const blocked = calculator.calculateMotivationReserve({
+    paymentType: 'standard',
+    partnerConfirmed: false,
+    quarterlyCommission: 1500000,
+    quarterlyDeposits: 0,
+    motivation: {
+      mode: 'rules',
+      quarterlyCommission: 1500000,
+      stipendMode: 'auto'
+    }
+  });
+
+  assert.equal(blocked.stipendAvailable, false);
+  assert.equal(blocked.stipendMonthly, 0);
+});
+
 test('A4 motivation UI explains quarter stipend obligation and calendar caveats', () => {
-  assert.match(appSource, /Обязательство следующего квартала/);
-  assert.match(appSource, /Стипендия выплачивается ежемесячно в следующем квартале/);
-  assert.match(appSource, /Горы и Море — разные сезонные акции/);
-  assert.match(appSource, /Корпоративы — это разные календарные события/);
-  assert.match(appSource, /Деление на 12 — это грубое управленческое распределение резерва/);
+  assert.match(appSource, /Партнёрство подтверждено\?/);
+  assert.match(appSource, /Сначала подтвердите партнёрство\. Без подтверждения квартальный результат не учитывается для мотиваций\./);
+  assert.match(appSource, /Результат используется для уровня и стипендии по текущей логике\./);
+  assert.match(appSource, /Задатки в квартале перед поездкой, ₽/);
+  assert.match(appSource, /Если период поездки непонятен/);
+  assert.match(appSource, /Точная календарная логика будет в расширенном режиме/);
 });
 
 test('future mode entry pages exist as static scaffolds', () => {

@@ -3,19 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Домиан — быстрая оценка офиса</title>
+  <title>Домиан — простой расчёт</title>
   <link rel="stylesheet" href="assets/css/modes.css">
+  <link rel="stylesheet" href="assets/css/navigation.css">
 </head>
 <body>
   <main class="page">
-    <header class="hero">
-      <p class="eyebrow">Каркас режима</p>
-      <h1>Домиан — быстрая оценка офиса</h1>
-      <p class="lead">Упрощённый режим задуман для грубой оценки экономики офиса без детального помесячного или поагентского разбора.</p>
+    <header class="mode-header">
+      <div class="mode-header__top">
+        <div>
+          <p class="mode-header__project">Домиан — калькулятор офиса</p>
+          <h1 class="mode-header__title">Простой расчёт</h1>
+          <p class="mode-header__subtitle">Быстрая оценка экономики офиса без подробного ввода сделок.</p>
+        </div>
+        <div class="return-actions">
+          <a href="start.html">← На старт</a>
+          <a class="primary" href="index.html">← В A4</a>
+        </div>
+      </div>
+      <nav class="mode-nav" aria-label="Навигация по режимам">
+        <a href="start.html">На старт</a>
+        <a href="index.html">A4</a>
+        <a href="table.html">Ведомость</a>
+        <a href="simple.html" aria-current="page">Простой</a>
+        <a href="extended.html">Расширенный</a>
+      </nav>
     </header>
 
     <section class="section notice">
-      Это каркас простого режима. Сейчас поля не выполняют расчёт. Полноценная логика будет добавлена отдельным этапом.
+      Это каркас простого режима. Сейчас поля не выполняют расчёт; полноценная логика simple остаётся отдельным этапом.
     </section>
 
     <section class="section stack">
@@ -88,36 +104,28 @@
         </div>
       </section>
 
-      <section class="panel">
-        <h2>Шаг 4. Допущения</h2>
-        <div class="field-grid">
-          <div class="field-row">
-            <label><input type="checkbox"> Учитывать реферальные 2,5%</label>
-          </div>
-          <div class="field-row">
-            <label>Ручной резерв мотиваций в месяц</label>
-            <input type="text" placeholder="Например, 25 000">
-          </div>
-        </div>
-      </section>
-
       <section class="panel panel-muted">
-        <h2>Шаг 5. Итог</h2>
+        <h2>Шаг 4. Итог</h2>
         <ul class="summary-list">
           <li><span>Оборот агентов:</span><strong>—</strong></li>
           <li><span>Выплаты агентам:</span><strong>—</strong></li>
           <li><span>Роялти:</span><strong>—</strong></li>
           <li><span>Расходы:</span><strong>—</strong></li>
-          <li><span>Остаток собственнику:</span><strong>—</strong></li>
-          <li><span>Диагноз:</span><strong>расчёт будет добавлен позже.</strong></li>
+          <li><span>Остаток собственнику:</span><strong>расчёт будет добавлен позже</strong></li>
         </ul>
       </section>
     </section>
 
-    <nav class="nav-row">
-      <a class="button" href="start.html">Назад к выбору режимов</a>
-      <a class="button primary" href="index.html">Перейти в точный A4</a>
-    </nav>
+    <footer class="mode-footer">
+      <p>Расчёт является управленческой моделью и помогает оценить экономику офиса.</p>
+      <nav class="mode-footer__links" aria-label="Нижняя навигация">
+        <a href="start.html">На старт</a>
+        <a href="index.html">Основной A4</a>
+        <a href="table.html">Ведомость сделок</a>
+        <a href="simple.html" aria-current="page">Простой режим</a>
+        <a href="extended.html">Расширенный режим</a>
+      </nav>
+    </footer>
   </main>
 </body>
 </html>

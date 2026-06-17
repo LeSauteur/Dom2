@@ -3,84 +3,93 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Домиан — выбор режима</title>
+  <title>Домиан — выбор режима расчёта</title>
   <link rel="stylesheet" href="assets/css/modes.css">
+  <link rel="stylesheet" href="assets/css/navigation.css">
 </head>
 <body>
   <main class="page">
-    <header class="hero">
-      <p class="eyebrow">Навигатор режимов</p>
-      <h1>Домиан — выбор режима расчёта</h1>
-      <p class="lead">Выберите формат работы под задачу: быстрый ориентир, точный расчёт текущего месяца, новая ведомость сделок или будущий расчёт периода.</p>
+    <header class="mode-header">
+      <div class="mode-header__top">
+        <div>
+          <p class="mode-header__project">Домиан — калькулятор офиса</p>
+          <h1 class="mode-header__title">Выбор режима расчёта</h1>
+          <p class="mode-header__subtitle">Выберите формат работы: быстрый ориентир, основной A4, ведомость сделок или расширенный расчёт периода.</p>
+        </div>
+      </div>
+      <nav class="mode-nav" aria-label="Навигация по режимам">
+        <a href="start.html" aria-current="page">На старт</a>
+        <a href="index.html">A4</a>
+        <a href="table.html">Ведомость</a>
+        <a href="simple.html">Простой</a>
+        <a href="extended.html">Расширенный</a>
+      </nav>
     </header>
 
     <section class="section">
       <div class="cards">
         <article class="card">
           <div>
-            <h3>Быстрая оценка</h3>
-            <p>Простой режим для грубой оценки экономики офиса без подробного ввода каждого агента и каждой сделки.</p>
+            <h3>Простой расчёт</h3>
+            <p>Быстрая оценка экономики офиса без детального ввода каждого агента и каждой сделки.</p>
           </div>
           <ul>
             <li>общий оборот;</li>
             <li>количество агентов;</li>
-            <li>средняя схема выплат;</li>
             <li>расходы;</li>
-            <li>быстрый диагноз.</li>
+            <li>быстрый ориентир.</li>
           </ul>
           <div class="button-row">
-            <a class="button primary" href="simple.html">Открыть simple.html</a>
+            <a class="button primary" href="simple.html">Открыть простой режим</a>
           </div>
         </article>
 
         <article class="card">
           <div>
-            <h3>Точный расчёт месяца</h3>
-            <p>Основной A4-калькулятор для расчёта текущего месяца по агентам, сделкам, расходам, роялти и мотивациям.</p>
+            <h3>Основной A4-калькулятор</h3>
+            <p>Основной управленческий расчёт текущего месяца по агентам, сделкам, расходам, роялти и мотивациям.</p>
           </div>
           <ul>
-            <li>агенты;</li>
-            <li>сделки;</li>
-            <li>выплаты;</li>
+            <li>агенты и сделки;</li>
+            <li>выплаты и рефералы;</li>
             <li>роялти;</li>
-            <li>мотивации;</li>
             <li>итог собственнику.</li>
           </ul>
           <div class="button-row">
-            <a class="button primary" href="index.html">Открыть index.html</a>
+            <a class="button primary" href="index.html">Открыть A4</a>
           </div>
         </article>
 
         <article class="card">
           <div>
             <h3>Ведомость сделок</h3>
-            <p>Основная табличная версия проекта. Теперь именно она открывается из A4 и навигатора режимов, а <code>table.html</code> служит публичным алиасом.</p>
+            <p>Табличная ведомость для Генерального: сделки строками, итоги агента и общий итог офиса.</p>
           </div>
           <ul>
-            <li>строки сделок;</li>
-            <li>итоги агента и офиса;</li>
-            <li>быстрый доступ к ledger-версии.</li>
+            <li>реестр сделок;</li>
+            <li>итоги агента;</li>
+            <li>контроль выплат;</li>
+            <li>алиас через table.html.</li>
           </ul>
           <div class="button-row">
-            <a class="button primary" href="table.html">Открыть table.html</a>
-            <a class="button" href="table-ledger.html">Открыть table-ledger.html</a>
+            <a class="button primary" href="table.html">Открыть ведомость</a>
+            <a class="button" href="table-ledger.html">Прямой вход</a>
           </div>
         </article>
 
         <article class="card">
           <div>
-            <h3>Расчёт периода</h3>
-            <p>Будущий расширенный режим для месяца, квартала, полугодия или года. Сохранение черновика и календарная логика будут добавлены отдельными этапами.</p>
+            <h3>Расширенный расчёт</h3>
+            <p>Расчёт периода для собственника: месяц, квартал, полугодие или год с агентами, сделками и черновиком.</p>
           </div>
           <ul>
-            <li>месяц / квартал / полугодие / год;</li>
-            <li>общий или подробный ввод;</li>
-            <li>месячные сводки;</li>
-            <li>будущие обязательства;</li>
-            <li>черновики позже.</li>
+            <li>период 1 / 3 / 6 / 12 месяцев;</li>
+            <li>быстрый или подробный ввод;</li>
+            <li>мотивации и обязательства;</li>
+            <li>сохранение черновика.</li>
           </ul>
           <div class="button-row">
-            <a class="button primary" href="extended.html">Открыть extended.html</a>
+            <a class="button primary" href="extended.html">Открыть расширенный режим</a>
           </div>
         </article>
       </div>
@@ -88,10 +97,19 @@
 
     <section class="section helper">
       <h2>Как выбрать режим</h2>
-      <p>Если нужно быстро понять порядок цифр — используйте быструю оценку.</p>
-      <p>Если нужно точно посчитать текущий месяц — используйте A4.</p>
-      <p>Если нужен период, календарь мотиваций или черновики — используйте расчёт периода.</p>
+      <p>Для текущего месяца используйте A4. Для сделки-по-строке откройте ведомость. Для периода больше месяца используйте расширенный режим.</p>
     </section>
+
+    <footer class="mode-footer">
+      <p>Расчёт является управленческой моделью и помогает оценить экономику офиса.</p>
+      <nav class="mode-footer__links" aria-label="Нижняя навигация">
+        <a href="start.html" aria-current="page">На старт</a>
+        <a href="index.html">Основной A4</a>
+        <a href="table.html">Ведомость сделок</a>
+        <a href="simple.html">Простой режим</a>
+        <a href="extended.html">Расширенный режим</a>
+      </nav>
+    </footer>
   </main>
 </body>
 </html>

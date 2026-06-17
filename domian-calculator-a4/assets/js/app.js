@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   'use strict';
 
   var state = null;
@@ -482,6 +482,7 @@
       + '<button class="button ghost" type="button" data-action="add-deal" data-agent-id="' + agent.id + '">Добавить сделку</button>'
       + '<dl class="exact-deals-total">'
       + '<div><dt>Итого комиссия по сделкам</dt><dd data-agent-summary="commission" data-agent-id="' + agent.id + '">' + money(result.commission) + '</dd></div>'
+      + '<div><dt>Итого зарплата агенту</dt><dd data-agent-summary="payout" data-agent-id="' + agent.id + '">' + money(result.payout) + '</dd></div>'
       + '<div><dt>Количество сделок</dt><dd data-agent-summary="dealCount" data-agent-id="' + agent.id + '">' + result.dealCount + '</dd></div>'
       + '</dl>'
       + '</div>';
@@ -505,11 +506,16 @@
   }
 
   function renderExpenses() {
-    elements.expensesList.innerHTML = state.expenses.map(function (expense) {
+    elements.expensesList.innerHTML = '<div class="notice info expense-guidance wide-field">'
+      + '<p>Что можно добавить: аренда офиса, связь, CRM, реклама, интернет, бухгалтерия, уборка, коммунальные платежи, зарплата администратора, прочие постоянные расходы.</p>'
+      + '<p>Не добавляйте сюда роялти, выплаты агентам, рефералы и мотивации — калькулятор считает их отдельно.</p>'
+      + '</div>'
+      + state.expenses.map(function (expense, index) {
+      var namePlaceholder = index === 0 ? 'Например: аренда офиса' : 'Добавьте категорию расхода';
       return '<label class="field expense-row">'
         + '<span>Категория</span>'
-        + '<input type="text" data-expense-id="' + expense.id + '" data-expense-field="name" value="' + escapeHtml(expense.name) + '">'
-        + moneyInput('data-expense-id="' + expense.id + '" data-expense-field="amount" aria-label="Сумма расхода ' + escapeHtml(expense.name) + '"', expense.amount)
+        + '<input type="text" data-expense-id="' + expense.id + '" data-expense-field="name" value="' + escapeHtml(expense.name) + '" placeholder="' + escapeHtml(namePlaceholder) + '">'
+        + moneyInput('data-expense-id="' + expense.id + '" data-expense-field="amount" aria-label="Сумма расхода ' + escapeHtml(expense.name) + '"', expense.amount, 'Введите сумму расхода')
         + '<button class="button ghost" type="button" data-action="remove-expense" data-expense-id="' + expense.id + '">Удалить</button>'
         + '</label>';
     }).join('');
@@ -904,6 +910,33 @@
       + '</div></section>';
   }
 
+  function renderMotivationSummaryText(headerText) {
+    return '<span class="motivation-summary-text">'
+      + headerText
+      + '<span class="motivation-summary-warning">Без проверки мотиваций расчёт может быть неполным.</span>'
+      + '<span class="motivation-summary-list">Проверьте: конгресс, звезда, море/горы, путешествие, стипендия.</span>'
+      + '</span>';
+  }
+
+  function renderMotivationSummaryAction() {
+    return '<span class="collapse-text"><span class="summary-closed">Открыть и проверить мотивации</span><span class="summary-open">Скрыть мотивации</span></span>';
+  }
+
+  function renderQuarterlyConditionsSection(agent, motivation, reserve) {
+    var partnershipConfirmed = Boolean(agent.partnerConfirmed);
+    var quarterResultLocked = !partnershipConfirmed;
+
+    return '<section class="motivation-section motivation-section--quarterly"><h4>Квартальные условия</h4><div class="form-grid compact-grid">'
+      + '<label class="field wide-field"><span>Партнёрство подтверждено?</span><select data-agent-id="' + agent.id + '" data-agent-field="partnerConfirmed" data-structural="true">'
+      + option('true', 'Да', String(partnershipConfirmed))
+      + option('false', 'Нет', String(partnershipConfirmed))
+      + '</select><small>Да — партнёрские бонусы можно учитывать. Нет — такие бонусы не считаются. 250 000 ₽ остаётся ориентиром правила.</small></label>'
+      + '<label class="field' + (quarterResultLocked ? ' is-muted' : '') + '"><span>Результат агента за квартал, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-agent-field="quarterlyCommission" data-structural="true"' + disabled(quarterResultLocked), motivation.quarterlyCommission) + '<small>' + (quarterResultLocked
+        ? 'Сначала подтвердите партнёрство. Без подтверждения квартальный результат не учитывается для мотиваций.'
+        : 'Результат используется для уровня и стипендии по текущей логике.') + '</small></label>'
+      + '</div></section>';
+  }
+
   function renderMotivationControls(agent) {
     var motivation = Object.assign(createMotivation(), agent.motivation || {});
     var motivationReserve = calculateAgent(agent).motivationReserve;
@@ -921,11 +954,11 @@
         + '<summary class="motivation-summary">'
         + '<span class="motivation-summary-main">'
         + '<span class="motivation-summary-title"><span class="summary-closed">Резерв мотиваций стажёра</span><span class="summary-open">Скрыть резерв стажёра</span></span>'
-        + '<span class="motivation-summary-text">' + headerText + '</span>'
+        + renderMotivationSummaryText(headerText)
         + '</span>'
         + '<span class="motivation-summary-side">'
         + '<span class="motivation-current">Сейчас учтено: <b data-agent-summary="motivationInline" data-agent-id="' + agent.id + '">' + money(motivationReserve) + '</b> / месяц</span>'
-        + '<span class="collapse-text"><span class="summary-closed">Раскрыть ↓</span><span class="summary-open">Скрыть ↑</span></span>'
+        + renderMotivationSummaryAction()
         + '</span>'
         + '</summary>'
         + '<div class="motivation-content">'
@@ -948,11 +981,11 @@
         + '<summary class="motivation-summary">'
         + '<span class="motivation-summary-main">'
         + '<span class="motivation-summary-title"><span class="summary-closed">Резерв при особых условиях</span><span class="summary-open">Скрыть резерв при особых условиях</span></span>'
-        + '<span class="motivation-summary-text">' + headerText + '</span>'
+        + renderMotivationSummaryText(headerText)
         + '</span>'
         + '<span class="motivation-summary-side">'
         + '<span class="motivation-current">Сейчас учтено: <b data-agent-summary="motivationInline" data-agent-id="' + agent.id + '">' + money(motivationReserve) + '</b> / месяц</span>'
-        + '<span class="collapse-text"><span class="summary-closed">Раскрыть ↓</span><span class="summary-open">Скрыть ↑</span></span>'
+        + renderMotivationSummaryAction()
         + '</span>'
         + '</summary>'
         + '<div class="motivation-content">'
@@ -969,12 +1002,12 @@
     return '<details class="motivation-box" data-agent-id="' + agent.id + '">'
       + '<summary class="motivation-summary">'
       + '<span class="motivation-summary-main">'
-      + '<span class="motivation-summary-title"><span class="summary-closed">Настройки мотиваций</span><span class="summary-open">Скрыть настройки мотиваций</span></span>'
-      + '<span class="motivation-summary-text">' + headerText + '</span>'
+      + '<span class="motivation-summary-title"><span class="summary-closed">Обязательно проверьте мотивации перед итогом</span><span class="summary-open">Скрыть мотивации</span></span>'
+      + renderMotivationSummaryText(headerText)
       + '</span>'
       + '<span class="motivation-summary-side">'
       + '<span class="motivation-current">Сейчас учтено: <b data-agent-summary="motivationInline" data-agent-id="' + agent.id + '">' + money(motivationReserve) + '</b> / месяц</span>'
-      + '<span class="collapse-text"><span class="summary-closed">Раскрыть ↓</span><span class="summary-open">Скрыть ↑</span></span>'
+      + renderMotivationSummaryAction()
       + '</span>'
       + '</summary>'
       + '<div class="motivation-content">'
@@ -992,18 +1025,18 @@
         ? '<div class="form-grid compact-grid"><label class="field wide-field"><span>Резерв мотиваций в месяц, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-motivation-field="manualReserveMonthly"', motivation.manualReserveMonthly) + '<small>Укажите сумму, которую собственник хочет ежемесячно закладывать на будущие мотивации этого агента. Конгресс и Звезда считаются отдельно ниже.</small></label></div>'
         : '')
       + (currentMode === 'rules'
-        ? '<section class="motivation-section"><h4>Квартальные условия</h4><div class="form-grid compact-grid">'
+        ? '<section class="motivation-section motivation-section--quarterly"><h4>Квартальные условия</h4><div class="form-grid compact-grid">'
           + '<label class="field wide-field"><span>Партнёрство подтверждено?</span><select data-agent-id="' + agent.id + '" data-agent-field="partnerConfirmed" data-structural="true">'
           + option('true', 'Да', String(Boolean(agent.partnerConfirmed)))
           + option('false', 'Нет', String(Boolean(agent.partnerConfirmed)))
           + '</select><small>Да — партнёрские бонусы можно учитывать. Нет — такие бонусы не считаются. 250 000 ₽ остаётся ориентиром правила.</small></label>'
-          + '<label class="field"><span>Результат агента за квартал, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-agent-field="quarterlyCommission" data-structural="true"', agent.quarterlyCommission) + '<small>Нужно для уровня и стипендии.</small></label>'
-          + '</div>'
-          + '<p class="eligibility-note ' + (reserve.partnershipConfirmed ? 'ok' : 'blocked') + '">' + (reserve.partnershipConfirmed ? 'Партнёрство подтверждено.' : 'Партнёрство не подтверждено: партнёрские бонусы по умолчанию не положены.') + '</p>'
-          + '</section>'
-          + '<section class="motivation-section"><h4>Полугодовые условия</h4><div class="form-grid compact-grid">'
+          + '<label class="field' + (reserve.partnershipConfirmed ? '' : ' is-muted') + '"><span>Результат агента за квартал, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-agent-field="quarterlyCommission" data-structural="true"' + disabled(!reserve.partnershipConfirmed), motivation.quarterlyCommission) + '<small>' + (!reserve.partnershipConfirmed ? 'Сначала подтвердите партнёрство. Без подтверждения квартальный результат не учитывается для мотиваций.' : 'Результат используется для уровня и стипендии по текущей логике.') + '</small></label>'
+          + '</div></section>'
+        : '')
+      + (currentMode === 'rules'
+        ? '<section class="motivation-section"><h4>Полугодовые условия</h4><div class="notice warning wide-field motivation-calendar-note">Поездки зависят от периода результата и квартала подтверждения. Точная календарная логика будет в расширенном режиме.</div><div class="form-grid compact-grid">'
           + '<label class="field"><span>Результат за полугодие, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-agent-field="halfYearCommission" data-structural="true"', agent.halfYearCommission) + '<small>Для путешествия нужен минимум 1 600 000 ₽.</small></label>'
-          + '<label class="field"><span>Задатки перед поездкой, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-agent-field="preTripQuarterDeposits" data-structural="true"', agent.preTripQuarterDeposits) + '<small>Для поездки нужен квартал от 250 000 ₽ задатков.</small></label>'
+          + '<label class="field"><span>Задатки в квартале перед поездкой, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-agent-field="preTripQuarterDeposits" data-structural="true"', agent.preTripQuarterDeposits) + '<small>Введите сумму задатков за квартал, который проверяется перед поездкой. Если период поездки непонятен, оставьте поле пустым и задайте резерв вручную.</small></label>'
           + '</div></section>'
           + '<section class="motivation-section"><h4>Дополнительные резервы</h4><div class="form-grid compact-grid">'
           + '<div class="wide-field">'
@@ -1970,7 +2003,7 @@
       markStateDirty();
       state.expenses.push({
         id: nextExpenseId(),
-        name: 'Новый расход',
+        name: '',
         amount: 0
       });
       renderPreservingUiState();
@@ -2065,3 +2098,4 @@
     window.domianA4State = state;
   });
 }());
+

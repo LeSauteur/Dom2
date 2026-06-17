@@ -5,9 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Домиан — ведомость сделок офиса</title>
   <link rel="stylesheet" href="assets/css/table-ledger.css">
+  <link rel="stylesheet" href="assets/css/navigation.css">
 </head>
 <body>
   <main class="ledger-page">
+    <header class="mode-header">
+      <div class="mode-header__top">
+        <div>
+          <p class="mode-header__project">Домиан — калькулятор офиса</p>
+          <h1 class="mode-header__title">Ведомость сделок</h1>
+          <p class="mode-header__subtitle">Сделки строками, итоги агента и общий результат офиса.</p>
+        </div>
+        <div class="return-actions">
+          <a href="start.html">← На старт</a>
+          <a class="primary" href="index.html">← В основной A4</a>
+        </div>
+      </div>
+      <nav class="mode-nav" aria-label="Навигация по режимам">
+        <a href="start.html">На старт</a>
+        <a href="index.html">A4</a>
+        <a href="table.html" aria-current="page">Ведомость</a>
+        <a href="simple.html">Простой</a>
+        <a href="extended.html">Расширенный</a>
+      </nav>
+    </header>
     <header class="ledger-hero">
       <div>
         <a class="back-link" href="index.html">← Вернуться к A4</a>
@@ -95,6 +116,16 @@
     </section>
 
     <section class="summary-panel" id="summaryPanel" aria-label="Итоговая сводка"></section>
+    <footer class="mode-footer">
+      <p>Расчёт является управленческой моделью и помогает оценить экономику офиса.</p>
+      <nav class="mode-footer__links" aria-label="Нижняя навигация">
+        <a href="start.html">На старт</a>
+        <a href="index.html">Основной A4</a>
+        <a href="table.html" aria-current="page">Ведомость сделок</a>
+        <a href="simple.html">Простой режим</a>
+        <a href="extended.html">Расширенный режим</a>
+      </nav>
+    </footer>
   </main>
 
   <script src="assets/js/constants.js"></script>

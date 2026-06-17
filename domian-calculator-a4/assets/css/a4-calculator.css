@@ -352,6 +352,16 @@ h3 {
   color: var(--orange);
 }
 
+.expense-guidance {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.expense-guidance p {
+  margin: 0;
+}
+
 .notice.danger {
   background: var(--red-soft);
   color: var(--red);
@@ -378,6 +388,14 @@ select {
   border-radius: 6px;
   background: #fff;
   color: var(--ink);
+}
+
+input:disabled,
+select:disabled {
+  background: #f3f5f9;
+  color: #7a869a;
+  cursor: not-allowed;
+  opacity: .85;
 }
 
 input:focus,
@@ -697,6 +715,20 @@ select:focus {
   list-style: none;
 }
 
+.motivation-box:not([open]) {
+  border-color: rgba(217, 131, 31, .38);
+  box-shadow: 0 0 0 1px rgba(217, 131, 31, .08), 0 10px 24px rgba(180, 83, 9, .08);
+}
+
+.motivation-box:not([open]) .motivation-summary {
+  border-left: 8px solid #d9831f;
+  background: linear-gradient(135deg, rgba(217, 131, 31, .18), rgba(255, 244, 223, .96));
+}
+
+.motivation-box:not([open]) .motivation-summary::before {
+  background: #d9831f;
+}
+
 .motivation-summary:hover,
 .motivation-summary:focus {
   background:
@@ -741,6 +773,24 @@ select:focus {
   font-size: 14px;
   line-height: 1.5;
   font-weight: 700;
+}
+
+.motivation-summary-warning {
+  display: block;
+  margin-top: 6px;
+  color: #8a4a00;
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 900;
+}
+
+.motivation-summary-list {
+  display: block;
+  margin-top: 6px;
+  color: #8a4a00;
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 800;
 }
 
 .motivation-summary-side {
@@ -833,9 +883,18 @@ select:focus {
   gap: 12px;
   margin: 0 14px 14px;
   padding: 14px;
-  border: 1px solid rgba(36, 92, 153, .18);
+  border: 1px solid rgba(180, 83, 9, .22);
   border-radius: var(--radius);
-  background: rgba(232, 241, 251, .32);
+  background: rgba(255, 244, 223, .58);
+}
+
+.motivation-section--quarterly {
+  border-color: rgba(180, 83, 9, .32);
+  background: rgba(255, 242, 213, .7);
+}
+
+.motivation-calendar-note {
+  margin: 0;
 }
 
 .motivation-section h4 {
