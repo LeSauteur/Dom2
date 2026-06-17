@@ -71,6 +71,17 @@
     return standardRate;
   }
 
+  function getTraineeStandardDealRate(dealIndex) {
+    var traineeRates = PAY_SCALES.standard.trainee || [];
+    var partnerRates = PAY_SCALES.standard.partner || [];
+
+    if (dealIndex < 3) {
+      return traineeRates[Math.min(dealIndex, traineeRates.length - 1)];
+    }
+
+    return partnerRates[Math.min(dealIndex - 3, partnerRates.length - 1)];
+  }
+
   function getRateScaleIndexForDeal(dealCommission, qualifiedDealCount) {
     var threshold = positiveNumber(window.QUALIFYING_DEAL_COMMISSION_THRESHOLD || 50000);
     var qualifiedCount = Math.max(0, Math.floor(positiveNumber(qualifiedDealCount)));
@@ -261,9 +272,6 @@
     }
     if (context.halfYearCommission < TRAVEL_MIN_HALF_YEAR_COMMISSION) {
       return Object.assign(base, getBlockedResult('halfYearLevel'));
-    }
-    if (!isPartnershipConfirmed(context.preTripQuarterDeposits)) {
-      return Object.assign(base, getBlockedResult('preTripDeposits'));
     }
     return base;
   }
@@ -578,8 +586,9 @@
 
     for (var i = 0; i < dealCount; i += 1) {
       var currentDealCommission = exactMode ? positiveNumber(sourceDeals[i]) : dealCommission;
-      var rateScaleIndex = getRateScaleIndexForDeal(currentDealCommission, qualifiedDealCount);
-      var rate = getDealRate(agent, rateScaleIndex);
+      var rate = agent.status === 'trainee' && agent.paymentType === 'standard'
+        ? getTraineeStandardDealRate(i)
+        : getDealRate(agent, getRateScaleIndexForDeal(currentDealCommission, qualifiedDealCount));
       var dealPayout = currentDealCommission * rate;
       if (currentDealCommission >= positiveNumber(window.QUALIFYING_DEAL_COMMISSION_THRESHOLD || 50000)) {
         qualifiedDealCount += 1;

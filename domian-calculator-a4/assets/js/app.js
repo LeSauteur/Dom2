@@ -376,10 +376,10 @@
       return 'У агента особые условия выплаты. По умолчанию мотивации за счёт офиса не предусмотрены.';
     }
     if (reason === 'halfYearLevel') {
-      return 'Путешествие недоступно: результат за полугодие меньше 1 600 000 ₽.';
+      return 'Поездка не заработана: результат за полугодие меньше 1 600 000 ₽. Можно заложить вручную по решению собственника.';
     }
     if (reason === 'preTripDeposits') {
-      return 'Путешествие недоступно: в квартале перед поездкой задатков меньше 250 000 ₽.';
+      return 'Поездка не заработана: в квартале перед поездкой задатков меньше 250 000 ₽. Можно заложить вручную по решению собственника.';
     }
     return 'Мотивация доступна по текущим данным.';
   }
@@ -401,6 +401,16 @@
     return '<p class="eligibility-note blocked">' + getEligibilityText(reason) + '</p>';
   }
 
+  function renderTravelEligibilityNote(available, reason, overridden) {
+    if (available) {
+      return '<p class="eligibility-note ok">Агент заработал поездку.</p>';
+    }
+    if (overridden) {
+      return '<p class="eligibility-note warning">Поездка не заработана: результат за полугодие меньше 1 600 000 ₽. Можно заложить вручную по решению собственника.</p>';
+    }
+    return '<p class="eligibility-note blocked">' + getEligibilityText(reason) + '</p>';
+  }
+
   function renderTripMotivationCard(agent, config) {
     var motivation = Object.assign(createMotivation(), agent.motivation || {});
     var reserve = calculateMotivationReserve(agent);
@@ -413,7 +423,7 @@
     return '<article class="motivation-card' + (locked ? ' is-blocked' : '') + '">'
       + '<label class="motivation-card-toggle"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="' + config.enabledField + '"' + checked(motivation[config.enabledField]) + disabled(locked) + '>'
       + '<span><strong>' + config.title + '</strong><small>' + config.description + '</small></span></label>'
-      + renderEligibilityNote(available, reason, overridden)
+      + (config.key === 'travel' ? renderTravelEligibilityNote(available, reason, overridden) : renderEligibilityNote(available, reason, overridden))
       + (!available ? renderOverrideCheckbox(agent, config.overrideField, config.overrideLabel) : '')
       + renderMotivationInfo(config.infoLines)
       + '<div class="motivation-card-fields">'

@@ -95,14 +95,20 @@ const appSource = fs.readFileSync(path.join(rootDir, 'assets/js/app.js'), 'utf8'
 test('A4 money parser accepts regular, non-breaking and narrow non-breaking spaces', () => {
   [
     '1500000',
+    '1600000',
     '1 500 000',
+    '1 600 000',
     '1\u00a0500\u00a0000',
+    '1\u00a0600\u00a0000',
     '1\u202f500\u202f000',
+    '1\u202f600\u202f000',
     '1500 000',
     '1,500,000',
-    '1.500.000'
+    '1,600,000',
+    '1.500.000',
+    '1.600.000'
   ].forEach((value) => {
-    assert.equal(appHelpers.inputNumber(value), 1500000);
+    assert.equal(appHelpers.inputNumber(value), value.indexOf('6') !== -1 ? 1600000 : 1500000);
   });
   assert.equal(appHelpers.inputNumber('1,300,000'), 1300000);
   assert.equal(appHelpers.inputNumber('1.300.000'), 1300000);
@@ -999,27 +1005,118 @@ test('travel and corporate reserves are blocked by eligibility unless overridden
   closeTo(overridden.corporateAnnual, 20000);
 });
 
-test('domian travel requires half-year result and pre-trip deposits', () => {
-  assert.equal(calculator.getTravelEligibility({
+test('domian travel uses inclusive half-year threshold and syncs render text', () => {
+  const blocked = calculator.calculateMotivationReserve({
     paymentType: 'standard',
+    partnerConfirmed: true,
     quarterlyDeposits: 250000,
     halfYearCommission: 1599999,
-    preTripQuarterDeposits: 250000
-  }).available, false);
+    preTripQuarterDeposits: 0,
+    motivation: {
+      mode: 'rules',
+      annualReserveMode: 'monthly',
+      travelEnabled: true,
+      travelPerTrip: 100000,
+      travelTripsPerYear: 2,
+      congressEnabled: false,
+      starEnabled: false
+    }
+  });
+  assert.equal(blocked.travelAvailable, false);
+  assert.equal(blocked.travelReason, 'halfYearLevel');
+  assert.equal(blocked.travelAnnual, 0);
 
-  assert.equal(calculator.getTravelEligibility({
+  const earnedAtThreshold = calculator.calculateMotivationReserve({
     paymentType: 'standard',
+    partnerConfirmed: true,
     quarterlyDeposits: 250000,
     halfYearCommission: 1600000,
-    preTripQuarterDeposits: 0
-  }).available, false);
+    preTripQuarterDeposits: 0,
+    motivation: {
+      mode: 'rules',
+      annualReserveMode: 'monthly',
+      travelEnabled: true,
+      travelPerTrip: 100000,
+      travelTripsPerYear: 2,
+      congressEnabled: false,
+      starEnabled: false
+    }
+  });
+  assert.equal(earnedAtThreshold.travelAvailable, true);
+  assert.equal(earnedAtThreshold.travelReason, 'available');
+  closeTo(earnedAtThreshold.travelAnnual, 200000);
 
-  assert.equal(calculator.getTravelEligibility({
+  const earnedAboveThreshold = calculator.calculateMotivationReserve({
     paymentType: 'standard',
+    partnerConfirmed: true,
+    quarterlyDeposits: 250000,
+    halfYearCommission: 1600001,
+    preTripQuarterDeposits: 0,
+    motivation: {
+      mode: 'rules',
+      annualReserveMode: 'monthly',
+      travelEnabled: true,
+      travelPerTrip: 100000,
+      travelTripsPerYear: 2,
+      congressEnabled: false,
+      starEnabled: false
+    }
+  });
+  assert.equal(earnedAboveThreshold.travelAvailable, true);
+  closeTo(earnedAboveThreshold.travelAnnual, 200000);
+
+  const blockedHtml = appHelpers.renderMotivationControls({
+    id: 'travel-blocked',
+    name: 'Travel blocked',
+    commission: 0,
+    dealCount: 1,
+    commissionMode: 'exact',
+    dealsInput: [''],
+    paymentType: 'standard',
+    status: 'partner',
+    partnerConfirmed: true,
+    quarterlyCommission: 0,
+    quarterlyDeposits: 250000,
+    halfYearCommission: 1599999,
+    preTripQuarterDeposits: 0,
+    motivation: {
+      mode: 'rules',
+      annualReserveMode: 'monthly',
+      travelEnabled: true,
+      travelPerTrip: 100000,
+      travelTripsPerYear: 2,
+      congressEnabled: false,
+      starEnabled: false
+    }
+  });
+  assert.match(blockedHtml, /Поездка не заработана: результат за полугодие меньше 1 600 000 ₽\. Можно заложить вручную по решению собственника\./);
+
+  const earnedHtml = appHelpers.renderMotivationControls({
+    id: 'travel-earned',
+    name: 'Travel earned',
+    commission: 0,
+    dealCount: 1,
+    commissionMode: 'exact',
+    dealsInput: [''],
+    paymentType: 'standard',
+    status: 'partner',
+    partnerConfirmed: true,
+    quarterlyCommission: 0,
     quarterlyDeposits: 250000,
     halfYearCommission: 1600000,
-    preTripQuarterDeposits: 250000
-  }).available, true);
+    preTripQuarterDeposits: 0,
+    motivation: {
+      mode: 'rules',
+      annualReserveMode: 'monthly',
+      travelEnabled: true,
+      travelPerTrip: 100000,
+      travelTripsPerYear: 2,
+      congressEnabled: false,
+      starEnabled: false
+    }
+  });
+  assert.match(earnedHtml, /Агент заработал поездку\./);
+  assert.match(earnedHtml, /data-agent-field="halfYearCommission"[^>]*value="1 600 000"/);
 });
 
 test('congress and star are always available without override', () => {
@@ -1155,6 +1252,34 @@ test('standard trainee fourth exact deal gets 45 percent', () => {
 
   assert.deepEqual(Array.from(trainee.deals.map((deal) => deal.rate)), [0.30, 0.35, 0.40, 0.45]);
   closeTo(trainee.payout, 150000);
+});
+
+test('standard trainee fifth exact deal switches to partner scale', () => {
+  const trainee = calculator.calculateAgent({
+    id: 'trainee-fifth',
+    commissionMode: 'exact',
+    dealsInput: [50000, 50000, 50000, 50000, 50000],
+    paymentType: 'standard',
+    status: 'trainee',
+    introduced: false
+  });
+
+  assert.deepEqual(Array.from(trainee.deals.map((deal) => deal.rate)), [0.30, 0.35, 0.40, 0.45, 0.50]);
+  closeTo(trainee.payout, 100000);
+});
+
+test('standard trainee sixth exact deal reaches 55 percent', () => {
+  const trainee = calculator.calculateAgent({
+    id: 'trainee-sixth',
+    commissionMode: 'exact',
+    dealsInput: [50000, 50000, 50000, 50000, 50000, 50000],
+    paymentType: 'standard',
+    status: 'trainee',
+    introduced: false
+  });
+
+  assert.deepEqual(Array.from(trainee.deals.map((deal) => deal.rate)), [0.30, 0.35, 0.40, 0.45, 0.50, 0.55]);
+  closeTo(trainee.payout, 127500);
 });
 
 test('motivation block uses the new warning wording and collapsed list', () => {
