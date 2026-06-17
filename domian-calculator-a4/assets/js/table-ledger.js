@@ -4,6 +4,7 @@
   var SNAPSHOT_KEY = 'domianA4TableSnapshot';
   var SNAPSHOT_VERSION = 1;
   var DEFAULT_AGENT_NAME = 'Агент';
+  var motivationPanelState = Object.create(null);
   var agentCounter = 0;
   var expenseCounter = 0;
   var dealCounter = 0;
@@ -342,6 +343,21 @@
     }
   }
 
+  function isMotivationPanelOpen(agentId) {
+    return Boolean(motivationPanelState[agentId]);
+  }
+
+  function setMotivationPanelOpen(agentId, isOpen) {
+    if (!agentId) {
+      return;
+    }
+    if (isOpen) {
+      motivationPanelState[agentId] = true;
+      return;
+    }
+    delete motivationPanelState[agentId];
+  }
+
   function render() {
     var officeResult = getOfficeResult();
     renderExpenses();
@@ -361,7 +377,7 @@
     }
     list.innerHTML = state.expenses.map(function (expense) {
       return '<div class="expense-row" data-expense-id="' + expense.id + '">'
-        + '<input class="text-cell" data-focus-key="expense-name-' + expense.id + '" data-expense-field="name" data-expense-id="' + expense.id + '" value="' + escapeHtml(expense.name) + '">'
+        + '<input class="text-cell" data-focus-key="expense-name-' + expense.id + '" data-expense-field="name" data-expense-id="' + expense.id + '" value="' + escapeHtml(expense.name) + '" placeholder="Название расхода">'
         + '<input class="money-cell" inputmode="numeric" autocomplete="off" data-focus-key="expense-amount-' + expense.id + '" data-expense-field="amount" data-expense-id="' + expense.id + '" value="' + escapeHtml(formatInputMoney(expense.amount)) + '">'
         + '<button class="small danger" type="button" data-action="remove-expense" data-expense-id="' + expense.id + '">Удалить</button>'
         + '</div>';
@@ -381,6 +397,7 @@
     var stipendText = motivation.stipendMonthly ? 'Стипендия: ' + moneyValue(motivation.stipendMonthly) : 'Стипендия: нет';
     var congressText = 'Конгресс учтён: ' + moneyValue(monthlyFromYearly(DEFAULT_MOTIVATION.congressPerYear)) + '/мес';
     var starText = agent.starEnabled ? 'Звезда учтена: ' + moneyValue(monthlyFromYearly(DEFAULT_MOTIVATION.starPerYear)) + '/мес' : (starTakenBy ? 'Звезда уже у ' + (starTakenBy.name || DEFAULT_AGENT_NAME) : 'Звезда: нет');
+    var motivationPanelOpen = isMotivationPanelOpen(agent.id);
 
     return '<tr class="agent-setup-row" data-agent-id="' + agent.id + '">'
       + '<td colspan="14">'
@@ -395,7 +412,7 @@
       + '<label class="flag-box mandatory"><input type="checkbox" data-agent-field="congressEnabled" data-agent-id="' + agent.id + '"' + (agent.congressEnabled ? ' checked' : '') + '> ' + congressText + '</label>'
       + '<label class="flag-box"><input type="checkbox" data-agent-field="starEnabled" data-agent-id="' + agent.id + '"' + (agent.starEnabled ? ' checked' : '') + starDisabled + starTitle + '> ' + escapeHtml(starText) + '</label>'
       + '</div>'
-      + '<details class="motivation-ledger-panel">'
+      + '<details class="motivation-ledger-panel" data-motivation-panel-id="' + agent.id + '"' + (motivationPanelOpen ? ' open' : '') + '>'
       + '<summary>Мотивации и партнёрство <span>' + escapeHtml(stipendText) + ', всего: ' + moneyValue(getMotivationBreakdown(result).standard) + '</span></summary>'
       + '<div class="motivation-ledger-grid">'
       + '<label>Режим мотиваций<select data-agent-field="motivationMode" data-agent-id="' + agent.id + '">' + option('rules', 'По правилам', agent.motivationMode) + option('off', 'Не учитывать стандартные', agent.motivationMode) + option('manual', 'Ручной резерв', agent.motivationMode) + '</select></label>'
@@ -764,6 +781,7 @@
         return created;
       });
       normalizeSingleStar();
+      motivationPanelState = Object.create(null);
       showNotice('Данные из A4 загружены в ведомость.');
       render();
     } catch (error) {
@@ -830,6 +848,14 @@
     }
   });
 
+  document.addEventListener('toggle', function (event) {
+    var details = event.target;
+    if (!details || !details.classList || !details.classList.contains('motivation-ledger-panel')) {
+      return;
+    }
+    setMotivationPanelOpen(details.dataset.motivationPanelId, details.open);
+  }, true);
+
   document.addEventListener('click', function (event) {
     var button = event.target.closest('button[data-action]');
     if (!button) return;
@@ -869,7 +895,7 @@
       }
     }
     if (action === 'add-expense') {
-      state.expenses.push(createExpense('Новый расход'));
+      state.expenses.push(createExpense(''));
       render();
     }
     if (action === 'remove-expense') {
@@ -878,6 +904,7 @@
     }
     if (action === 'clear-ledger') {
       state = createState();
+      motivationPanelState = Object.create(null);
       showNotice('Ведомость очищена.');
       render();
     }
