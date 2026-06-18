@@ -1722,7 +1722,11 @@
       return false;
     }
 
-    return !(eventType === 'input' && target.tagName === 'INPUT');
+    if (eventType === 'input' && target.tagName === 'INPUT') {
+      return target.dataset.agentField === 'halfYearCommission';
+    }
+
+    return true;
   }
 
   function syncAgentTotalsFromDeals(agent) {
