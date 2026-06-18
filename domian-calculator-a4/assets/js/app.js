@@ -12,6 +12,7 @@
   var DEFAULT_AGENT_NAME = 'Новый агент';
   var DEAL_PLACEHOLDER = '100 000';
   var hasUnsavedChanges = false;
+  var deferredMotivationRenderTimer = null;
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -1722,11 +1723,26 @@
       return false;
     }
 
-    if (eventType === 'input' && target.tagName === 'INPUT') {
-      return target.dataset.agentField === 'halfYearCommission';
+    return !(eventType === 'input' && target.tagName === 'INPUT');
+  }
+
+  function shouldScheduleMotivationRerender(target, eventType) {
+    if (!target || eventType !== 'input' || target.tagName !== 'INPUT') {
+      return false;
     }
 
-    return true;
+    return target.dataset.agentField === 'halfYearCommission';
+  }
+
+  function scheduleMotivationRerender() {
+    if (deferredMotivationRenderTimer) {
+      window.clearTimeout(deferredMotivationRenderTimer);
+    }
+
+    deferredMotivationRenderTimer = window.setTimeout(function () {
+      deferredMotivationRenderTimer = null;
+      renderPreservingUiState();
+    }, 180);
   }
 
   function syncAgentTotalsFromDeals(agent) {
@@ -1857,6 +1873,9 @@
       renderPreservingUiState();
     } else {
       updateTotalsOnly();
+      if (shouldScheduleMotivationRerender(target, eventType)) {
+        scheduleMotivationRerender();
+      }
     }
   }
 
