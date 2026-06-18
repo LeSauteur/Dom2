@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
   'use strict';
 
   var state = null;
@@ -12,7 +12,6 @@
   var DEFAULT_AGENT_NAME = 'Новый агент';
   var DEAL_PLACEHOLDER = '100 000';
   var hasUnsavedChanges = false;
-  var deferredMotivationRenderTimer = null;
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -421,7 +420,7 @@
     var overridden = !available && (agent[config.overrideField] || agent.motivationOverride);
     var locked = !available && !overridden;
 
-    return '<article class="motivation-card' + (locked ? ' is-blocked' : '') + '">'
+    return '<article class="motivation-card' + (locked ? ' is-blocked' : '') + '" data-agent-id="' + agent.id + '" data-motivation-card="' + config.key + '">'
       + '<label class="motivation-card-toggle"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="' + config.enabledField + '"' + checked(motivation[config.enabledField]) + disabled(locked) + '>'
       + '<span><strong>' + config.title + '</strong><small>' + config.description + '</small></span></label>'
       + (config.key === 'travel' ? renderTravelEligibilityNote(available, reason, overridden) : renderEligibilityNote(available, reason, overridden))
@@ -958,6 +957,30 @@
       + '</div></section>';
   }
 
+  function getTravelMotivationConfig() {
+    return {
+      key: 'travel',
+      enabledField: 'travelEnabled',
+      amountField: 'travelPerTrip',
+      countField: 'travelTripsPerYear',
+      overrideField: 'travelOverride',
+      overrideLabel: 'Всё равно заложить путешествие',
+      title: 'Заграница / Путешествие',
+      description: 'Зарубежные поездки для агента'
+    };
+  }
+
+  function updateTravelMotivationCard(agent) {
+    if (!agent) {
+      return;
+    }
+
+    var card = document.querySelector('[data-motivation-card="travel"][data-agent-id="' + agent.id + '"]');
+    if (card) {
+      card.outerHTML = renderTripMotivationCard(agent, getTravelMotivationConfig());
+    }
+  }
+
   function renderMotivationControls(agent) {
     var motivation = Object.assign(createMotivation(), agent.motivation || {});
     var motivationReserve = calculateAgent(agent).motivationReserve;
@@ -1080,7 +1103,7 @@
           + '</div></section>'
           + '<section class="motivation-section"><h4>Годовые мотивации</h4><div class="motivation-card-grid">'
           + renderTripMotivationCard(agent, { key: 'mountainSea', enabledField: 'mountainSeaEnabled', amountField: 'mountainSeaPerTrip', countField: 'mountainSeaTripsPerYear', overrideField: 'mountainSeaOverride', overrideLabel: 'Всё равно заложить поездки по РФ', title: 'Горы / Море', description: 'Поездки по РФ для агента', infoLines: ['Горы и Море — разные сезонные акции. Сейчас блок показывает укрупнённый резерв по поездкам, а не календарный расчёт.', 'Горы: акция 1 января – 28 февраля, поездка в апреле.', 'Море: акция 1 мая – 30 июня, поездка в сентябре.', 'План офиса считается отдельно для акции: количество партнёров × 350 000 ₽.'] })
-          + renderTripMotivationCard(agent, { key: 'travel', enabledField: 'travelEnabled', amountField: 'travelPerTrip', countField: 'travelTripsPerYear', overrideField: 'travelOverride', overrideLabel: 'Всё равно заложить путешествие', title: 'Заграница / Путешествие', description: 'Зарубежные поездки для агента' })
+          + renderTripMotivationCard(agent, getTravelMotivationConfig())
           + renderAnnualMotivationCard(agent, { key: 'corporate', enabledField: 'corporateEnabled', amountField: 'corporatePerYear', overrideField: 'eventsOverride', overrideLabel: 'Всё равно заложить корпоратив', title: 'Корпоративы', description: 'Годовой резерв на мероприятия', infoLines: ['Корпоративы — это разные календарные события, а текущий блок показывает укрупнённый резерв.', 'Летний корпоратив проходит в середине июля по подтверждению партнёрства за предыдущий квартал.', 'Зимний корпоратив проходит примерно 25 декабря по подтверждению партнёрства за 3 квартал.', 'Оборот / сделки для корпоративов не требуются.'] })
           + '</div></section>'
         : '')
@@ -1726,25 +1749,6 @@
     return !(eventType === 'input' && target.tagName === 'INPUT');
   }
 
-  function shouldScheduleMotivationRerender(target, eventType) {
-    if (!target || eventType !== 'input' || target.tagName !== 'INPUT') {
-      return false;
-    }
-
-    return target.dataset.agentField === 'halfYearCommission';
-  }
-
-  function scheduleMotivationRerender() {
-    if (deferredMotivationRenderTimer) {
-      window.clearTimeout(deferredMotivationRenderTimer);
-    }
-
-    deferredMotivationRenderTimer = window.setTimeout(function () {
-      deferredMotivationRenderTimer = null;
-      renderPreservingUiState();
-    }, 180);
-  }
-
   function syncAgentTotalsFromDeals(agent) {
     if (!agent) {
       return;
@@ -1873,8 +1877,8 @@
       renderPreservingUiState();
     } else {
       updateTotalsOnly();
-      if (shouldScheduleMotivationRerender(target, eventType)) {
-        scheduleMotivationRerender();
+      if (eventType === 'input' && field === 'halfYearCommission') {
+        updateTravelMotivationCard(agent);
       }
     }
   }
