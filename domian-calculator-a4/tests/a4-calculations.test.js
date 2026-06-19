@@ -32,6 +32,9 @@ function loadAppHelpers() {
       },
       getElementById() {
         return null;
+      },
+      querySelector() {
+        return null;
       }
     },
     localStorage: {
@@ -62,8 +65,11 @@ function loadAppHelpers() {
       '  renderExpenses: renderExpenses,',
       '  renderExactDeals: renderExactDeals,',
       '  renderMotivationControls: renderMotivationControls,',
+      '  renderTravelMotivationCard: renderTravelMotivationCard,',
+      '  updateTravelMotivationCard: updateTravelMotivationCard,',
       '  setState: function (nextState) { state = nextState; },',
-      '  setElements: function (nextElements) { elements = nextElements; }',
+      '  setElements: function (nextElements) { elements = nextElements; },',
+      '  setDocumentQuerySelector: function (querySelector) { document.querySelector = querySelector; }',
       '};',
       '}());'
     ].join('\n'));
@@ -1117,6 +1123,44 @@ test('domian travel uses inclusive half-year threshold and syncs render text', (
   });
   assert.match(earnedHtml, /Агент заработал поездку\./);
   assert.match(earnedHtml, /data-agent-field="halfYearCommission"[^>]*value="1 600 000"/);
+
+  const liveAgent = {
+    id: 'travel-live',
+    name: 'Travel live',
+    commission: 0,
+    dealCount: 1,
+    commissionMode: 'exact',
+    dealsInput: [''],
+    paymentType: 'standard',
+    status: 'partner',
+    partnerConfirmed: true,
+    quarterlyCommission: 0,
+    quarterlyDeposits: 250000,
+    halfYearCommission: 1599999,
+    preTripQuarterDeposits: 0,
+    motivation: {
+      mode: 'rules',
+      annualReserveMode: 'monthly',
+      travelEnabled: true,
+      travelPerTrip: 100000,
+      travelTripsPerYear: 2,
+      congressEnabled: false,
+      starEnabled: false
+    }
+  };
+  const travelCard = {
+    outerHTML: appHelpers.renderTravelMotivationCard(liveAgent)
+  };
+  assert.match(travelCard.outerHTML, /data-motivation-card="travel"/);
+  assert.match(travelCard.outerHTML, /Поездка не заработана/);
+
+  liveAgent.halfYearCommission = 1600000;
+  appHelpers.setDocumentQuerySelector((selector) => (
+    selector === '[data-motivation-card="travel"][data-agent-id="travel-live"]' ? travelCard : null
+  ));
+  appHelpers.updateTravelMotivationCard(liveAgent);
+  assert.match(travelCard.outerHTML, /Агент заработал поездку\./);
+  assert.doesNotMatch(travelCard.outerHTML, /Поездка не заработана/);
 });
 
 test('congress and star are always available without override', () => {

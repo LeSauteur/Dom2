@@ -419,8 +419,9 @@
     var reason = reserve[config.key + 'Reason'];
     var overridden = !available && (agent[config.overrideField] || agent.motivationOverride);
     var locked = !available && !overridden;
+    var cardAttribute = config.key ? ' data-motivation-card="' + config.key + '"' : '';
 
-    return '<article class="motivation-card' + (locked ? ' is-blocked' : '') + '" data-agent-id="' + agent.id + '" data-motivation-card="' + config.key + '">'
+    return '<article class="motivation-card' + (locked ? ' is-blocked' : '') + '"' + cardAttribute + ' data-agent-id="' + agent.id + '">'
       + '<label class="motivation-card-toggle"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="' + config.enabledField + '"' + checked(motivation[config.enabledField]) + disabled(locked) + '>'
       + '<span><strong>' + config.title + '</strong><small>' + config.description + '</small></span></label>'
       + (config.key === 'travel' ? renderTravelEligibilityNote(available, reason, overridden) : renderEligibilityNote(available, reason, overridden))
@@ -435,6 +436,30 @@
       + renderMotivationMetric(agent.id, config.key + 'Monthly', 'Управленчески в месяц (÷12)', annual / 12)
       + '</dl>'
       + '</article>';
+  }
+
+  function renderTravelMotivationCard(agent) {
+    return renderTripMotivationCard(agent, {
+      key: 'travel',
+      enabledField: 'travelEnabled',
+      amountField: 'travelPerTrip',
+      countField: 'travelTripsPerYear',
+      overrideField: 'travelOverride',
+      overrideLabel: 'Всё равно заложить путешествие',
+      title: 'Заграница / Путешествие',
+      description: 'Зарубежные поездки для агента'
+    });
+  }
+
+  function updateTravelMotivationCard(agent) {
+    if (!agent || !document || typeof document.querySelector !== 'function') {
+      return;
+    }
+
+    var card = document.querySelector('[data-motivation-card="travel"][data-agent-id="' + agent.id + '"]');
+    if (card) {
+      card.outerHTML = renderTravelMotivationCard(agent);
+    }
   }
 
   function renderAnnualMotivationCard(agent, config) {
@@ -957,30 +982,6 @@
       + '</div></section>';
   }
 
-  function getTravelMotivationConfig() {
-    return {
-      key: 'travel',
-      enabledField: 'travelEnabled',
-      amountField: 'travelPerTrip',
-      countField: 'travelTripsPerYear',
-      overrideField: 'travelOverride',
-      overrideLabel: 'Всё равно заложить путешествие',
-      title: 'Заграница / Путешествие',
-      description: 'Зарубежные поездки для агента'
-    };
-  }
-
-  function updateTravelMotivationCard(agent) {
-    if (!agent) {
-      return;
-    }
-
-    var card = document.querySelector('[data-motivation-card="travel"][data-agent-id="' + agent.id + '"]');
-    if (card) {
-      card.outerHTML = renderTripMotivationCard(agent, getTravelMotivationConfig());
-    }
-  }
-
   function renderMotivationControls(agent) {
     var motivation = Object.assign(createMotivation(), agent.motivation || {});
     var motivationReserve = calculateAgent(agent).motivationReserve;
@@ -1103,7 +1104,7 @@
           + '</div></section>'
           + '<section class="motivation-section"><h4>Годовые мотивации</h4><div class="motivation-card-grid">'
           + renderTripMotivationCard(agent, { key: 'mountainSea', enabledField: 'mountainSeaEnabled', amountField: 'mountainSeaPerTrip', countField: 'mountainSeaTripsPerYear', overrideField: 'mountainSeaOverride', overrideLabel: 'Всё равно заложить поездки по РФ', title: 'Горы / Море', description: 'Поездки по РФ для агента', infoLines: ['Горы и Море — разные сезонные акции. Сейчас блок показывает укрупнённый резерв по поездкам, а не календарный расчёт.', 'Горы: акция 1 января – 28 февраля, поездка в апреле.', 'Море: акция 1 мая – 30 июня, поездка в сентябре.', 'План офиса считается отдельно для акции: количество партнёров × 350 000 ₽.'] })
-          + renderTripMotivationCard(agent, getTravelMotivationConfig())
+          + renderTravelMotivationCard(agent)
           + renderAnnualMotivationCard(agent, { key: 'corporate', enabledField: 'corporateEnabled', amountField: 'corporatePerYear', overrideField: 'eventsOverride', overrideLabel: 'Всё равно заложить корпоратив', title: 'Корпоративы', description: 'Годовой резерв на мероприятия', infoLines: ['Корпоративы — это разные календарные события, а текущий блок показывает укрупнённый резерв.', 'Летний корпоратив проходит в середине июля по подтверждению партнёрства за предыдущий квартал.', 'Зимний корпоратив проходит примерно 25 декабря по подтверждению партнёрства за 3 квартал.', 'Оборот / сделки для корпоративов не требуются.'] })
           + '</div></section>'
         : '')
@@ -1873,13 +1874,16 @@
       agent.dealsInput = splitCommissionIntoDeals(agent.commission, agent.dealCount);
     }
 
+    if (eventType === 'input' && (field === 'halfYearCommission' || field === 'preTripQuarterDeposits')) {
+      updateTotalsOnly();
+      updateTravelMotivationCard(agent);
+      return;
+    }
+
     if (shouldRerenderStructuralField(target, eventType)) {
       renderPreservingUiState();
     } else {
       updateTotalsOnly();
-      if (eventType === 'input' && field === 'halfYearCommission') {
-        updateTravelMotivationCard(agent);
-      }
     }
   }
 
@@ -2145,4 +2149,3 @@
     window.domianA4State = state;
   });
 }());
-

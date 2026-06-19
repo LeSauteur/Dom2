@@ -1,0 +1,4 @@
+domian-calculator-a4/*.html text eol=lf
+domian-calculator-a4/assets/css/*.css text eol=lf
+domian-calculator-a4/assets/js/*.js text eol=lf
+domian-calculator-a4/tests/*.js text eol=lf
