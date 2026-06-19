@@ -704,7 +704,7 @@ select:focus {
 .motivation-summary {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
   align-items: center;
   padding: 14px;
@@ -716,17 +716,25 @@ select:focus {
 }
 
 .motivation-box:not([open]) {
-  border-color: rgba(217, 131, 31, .38);
-  box-shadow: 0 0 0 1px rgba(217, 131, 31, .08), 0 10px 24px rgba(180, 83, 9, .08);
+  border-color: #991b1b;
+  box-shadow: 0 0 0 2px rgba(185, 28, 28, .14), 0 12px 26px rgba(127, 29, 29, .18);
 }
 
 .motivation-box:not([open]) .motivation-summary {
-  border-left: 8px solid #d9831f;
-  background: linear-gradient(135deg, rgba(217, 131, 31, .18), rgba(255, 244, 223, .96));
+  border-left: 8px solid #991b1b;
+  background: linear-gradient(135deg, #c62828, #e53935);
+  color: #fff;
 }
 
 .motivation-box:not([open]) .motivation-summary::before {
-  background: #d9831f;
+  content: "!";
+  background: #991b1b;
+  color: #fff;
+}
+
+.motivation-box:not([open]) .motivation-summary:hover,
+.motivation-box:not([open]) .motivation-summary:focus {
+  background: linear-gradient(135deg, #b91c1c, #dc2626);
 }
 
 .motivation-summary:hover,
@@ -747,6 +755,9 @@ select:focus {
   height: 28px;
   place-items: center;
   position: absolute;
+  top: 50%;
+  left: 14px;
+  transform: translateY(-50%);
   border-radius: 50%;
   background: var(--blue);
   color: #fff;

@@ -985,16 +985,16 @@
       + '</div></section>';
   }
 
-  function renderMotivationSummaryText(headerText) {
-    return '<span class="motivation-summary-text">'
-      + headerText
-      + '<span class="motivation-summary-warning">Без проверки мотиваций расчёт может быть неполным.</span>'
-      + '<span class="motivation-summary-list">Проверьте: конгресс, звезда, море/горы, путешествие, стипендия.</span>'
-      + '</span>';
-  }
+  function renderMotivationSummary(agent) {
+    var closedText = hasSpecialPaymentTermsUi(agent)
+      ? 'Мотивации не положены на особых условиях! Откройте, если всё равно хотите добавить.'
+      : 'Добавьте мотивации агенту!';
 
-  function renderMotivationSummaryAction() {
-    return '<span class="collapse-text"><span class="summary-closed">Открыть и проверить мотивации</span><span class="summary-open">Скрыть мотивации</span></span>';
+    return '<summary class="motivation-summary">'
+      + '<span class="motivation-summary-main">'
+      + '<span class="motivation-summary-title"><span class="summary-closed">' + closedText + '</span><span class="summary-open">Скрыть мотивации</span></span>'
+      + '</span>'
+      + '</summary>';
   }
 
   function renderQuarterlyConditionsSection(agent, motivation, reserve) {
@@ -1014,28 +1014,13 @@
 
   function renderMotivationControls(agent) {
     var motivation = Object.assign(createMotivation(), agent.motivation || {});
-    var motivationReserve = calculateAgent(agent).motivationReserve;
     var reserve = calculateMotivationReserve(agent);
     var currentMode = getVisibleMotivationMode(agent);
     var stipendManualEnabled = reserve.stipendMode === 'manual' || motivation.stipendMode === 'manual' || Boolean(motivation.stipendManualEnabled);
-    var headerText = agent.status === 'trainee'
-      ? 'Для стажёра можно оставить только простой ручной резерв без партнёрских мотиваций.'
-      : (hasSpecialPaymentTermsUi(agent)
-        ? 'При особых условиях стандартные мотивации обычно не применяются. Проверьте, остаётся ли офис в плюсе после повышенной выплаты агенту.'
-        : 'Стандартная система — выплата по шкале и возможные мотивации.');
 
     if (agent.status === 'trainee') {
       return '<details class="motivation-box" data-agent-id="' + agent.id + '">'
-        + '<summary class="motivation-summary">'
-        + '<span class="motivation-summary-main">'
-        + '<span class="motivation-summary-title"><span class="summary-closed">Резерв мотиваций стажёра</span><span class="summary-open">Скрыть резерв стажёра</span></span>'
-        + renderMotivationSummaryText(headerText)
-        + '</span>'
-        + '<span class="motivation-summary-side">'
-        + '<span class="motivation-current">Сейчас учтено: <b data-agent-summary="motivationInline" data-agent-id="' + agent.id + '">' + money(motivationReserve) + '</b> / месяц</span>'
-        + renderMotivationSummaryAction()
-        + '</span>'
-        + '</summary>'
+        + renderMotivationSummary(agent)
         + '<div class="motivation-content">'
         + '<div class="form-grid compact-grid">'
         + renderMotivationModeSelect(agent, 'Учитывать резерв мотиваций?', 'Для стажёра здесь только выбор: оставить резерв 0 ₽ или заложить сумму вручную.', [
@@ -1054,16 +1039,7 @@
 
     if (hasSpecialPaymentTermsUi(agent)) {
       return '<details class="motivation-box" data-agent-id="' + agent.id + '">'
-        + '<summary class="motivation-summary">'
-        + '<span class="motivation-summary-main">'
-        + '<span class="motivation-summary-title"><span class="summary-closed">Резерв при особых условиях</span><span class="summary-open">Скрыть резерв при особых условиях</span></span>'
-        + renderMotivationSummaryText(headerText)
-        + '</span>'
-        + '<span class="motivation-summary-side">'
-        + '<span class="motivation-current">Сейчас учтено: <b data-agent-summary="motivationInline" data-agent-id="' + agent.id + '">' + money(motivationReserve) + '</b> / месяц</span>'
-        + renderMotivationSummaryAction()
-        + '</span>'
-        + '</summary>'
+        + renderMotivationSummary(agent)
         + '<div class="motivation-content">'
         + '<p class="motivation-lead">Особые условия — это повышенная или фиксированная выплата, которую дают, чтобы привлечь или удержать сильного агента. Главный вопрос здесь: остаётся ли офис в плюсе после такой выплаты.</p>'
         + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-field="specialManualReserveEnabled" data-structural="true"' + checked(Boolean(motivation.specialManualReserveEnabled)) + '><span>Заложить ручной резерв мотиваций при особых условиях</span></label>'
@@ -1077,16 +1053,7 @@
     }
 
     return '<details class="motivation-box" data-agent-id="' + agent.id + '">'
-      + '<summary class="motivation-summary">'
-      + '<span class="motivation-summary-main">'
-      + '<span class="motivation-summary-title"><span class="summary-closed">Обязательно проверьте мотивации перед итогом</span><span class="summary-open">Скрыть мотивации</span></span>'
-      + renderMotivationSummaryText(headerText)
-      + '</span>'
-      + '<span class="motivation-summary-side">'
-      + '<span class="motivation-current">Сейчас учтено: <b data-agent-summary="motivationInline" data-agent-id="' + agent.id + '">' + money(motivationReserve) + '</b> / месяц</span>'
-      + renderMotivationSummaryAction()
-      + '</span>'
-      + '</summary>'
+      + renderMotivationSummary(agent)
       + '<div class="motivation-content">'
       + '<div class="form-grid compact-grid">'
       + renderMotivationModeSelect(agent, 'Учитывать мотивации агента?', 'Не учитывать — резерв 0 ₽. Вручную — вы задаёте сумму сами. По правилам — калькулятор откроет дополнительные поля.', [

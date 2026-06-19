@@ -98,6 +98,8 @@ function closeTo(actual, expected) {
 const calculator = loadCalculator();
 const appHelpers = loadAppHelpers();
 const appSource = fs.readFileSync(path.join(rootDir, 'assets/js/app.js'), 'utf8');
+const indexSource = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf8');
+const calculatorCssSource = fs.readFileSync(path.join(rootDir, 'assets/css/a4-calculator.css'), 'utf8');
 
 test('A4 money parser accepts regular, non-breaking and narrow non-breaking spaces', () => {
   [
@@ -1346,11 +1348,12 @@ test('standard trainee sixth exact deal reaches 55 percent', () => {
   closeTo(trainee.payout, 127500);
 });
 
-test('motivation block uses the new warning wording and collapsed list', () => {
-  assert.match(appSource, /Обязательно проверьте мотивации перед итогом/);
-  assert.match(appSource, /Без проверки мотиваций расчёт может быть неполным\./);
-  assert.match(appSource, /Открыть и проверить мотивации/);
-  assert.match(appSource, /Проверьте: конгресс, звезда, море\/горы, путешествие, стипендия\./);
+test('motivation block source uses concise urgent summaries', () => {
+  assert.match(appSource, /Добавьте мотивации агенту!/);
+  assert.match(appSource, /Мотивации не положены на особых условиях! Откройте, если всё равно хотите добавить\./);
+  assert.doesNotMatch(appSource, /Без проверки мотиваций расчёт может быть неполным\./);
+  assert.doesNotMatch(appSource, /Открыть и проверить мотивации/);
+  assert.doesNotMatch(appSource, /Проверьте: конгресс, звезда, море\/горы, путешествие, стипендия\./);
 });
 
 test('exact deals summary repeats agent payout with the same amount', () => {
@@ -1739,4 +1742,43 @@ test('travel UI exposes one contextual decision and always offers return to auto
   });
   assert.match(manualHtml, /data-agent-field="travelQuarterPartnershipConfirmed"/);
   assert.match(manualHtml, /data-motivation-card="travel"/);
+});
+
+test('expense add action appears once below the inline total', () => {
+  const action = 'data-action="add-expense"';
+  assert.equal(indexSource.split(action).length - 1, 1);
+  assert.ok(indexSource.indexOf(action) > indexSource.indexOf('id="expensesInlineTotal"'));
+  assert.match(indexSource, /paper-total[\s\S]*section-actions bottom-actions[\s\S]*data-action="add-expense"/);
+});
+
+test('collapsed motivation summary uses one urgent message per payment mode', () => {
+  const standardHtml = appHelpers.renderMotivationControls({
+    id: 'summary-standard',
+    status: 'partner',
+    paymentType: 'standard',
+    motivation: { mode: 'rules' }
+  });
+  assert.match(standardHtml, /summary-closed">Добавьте мотивации агенту!</);
+  assert.match(standardHtml, /summary-open">Скрыть мотивации</);
+  assert.doesNotMatch(standardHtml, /Без проверки мотиваций расчёт может быть неполным/);
+  assert.doesNotMatch(standardHtml, /Проверьте: конгресс/);
+  assert.doesNotMatch(standardHtml, /Открыть и проверить мотивации/);
+  assert.doesNotMatch(standardHtml, /data-agent-summary="motivationInline"/);
+
+  const specialHtml = appHelpers.renderMotivationControls({
+    id: 'summary-special',
+    status: 'partner',
+    paymentType: 'fixed',
+    fixedRate: 80,
+    motivation: { mode: 'off' }
+  });
+  assert.match(specialHtml, /summary-closed">Мотивации не положены на особых условиях! Откройте, если всё равно хотите добавить\./);
+  assert.match(specialHtml, /summary-open">Скрыть мотивации</);
+  assert.doesNotMatch(specialHtml, /data-agent-summary="motivationInline"/);
+});
+
+test('collapsed motivation alert is bright red with an exclamation marker', () => {
+  assert.match(calculatorCssSource, /\.motivation-box:not\(\[open\]\) \.motivation-summary\s*\{[\s\S]*background:[^;]*#(?:c|d|e|f)[0-9a-f]{5}/i);
+  assert.match(calculatorCssSource, /\.motivation-box:not\(\[open\]\) \.motivation-summary::before\s*\{[\s\S]*content:\s*"!"/);
+  assert.match(calculatorCssSource, /\.motivation-box:not\(\[open\]\) \.motivation-summary[\s\S]*color:\s*#fff/);
 });
