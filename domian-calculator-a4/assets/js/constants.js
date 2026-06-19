@@ -96,6 +96,8 @@
       quarterlyDeposits: 250000,
       halfYearCommission: 1600000,
       preTripQuarterDeposits: 250000,
+      travelQuarterPartnershipConfirmed: true,
+      travelDecision: 'auto',
       motivationOverride: false,
       stipendOverride: false,
       mountainSeaOverride: false,

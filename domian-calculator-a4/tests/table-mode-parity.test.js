@@ -323,7 +323,7 @@ test('table-mode treats legacy custom boosted rates as a starting-rate source', 
   closeTo(calculated.payout, 225000);
 });
 
-test('table-mode preserves imported motivation model details', () => {
+test('legacy table-mode does not infer isolated travel from travelEnabled', () => {
   const agent = table.toTableAgent({
     id: 'motivation-agent',
     name: 'Motivation agent',
@@ -354,9 +354,9 @@ test('table-mode preserves imported motivation model details', () => {
   const calculated = tableWindow.calculateAgent(table.getCalculationAgent(agent));
 
   assert.equal(agent.motivation.travelEnabled, true);
-  assert.equal(calculated.motivation.travelAnnual, 200000);
+  assert.equal(calculated.motivation.travelAnnual, 0);
   assert.equal(calculated.motivation.congressAnnual, 3500);
-  closeTo(calculated.motivationReserve, 20958.333333333332);
+  closeTo(calculated.motivationReserve, 4291.666666666667);
 });
 
 test('table-mode quick, fixed, referral and royalty controls still match shared calculations', () => {

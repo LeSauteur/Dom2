@@ -265,15 +265,61 @@
   }
 
   function getTravelEligibility(agent) {
-    var context = getMotivationContext(agent || {});
-    var base = getMotivationEligibility(agent || {});
-    if (!base.available) {
-      return base;
+    var travel = calculateTravelMotivation(agent || {});
+    return {
+      available: travel.earned,
+      reason: travel.earned ? 'available' : (travel.resultMet ? 'preTripPartnership' : 'halfYearLevel'),
+      partnershipConfirmed: travel.preTripPartnershipConfirmed
+    };
+  }
+
+  function normalizeTravelDecision(value) {
+    return value === 'forceInclude' || value === 'forceExclude' ? value : 'auto';
+  }
+
+  function calculateTravelMotivation(agent) {
+    var data = agent || {};
+    var source = data.motivation || data;
+    var halfYearCommission = positiveNumber(data.halfYearCommission);
+    var preTripPartnershipConfirmed = data.travelQuarterPartnershipConfirmed === true;
+    var decision = normalizeTravelDecision(data.travelDecision);
+    var resultMet = halfYearCommission >= TRAVEL_MIN_HALF_YEAR_COMMISSION;
+    var earned = resultMet && preTripPartnershipConfirmed;
+    var counted = decision === 'forceExclude' ? false : (decision === 'forceInclude' ? true : earned);
+    var fullAnnualAmount = readNumberOrFallback(data, source, 'travelPerTrip', DEFAULT_MOTIVATION.travelPerTrip)
+      * readNumberOrFallback(data, source, 'travelTripsPerYear', DEFAULT_MOTIVATION.travelTripsPerYear);
+    var status = 'blocked';
+    var message = '';
+
+    if (decision === 'forceExclude') {
+      status = 'warning';
+      message = earned
+        ? 'Агент заработал поездку, но она отключена вручную для этого агента.'
+        : 'Поездка отключена вручную для этого агента.';
+    } else if (decision === 'forceInclude') {
+      status = 'forced';
+      message = 'Поездка включена вручную как исключение собственника.';
+    } else if (earned) {
+      status = 'earned';
+      message = 'Агент заработал поездку.';
+    } else if (!resultMet) {
+      message = 'Поездка не заработана: результат за полугодие меньше 1 600 000 ₽.';
+    } else {
+      message = 'Поездка не засчитана: не подтверждено партнёрство по задаткам в квартале перед поездкой.';
     }
-    if (context.halfYearCommission < TRAVEL_MIN_HALF_YEAR_COMMISSION) {
-      return Object.assign(base, getBlockedResult('halfYearLevel'));
-    }
-    return base;
+
+    return {
+      resultMet: resultMet,
+      preTripPartnershipConfirmed: preTripPartnershipConfirmed,
+      earned: earned,
+      decision: decision,
+      counted: counted,
+      fullAnnualAmount: fullAnnualAmount,
+      annualAmount: counted ? fullAnnualAmount : 0,
+      monthlyAmount: counted ? fullAnnualAmount / 12 : 0,
+      status: status,
+      message: message
+    };
   }
 
   function canUseBlockedMotivation(context, overrideField) {
@@ -328,6 +374,30 @@
     return 'off';
   }
 
+  function attachTravelToReserve(result, travel, annualReserveMode, includeInTotal) {
+    var contribution = includeInTotal
+      ? (annualReserveMode === 'full' ? travel.annualAmount : travel.monthlyAmount)
+      : 0;
+
+    result.travelEarned = travel.earned;
+    result.travelCounted = travel.counted;
+    result.travelDecision = travel.decision;
+    result.travelStatus = travel.status;
+    result.travelMessage = travel.message;
+    result.travelAvailable = travel.counted;
+    result.travelReason = travel.status;
+    result.travelAnnual = travel.annualAmount;
+    result.travelFullAnnualAmount = travel.fullAnnualAmount;
+    result.travelMonthly = travel.monthlyAmount;
+    if (includeInTotal) {
+      result.annualReserveTotal += travel.annualAmount;
+      result.annualReserveMonthly += contribution;
+      result.total += contribution;
+      result.monthly += contribution;
+    }
+    return result;
+  }
+
   function calculateMotivationReserve(agent) {
     var context = getMotivationContext(agent);
     var source = context.source;
@@ -347,11 +417,12 @@
     var mandatoryAnnualTotal = congressAnnual + starAnnual;
     var mandatoryAnnualMonthly = annualReserveMode === 'full' ? mandatoryAnnualTotal : mandatoryAnnualTotal / 12;
     var emptyEligibility = getBlockedResult('specialTerms');
+    var isolatedTravel = calculateTravelMotivation(agent || {});
 
     if (agent && agent.status === 'trainee') {
       var traineeManualMonthly = motivationMode === 'manual' ? manualReserveMonthly : 0;
       var traineeTotal = traineeManualMonthly + mandatoryAnnualMonthly;
-      return {
+      return attachTravelToReserve({
         mode: motivationMode === 'manual' ? 'manual' : 'off',
         stipendMode: 'off',
         quarterlyResult: context.quarterlyCommission,
@@ -390,11 +461,11 @@
         specialManualReserveEnabled: false,
         total: traineeTotal,
         monthly: traineeTotal
-      };
+      }, isolatedTravel, annualReserveMode, annualReserveMode !== 'manual');
     }
 
     if (motivationMode === 'off' && !hasSpecialPaymentTerms(context)) {
-      return {
+      return attachTravelToReserve({
         mode: 'off',
         stipendMode: 'off',
         quarterlyResult: context.quarterlyCommission,
@@ -433,12 +504,12 @@
         specialManualReserveEnabled: specialManualReserveEnabled,
         total: mandatoryAnnualMonthly,
         monthly: mandatoryAnnualMonthly
-      };
+      }, isolatedTravel, annualReserveMode, annualReserveMode !== 'manual');
     }
 
     if (motivationMode === 'manual' && !hasSpecialPaymentTerms(context)) {
       var manualTotal = manualReserveMonthly + mandatoryAnnualMonthly;
-      return {
+      return attachTravelToReserve({
         mode: 'manual',
         stipendMode: 'off',
         quarterlyResult: context.quarterlyCommission,
@@ -477,7 +548,7 @@
         specialManualReserveEnabled: specialManualReserveEnabled,
         total: manualTotal,
         monthly: manualTotal
-      };
+      }, isolatedTravel, annualReserveMode, false);
     }
 
     var quarterlyResult = context.quarterlyCommission;
@@ -485,10 +556,8 @@
     var stipendLevel = getStipendLevel(quarterlyResult);
     var stipendEligibility = getStipendEligibility(Object.assign({}, agent || {}, source));
     var motivationEligibility = getMotivationEligibility(Object.assign({}, agent || {}, source));
-    var travelEligibility = getTravelEligibility(Object.assign({}, agent || {}, source));
     var stipendManualEnabled = stipendMode === 'manual' || canUseBlockedMotivation(context, 'stipendOverride');
     var mountainSeaAllowed = motivationEligibility.available || canUseBlockedMotivation(context, 'mountainSeaOverride');
-    var travelAllowed = travelEligibility.available || canUseBlockedMotivation(context, 'travelOverride');
     var corporateAllowed = motivationEligibility.available || canUseBlockedMotivation(context, 'eventsOverride');
     var stipendMonthly = 0;
 
@@ -501,11 +570,10 @@
     var mountainSeaAnnual = source.mountainSeaEnabled && mountainSeaAllowed
       ? readNumberOrFallback(agent, source, 'mountainSeaPerTrip', DEFAULT_MOTIVATION.mountainSeaPerTrip) * readNumberOrFallback(agent, source, 'mountainSeaTripsPerYear', DEFAULT_MOTIVATION.mountainSeaTripsPerYear)
       : 0;
-    var travelAnnual = source.travelEnabled && travelAllowed
-      ? readNumberOrFallback(agent, source, 'travelPerTrip', DEFAULT_MOTIVATION.travelPerTrip) * readNumberOrFallback(agent, source, 'travelTripsPerYear', DEFAULT_MOTIVATION.travelTripsPerYear)
-      : 0;
+    var travelAnnual = isolatedTravel.annualAmount;
+    var travelReserveAnnual = annualReserveMode === 'manual' ? 0 : travelAnnual;
     var corporateAnnual = source.corporateEnabled && corporateAllowed ? readNumberOrFallback(agent, source, 'corporatePerYear', DEFAULT_MOTIVATION.corporatePerYear) : 0;
-    var standardAnnualTotal = mountainSeaAnnual + travelAnnual + corporateAnnual;
+    var standardAnnualTotal = mountainSeaAnnual + travelReserveAnnual + corporateAnnual;
     var standardAnnualMonthly = standardAnnualTotal / 12;
 
     if (annualReserveMode === 'full') {
@@ -549,10 +617,16 @@
       mountainSeaReason: specialTermsOnlyManual ? 'specialTerms' : motivationEligibility.reason,
       mountainSeaAnnual: mountainSeaAnnual,
       mountainSeaMonthly: mountainSeaMonthly,
-      travelAvailable: specialTermsOnlyManual ? false : travelEligibility.available,
-      travelReason: specialTermsOnlyManual ? 'specialTerms' : travelEligibility.reason,
+      travelEarned: isolatedTravel.earned,
+      travelCounted: isolatedTravel.counted,
+      travelDecision: isolatedTravel.decision,
+      travelStatus: isolatedTravel.status,
+      travelMessage: isolatedTravel.message,
+      travelAvailable: isolatedTravel.counted,
+      travelReason: isolatedTravel.status,
       travelAnnual: travelAnnual,
-      travelMonthly: travelMonthly,
+      travelFullAnnualAmount: isolatedTravel.fullAnnualAmount,
+      travelMonthly: isolatedTravel.monthlyAmount,
       corporateAvailable: specialTermsOnlyManual ? false : motivationEligibility.available,
       corporateReason: specialTermsOnlyManual ? 'specialTerms' : motivationEligibility.reason,
       corporateAnnual: corporateAnnual,
@@ -952,6 +1026,7 @@
   window.getStipendEligibility = getStipendEligibility;
   window.getMotivationEligibility = getMotivationEligibility;
   window.getTravelEligibility = getTravelEligibility;
+  window.calculateTravelMotivation = calculateTravelMotivation;
   window.calculateMotivationReserve = calculateMotivationReserve;
   window.calculateAgent = calculateAgent;
   window.calculateExpenses = calculateExpenses;

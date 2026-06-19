@@ -50,6 +50,8 @@
       quarterlyDeposits: 0,
       halfYearCommission: 0,
       preTripQuarterDeposits: 0,
+      travelQuarterPartnershipConfirmed: false,
+      travelDecision: 'auto',
       motivationOverride: false,
       stipendOverride: false,
       mountainSeaOverride: false,
@@ -98,6 +100,12 @@
     }
     if (normalized.partnerConfirmed === undefined) {
       normalized.partnerConfirmed = positiveNumber(normalized.quarterlyDeposits) >= PARTNERSHIP_DEPOSIT_THRESHOLD;
+    }
+    normalized.travelQuarterPartnershipConfirmed = normalized.travelQuarterPartnershipConfirmed === true;
+    if (normalized.travelDecision !== 'auto' && normalized.travelDecision !== 'forceInclude' && normalized.travelDecision !== 'forceExclude') {
+      normalized.travelDecision = normalized.travelDecision === undefined && normalized.travelOverride === true
+        ? 'forceInclude'
+        : 'auto';
     }
     normalized.motivation.mode = inferInitialMotivationMode(normalized, normalized.motivation);
     return normalized;
@@ -401,16 +409,6 @@
     return '<p class="eligibility-note blocked">' + getEligibilityText(reason) + '</p>';
   }
 
-  function renderTravelEligibilityNote(available, reason, overridden) {
-    if (available) {
-      return '<p class="eligibility-note ok">Агент заработал поездку.</p>';
-    }
-    if (overridden) {
-      return '<p class="eligibility-note warning">Поездка не заработана: результат за полугодие меньше 1 600 000 ₽. Можно заложить вручную по решению собственника.</p>';
-    }
-    return '<p class="eligibility-note blocked">' + getEligibilityText(reason) + '</p>';
-  }
-
   function renderTripMotivationCard(agent, config) {
     var motivation = Object.assign(createMotivation(), agent.motivation || {});
     var reserve = calculateMotivationReserve(agent);
@@ -424,7 +422,7 @@
     return '<article class="motivation-card' + (locked ? ' is-blocked' : '') + '"' + cardAttribute + ' data-agent-id="' + agent.id + '">'
       + '<label class="motivation-card-toggle"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-flag="' + config.enabledField + '"' + checked(motivation[config.enabledField]) + disabled(locked) + '>'
       + '<span><strong>' + config.title + '</strong><small>' + config.description + '</small></span></label>'
-      + (config.key === 'travel' ? renderTravelEligibilityNote(available, reason, overridden) : renderEligibilityNote(available, reason, overridden))
+      + renderEligibilityNote(available, reason, overridden)
       + (!available ? renderOverrideCheckbox(agent, config.overrideField, config.overrideLabel) : '')
       + renderMotivationInfo(config.infoLines)
       + '<div class="motivation-card-fields">'
@@ -439,16 +437,48 @@
   }
 
   function renderTravelMotivationCard(agent) {
-    return renderTripMotivationCard(agent, {
-      key: 'travel',
-      enabledField: 'travelEnabled',
-      amountField: 'travelPerTrip',
-      countField: 'travelTripsPerYear',
-      overrideField: 'travelOverride',
-      overrideLabel: 'Всё равно заложить путешествие',
-      title: 'Заграница / Путешествие',
-      description: 'Зарубежные поездки для агента'
-    });
+    var motivation = Object.assign(createMotivation(), agent.motivation || {});
+    var travel = calculateTravelMotivation(agent);
+    var noteClass = travel.status === 'warning' ? 'warning' : (travel.counted ? 'ok' : 'blocked');
+    var cardClass = travel.counted ? '' : (travel.status === 'warning' ? ' is-warning' : ' is-blocked');
+    var action = '';
+
+    if (travel.decision !== 'auto') {
+      action = '<button class="button ghost" type="button" data-action="set-travel-decision" data-agent-id="' + agent.id + '" data-agent-field="travelDecision" value="auto">Вернуть расчёт по правилу</button>';
+    } else if (travel.earned) {
+      action = '<button class="button ghost" type="button" data-action="set-travel-decision" data-agent-id="' + agent.id + '" data-agent-field="travelDecision" value="forceExclude">Не учитывать поездку</button>';
+    } else {
+      action = '<button class="button" type="button" data-action="set-travel-decision" data-agent-id="' + agent.id + '" data-agent-field="travelDecision" value="forceInclude">Всё равно отправить</button>';
+    }
+
+    return '<article class="motivation-card' + cardClass + '" data-motivation-card="travel" data-agent-id="' + agent.id + '">'
+      + '<div class="motivation-card-toggle"><span><strong>Заграница / Путешествие</strong><small>Автономный расчёт поездки для агента</small></span></div>'
+      + '<p class="eligibility-note ' + noteClass + '">' + escapeHtml(travel.message) + '</p>'
+      + '<div class="motivation-card-note"><p>Обязательное правило: не менее 1 600 000 ₽ за полугодие и подтверждённое партнёрство по задаткам в квартале перед поездкой.</p></div>'
+      + '<div class="motivation-card-fields">'
+      + '<label class="field"><span>Сумма за поездку, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-motivation-field="travelPerTrip"', motivation.travelPerTrip) + '</label>'
+      + '<label class="field"><span>Количество поездок в год</span><input type="number" min="0" step="1" data-agent-id="' + agent.id + '" data-motivation-field="travelTripsPerYear" value="' + motivation.travelTripsPerYear + '"></label>'
+      + '</div>'
+      + '<div class="override-row">' + action + '</div>'
+      + '<dl class="motivation-card-total">'
+      + renderMotivationMetric(agent.id, 'travelCalculatedAnnual', 'Расчётная сумма поездки', travel.fullAnnualAmount)
+      + renderMotivationMetric(agent.id, 'travelAnnual', 'Учтено в расходах за год', travel.annualAmount)
+      + renderMotivationMetric(agent.id, 'travelMonthly', 'Управленчески в месяц (÷12)', travel.monthlyAmount)
+      + '</dl>'
+      + '</article>';
+  }
+
+  function renderTravelSection(agent) {
+    return '<section class="motivation-section motivation-section--travel"><h4>Полугодовые условия / Заграница / Путешествие</h4>'
+      + '<div class="form-grid compact-grid">'
+      + '<label class="field"><span>Результат за полугодие, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-agent-field="halfYearCommission"', agent.halfYearCommission) + '<small>Автоматический порог — от 1 600 000 ₽ включительно.</small></label>'
+      + '<label class="field"><span>Партнёрство по задаткам в квартале перед поездкой подтверждено?</span><select data-agent-id="' + agent.id + '" data-agent-field="travelQuarterPartnershipConfirmed">'
+      + option('true', 'Да', String(agent.travelQuarterPartnershipConfirmed === true))
+      + option('false', 'Нет', String(agent.travelQuarterPartnershipConfirmed === true))
+      + '</select><small>Отдельное условие поездки; не связано с обычным квартальным партнёрством.</small></label>'
+      + '</div>'
+      + renderTravelMotivationCard(agent)
+      + '</section>';
   }
 
   function updateTravelMotivationCard(agent) {
@@ -1016,6 +1046,7 @@
           ? renderReserveSummary('Стандартные мотивации не учитываются. Обязательные расходы ниже считаются отдельно.', reserve.congressMonthly + reserve.starMonthly)
           : '<label class="field wide-field"><span>Резерв мотиваций в месяц, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-motivation-field="manualReserveMonthly"', motivation.manualReserveMonthly) + '<small>Укажите сумму, которую собственник хочет ежемесячно закладывать на будущие мотивации этого агента.</small></label>')
         + '</div>'
+        + renderTravelSection(agent)
         + renderMandatoryAnnualMotivationSection(agent)
         + '</div>'
         + '</details>';
@@ -1039,6 +1070,7 @@
         + (motivation.specialManualReserveEnabled
           ? '<label class="field"><span>Резерв мотиваций в месяц, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-motivation-field="manualReserveMonthly"', motivation.manualReserveMonthly) + '<small>Заполняйте только если хотите отдельно откладывать резерв сверх особых условий.</small></label>'
           : renderReserveSummary('Ручной резерв не учитывается. Конгресс и Звезда считаются отдельно ниже.', reserve.congressMonthly + reserve.starMonthly))
+        + renderTravelSection(agent)
         + renderMandatoryAnnualMotivationSection(agent)
         + '</div>'
         + '</details>';
@@ -1079,11 +1111,7 @@
           + '</div></section>'
         : '')
       + (currentMode === 'rules'
-        ? '<section class="motivation-section"><h4>Полугодовые условия</h4><div class="notice warning wide-field motivation-calendar-note">Поездки зависят от периода результата и квартала подтверждения. Точная календарная логика будет в расширенном режиме.</div><div class="form-grid compact-grid">'
-          + '<label class="field"><span>Результат за полугодие, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-agent-field="halfYearCommission" data-structural="true"', agent.halfYearCommission) + '<small>Для путешествия нужен минимум 1 600 000 ₽.</small></label>'
-          + '<label class="field"><span>Задатки в квартале перед поездкой, ₽</span>' + moneyInput('data-agent-id="' + agent.id + '" data-agent-field="preTripQuarterDeposits" data-structural="true"', agent.preTripQuarterDeposits) + '<small>Введите сумму задатков за квартал, который проверяется перед поездкой. Если период поездки непонятен, оставьте поле пустым и задайте резерв вручную.</small></label>'
-          + '</div></section>'
-          + '<section class="motivation-section"><h4>Дополнительные резервы</h4><div class="form-grid compact-grid">'
+        ? '<section class="motivation-section"><h4>Дополнительные резервы</h4><div class="form-grid compact-grid">'
           + '<div class="wide-field">'
           + '<p class="hint compact">Стипендия в режиме “Рассчитать по правилам” считается автоматически, если выполнены условия партнёрства и уровня.</p>'
           + renderStipendStatus(reserve)
@@ -1104,10 +1132,10 @@
           + '</div></section>'
           + '<section class="motivation-section"><h4>Годовые мотивации</h4><div class="motivation-card-grid">'
           + renderTripMotivationCard(agent, { key: 'mountainSea', enabledField: 'mountainSeaEnabled', amountField: 'mountainSeaPerTrip', countField: 'mountainSeaTripsPerYear', overrideField: 'mountainSeaOverride', overrideLabel: 'Всё равно заложить поездки по РФ', title: 'Горы / Море', description: 'Поездки по РФ для агента', infoLines: ['Горы и Море — разные сезонные акции. Сейчас блок показывает укрупнённый резерв по поездкам, а не календарный расчёт.', 'Горы: акция 1 января – 28 февраля, поездка в апреле.', 'Море: акция 1 мая – 30 июня, поездка в сентябре.', 'План офиса считается отдельно для акции: количество партнёров × 350 000 ₽.'] })
-          + renderTravelMotivationCard(agent)
           + renderAnnualMotivationCard(agent, { key: 'corporate', enabledField: 'corporateEnabled', amountField: 'corporatePerYear', overrideField: 'eventsOverride', overrideLabel: 'Всё равно заложить корпоратив', title: 'Корпоративы', description: 'Годовой резерв на мероприятия', infoLines: ['Корпоративы — это разные календарные события, а текущий блок показывает укрупнённый резерв.', 'Летний корпоратив проходит в середине июля по подтверждению партнёрства за предыдущий квартал.', 'Зимний корпоратив проходит примерно 25 декабря по подтверждению партнёрства за 3 квартал.', 'Оборот / сделки для корпоративов не требуются.'] })
           + '</div></section>'
         : '')
+      + renderTravelSection(agent)
       + renderMandatoryAnnualMotivationSection(agent)
       + '</div>'
       + '</details>';
@@ -1845,7 +1873,7 @@
           agent.startingRate = positiveNumber(PAY_SCALES.boostedStartingDefault || PAY_SCALES.boostedDefault[0]);
         }
       }
-    } else if (field === 'introduced' || field === 'partnerConfirmed' || field === 'motivationOverride' || field === 'stipendOverride' || field === 'mountainSeaOverride' || field === 'travelOverride' || field === 'eventsOverride' || field === 'specialTermsOverride') {
+    } else if (field === 'introduced' || field === 'partnerConfirmed' || field === 'travelQuarterPartnershipConfirmed' || field === 'motivationOverride' || field === 'stipendOverride' || field === 'mountainSeaOverride' || field === 'travelOverride' || field === 'eventsOverride' || field === 'specialTermsOverride') {
       agent[field] = target.type === 'checkbox' ? target.checked : target.value === 'true';
     } else if (field === 'commissionMode') {
       if (target.value === 'quick') {
@@ -1874,7 +1902,7 @@
       agent.dealsInput = splitCommissionIntoDeals(agent.commission, agent.dealCount);
     }
 
-    if (eventType === 'input' && (field === 'halfYearCommission' || field === 'preTripQuarterDeposits')) {
+    if ((eventType === 'input' && field === 'halfYearCommission') || field === 'travelQuarterPartnershipConfirmed') {
       updateTotalsOnly();
       updateTravelMotivationCard(agent);
       return;
@@ -1904,6 +1932,12 @@
       agent.motivation.mode = target.checked ? 'manual' : 'off';
     } else {
       agent.motivation[target.dataset.motivationField] = inputNumber(target.value);
+    }
+
+    if (target.dataset.motivationField === 'travelPerTrip' || target.dataset.motivationField === 'travelTripsPerYear') {
+      updateTotalsOnly();
+      updateTravelMotivationCard(agent);
+      return;
     }
 
     if (
@@ -1970,6 +2004,19 @@
   function onClick(event) {
     var target = event.target.closest('[data-action]');
     if (!target) {
+      return;
+    }
+
+    if (target.dataset.action === 'set-travel-decision') {
+      var travelAgent = findAgent(target.dataset.agentId);
+      if (travelAgent) {
+        markStateDirty();
+        travelAgent.travelDecision = target.value === 'forceInclude' || target.value === 'forceExclude'
+          ? target.value
+          : 'auto';
+        updateTotalsOnly();
+        updateTravelMotivationCard(travelAgent);
+      }
       return;
     }
 

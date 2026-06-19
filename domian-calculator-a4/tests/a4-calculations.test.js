@@ -62,6 +62,7 @@ function loadAppHelpers() {
       '  createState: createState,',
       '  createExampleState: createExampleState,',
       '  createBlankState: createBlankState,',
+      '  normalizeAgent: normalizeAgent,',
       '  renderExpenses: renderExpenses,',
       '  renderExactDeals: renderExactDeals,',
       '  renderMotivationControls: renderMotivationControls,',
@@ -458,6 +459,7 @@ test('motivation reserve supports stipend and annual trip reserves', () => {
     quarterlyDeposits: 250000,
     halfYearCommission: 1600000,
     preTripQuarterDeposits: 250000,
+    travelQuarterPartnershipConfirmed: true,
     annualReserveMode: 'monthly',
     mountainSeaEnabled: true,
     mountainSeaPerTrip: 15000,
@@ -515,6 +517,7 @@ test('motivation reserve preserves explicit zero values', () => {
     quarterlyDeposits: 250000,
     halfYearCommission: 1600000,
     preTripQuarterDeposits: 250000,
+    travelQuarterPartnershipConfirmed: true,
     annualReserveMode: 'monthly',
     mountainSeaEnabled: true,
     mountainSeaPerTrip: 0,
@@ -542,12 +545,13 @@ test('motivation reserve preserves explicit zero values', () => {
   assert.equal(reserve.starMonthly, 0);
 });
 
-test('mountain sea override is independent and legacy travel override still unlocks old snapshots', () => {
+test('mountain sea override is independent and legacy travel flags do not control isolated travel', () => {
   const separated = calculator.calculateMotivationReserve({
     paymentType: 'standard',
     quarterlyDeposits: 0,
     halfYearCommission: 1600000,
     preTripQuarterDeposits: 250000,
+    travelQuarterPartnershipConfirmed: false,
     mountainSeaOverride: true,
     travelOverride: false,
     motivation: {
@@ -566,6 +570,7 @@ test('mountain sea override is independent and legacy travel override still unlo
     quarterlyDeposits: 0,
     halfYearCommission: 1600000,
     preTripQuarterDeposits: 250000,
+    travelQuarterPartnershipConfirmed: false,
     travelOverride: true,
     motivation: {
       annualReserveMode: 'monthly',
@@ -578,6 +583,7 @@ test('mountain sea override is independent and legacy travel override still unlo
   closeTo(separated.mountainSeaAnnual, 30000);
   assert.equal(separated.travelAnnual, 0);
   closeTo(legacy.mountainSeaAnnual, 30000);
+  assert.equal(legacy.travelAnnual, 0);
 });
 
 test('special payment terms keep congress and star as separate annual expenses', () => {
@@ -608,6 +614,7 @@ test('travel reserve defaults to two international trips per year', () => {
     quarterlyDeposits: 250000,
     halfYearCommission: 1600000,
     preTripQuarterDeposits: 250000,
+    travelQuarterPartnershipConfirmed: true,
     annualReserveMode: 'monthly',
     travelEnabled: true
   });
@@ -624,6 +631,7 @@ test('annual reserves can be recognized immediately or manually', () => {
     quarterlyDeposits: 250000,
     halfYearCommission: 1600000,
     preTripQuarterDeposits: 250000,
+    travelQuarterPartnershipConfirmed: true,
     annualReserveMode: 'full',
     travelEnabled: true,
     travelPerTrip: 100000,
@@ -640,6 +648,7 @@ test('annual reserves can be recognized immediately or manually', () => {
     quarterlyDeposits: 250000,
     halfYearCommission: 1600000,
     preTripQuarterDeposits: 250000,
+    travelQuarterPartnershipConfirmed: true,
     annualReserveMode: 'manual',
     manualAnnualReserveMonthly: 25000,
     travelEnabled: true,
@@ -654,7 +663,8 @@ test('annual reserves can be recognized immediately or manually', () => {
   assert.equal(full.annualReserveTotal, 208500);
   assert.equal(full.annualReserveMonthly, 208500);
   assert.equal(full.monthly, 208500);
-  assert.equal(manual.annualReserveTotal, 208500);
+  assert.equal(manual.travelAnnual, 200000);
+  assert.equal(manual.annualReserveTotal, 8500);
   closeTo(manual.annualReserveMonthly, 25000 + 8500 / 12);
   closeTo(manual.monthly, 25000 + 8500 / 12);
 });
@@ -964,7 +974,7 @@ test('stipend eligibility requires level, partnership and no special terms unles
   assert.equal(overridden.stipendMonthly, 3000);
 });
 
-test('travel and corporate reserves are blocked by eligibility unless overridden', () => {
+test('isolated travel and corporate reserves use their own override rules', () => {
   const blocked = calculator.calculateMotivationReserve({
     paymentType: 'boosted',
     quarterlyCommission: 400000,
@@ -991,7 +1001,7 @@ test('travel and corporate reserves are blocked by eligibility unless overridden
     quarterlyCommission: 0,
     quarterlyDeposits: 0,
     motivationOverride: true,
-    travelOverride: true,
+    travelDecision: 'forceInclude',
     eventsOverride: true,
     motivation: {
       annualReserveMode: 'monthly',
@@ -1018,6 +1028,9 @@ test('domian travel uses inclusive half-year threshold and syncs render text', (
     quarterlyDeposits: 250000,
     halfYearCommission: 1599999,
     preTripQuarterDeposits: 0,
+    travelQuarterPartnershipConfirmed: true,
+    travelDecision: 'auto',
+    travelQuarterPartnershipConfirmed: true,
     motivation: {
       mode: 'rules',
       annualReserveMode: 'monthly',
@@ -1029,7 +1042,7 @@ test('domian travel uses inclusive half-year threshold and syncs render text', (
     }
   });
   assert.equal(blocked.travelAvailable, false);
-  assert.equal(blocked.travelReason, 'halfYearLevel');
+  assert.equal(blocked.travelReason, 'blocked');
   assert.equal(blocked.travelAnnual, 0);
 
   const earnedAtThreshold = calculator.calculateMotivationReserve({
@@ -1038,6 +1051,7 @@ test('domian travel uses inclusive half-year threshold and syncs render text', (
     quarterlyDeposits: 250000,
     halfYearCommission: 1600000,
     preTripQuarterDeposits: 0,
+    travelQuarterPartnershipConfirmed: true,
     motivation: {
       mode: 'rules',
       annualReserveMode: 'monthly',
@@ -1049,7 +1063,7 @@ test('domian travel uses inclusive half-year threshold and syncs render text', (
     }
   });
   assert.equal(earnedAtThreshold.travelAvailable, true);
-  assert.equal(earnedAtThreshold.travelReason, 'available');
+  assert.equal(earnedAtThreshold.travelReason, 'earned');
   closeTo(earnedAtThreshold.travelAnnual, 200000);
 
   const earnedAboveThreshold = calculator.calculateMotivationReserve({
@@ -1058,6 +1072,7 @@ test('domian travel uses inclusive half-year threshold and syncs render text', (
     quarterlyDeposits: 250000,
     halfYearCommission: 1600001,
     preTripQuarterDeposits: 0,
+    travelQuarterPartnershipConfirmed: true,
     motivation: {
       mode: 'rules',
       annualReserveMode: 'monthly',
@@ -1095,7 +1110,8 @@ test('domian travel uses inclusive half-year threshold and syncs render text', (
       starEnabled: false
     }
   });
-  assert.match(blockedHtml, /Поездка не заработана: результат за полугодие меньше 1 600 000 ₽\. Можно заложить вручную по решению собственника\./);
+  assert.match(blockedHtml, /Поездка не заработана: результат за полугодие меньше 1 600 000 ₽\./);
+  assert.match(blockedHtml, /value="forceInclude">Всё равно отправить/);
 
   const earnedHtml = appHelpers.renderMotivationControls({
     id: 'travel-earned',
@@ -1111,6 +1127,8 @@ test('domian travel uses inclusive half-year threshold and syncs render text', (
     quarterlyDeposits: 250000,
     halfYearCommission: 1600000,
     preTripQuarterDeposits: 0,
+    travelQuarterPartnershipConfirmed: true,
+    travelDecision: 'auto',
     motivation: {
       mode: 'rules',
       annualReserveMode: 'monthly',
@@ -1138,6 +1156,8 @@ test('domian travel uses inclusive half-year threshold and syncs render text', (
     quarterlyDeposits: 250000,
     halfYearCommission: 1599999,
     preTripQuarterDeposits: 0,
+    travelQuarterPartnershipConfirmed: true,
+    travelDecision: 'auto',
     motivation: {
       mode: 'rules',
       annualReserveMode: 'monthly',
@@ -1431,13 +1451,13 @@ test('quarterly result input renders from agent state after money input updates 
   assert.doesNotMatch(html, /data-agent-field="quarterlyCommission"[^>]*value=""/);
 });
 
-test('A4 motivation UI explains quarter stipend obligation and calendar caveats', () => {
+test('A4 motivation UI keeps stipend rules and uses isolated travel confirmation', () => {
   assert.match(appSource, /Партнёрство подтверждено\?/);
   assert.match(appSource, /Сначала подтвердите партнёрство\. Без подтверждения квартальный результат не учитывается для мотиваций\./);
   assert.match(appSource, /Результат используется для уровня и стипендии по текущей логике\./);
-  assert.match(appSource, /Задатки в квартале перед поездкой, ₽/);
-  assert.match(appSource, /Если период поездки непонятен/);
-  assert.match(appSource, /Точная календарная логика будет в расширенном режиме/);
+  assert.match(appSource, /data-agent-field=\\?"travelQuarterPartnershipConfirmed/);
+  assert.match(appSource, /Отдельное условие поездки; не связано с обычным квартальным партнёрством/);
+  assert.doesNotMatch(appSource, /Задатки в квартале перед поездкой, ₽/);
 });
 
 test('future mode entry pages exist as static scaffolds', () => {
@@ -1527,4 +1547,196 @@ test('mandatory congress and star survive off, manual and special payment modes'
     }
   });
   closeTo(fixed.monthly, (3500 + 5000) / 12);
+});
+
+test('isolated travel state machine covers automatic rule and owner decisions', () => {
+  const cases = [
+    { halfYearCommission: 1599999, confirmed: true, earned: false, counted: false },
+    { halfYearCommission: 1600000, confirmed: false, earned: false, counted: false },
+    { halfYearCommission: 1600000, confirmed: true, earned: true, counted: true },
+    { halfYearCommission: 2000000, confirmed: true, earned: true, counted: true }
+  ];
+
+  cases.forEach((item) => {
+    const result = calculator.calculateTravelMotivation({
+      halfYearCommission: item.halfYearCommission,
+      travelQuarterPartnershipConfirmed: item.confirmed,
+      travelDecision: 'auto'
+    });
+    assert.equal(result.earned, item.earned);
+    assert.equal(result.counted, item.counted);
+    assert.equal(result.annualAmount, item.counted ? 200000 : 0);
+  });
+
+  const forced = calculator.calculateTravelMotivation({
+    halfYearCommission: 1000000,
+    travelQuarterPartnershipConfirmed: false,
+    travelDecision: 'forceInclude'
+  });
+  assert.equal(forced.earned, false);
+  assert.equal(forced.counted, true);
+  assert.equal(forced.annualAmount, 200000);
+  assert.equal(forced.monthlyAmount, 200000 / 12);
+  assert.equal(forced.status, 'forced');
+
+  const excluded = calculator.calculateTravelMotivation({
+    halfYearCommission: 2000000,
+    travelQuarterPartnershipConfirmed: true,
+    travelDecision: 'forceExclude'
+  });
+  assert.equal(excluded.earned, true);
+  assert.equal(excluded.counted, false);
+  assert.equal(excluded.annualAmount, 0);
+  assert.equal(excluded.status, 'warning');
+});
+
+test('isolated travel ignores unrelated agent data and normalizes unknown decision', () => {
+  const result = calculator.calculateTravelMotivation({
+    name: '',
+    dealsInput: [],
+    status: 'trainee',
+    partnerConfirmed: false,
+    paymentType: 'fixed',
+    halfYearCommission: 2000000,
+    travelQuarterPartnershipConfirmed: true,
+    travelDecision: 'legacy-value',
+    motivation: {
+      travelEnabled: false,
+      travelPerTrip: 100000,
+      travelTripsPerYear: 2
+    }
+  });
+
+  assert.equal(result.decision, 'auto');
+  assert.equal(result.earned, true);
+  assert.equal(result.counted, true);
+  assert.equal(result.annualAmount, 200000);
+});
+
+test('legacy travel eligibility API delegates to the isolated rule', () => {
+  const eligibility = calculator.getTravelEligibility({
+    status: 'trainee',
+    partnerConfirmed: false,
+    paymentType: 'fixed',
+    halfYearCommission: 2000000,
+    travelQuarterPartnershipConfirmed: true
+  });
+
+  assert.equal(eligibility.available, true);
+  assert.equal(eligibility.reason, 'available');
+});
+
+test('travel state defaults and legacy migration use one decision source', () => {
+  const blankAgent = appHelpers.createBlankState().agents[0];
+  assert.equal(blankAgent.travelQuarterPartnershipConfirmed, false);
+  assert.equal(blankAgent.travelDecision, 'auto');
+
+  assert.equal(appHelpers.normalizeAgent({
+    travelDecision: 'forceExclude',
+    travelOverride: true,
+    motivation: { travelEnabled: true }
+  }).travelDecision, 'forceExclude');
+  assert.equal(appHelpers.normalizeAgent({ travelOverride: true }).travelDecision, 'forceInclude');
+  assert.equal(appHelpers.normalizeAgent({ motivation: { travelEnabled: true } }).travelDecision, 'auto');
+  assert.equal(appHelpers.normalizeAgent({ travelDecision: 'broken' }).travelDecision, 'auto');
+});
+
+test('motivation reserve consumes only the isolated travel result', () => {
+  const automatic = calculator.calculateMotivationReserve({
+    status: 'trainee',
+    partnerConfirmed: false,
+    halfYearCommission: 2000000,
+    travelQuarterPartnershipConfirmed: true,
+    travelDecision: 'auto',
+    motivation: {
+      mode: 'rules',
+      travelEnabled: false,
+      travelPerTrip: 100000,
+      travelTripsPerYear: 2,
+      congressEnabled: false
+    }
+  });
+  assert.equal(automatic.travelEarned, true);
+  assert.equal(automatic.travelCounted, true);
+  assert.equal(automatic.travelAnnual, 200000);
+  closeTo(automatic.monthly, 200000 / 12);
+
+  const forced = calculator.calculateMotivationReserve({
+    halfYearCommission: 1000000,
+    travelQuarterPartnershipConfirmed: false,
+    travelDecision: 'forceInclude',
+    motivation: { mode: 'rules', congressEnabled: false }
+  });
+  assert.equal(forced.travelAnnual, 200000);
+
+  const excluded = calculator.calculateMotivationReserve({
+    halfYearCommission: 2000000,
+    travelQuarterPartnershipConfirmed: true,
+    travelDecision: 'forceExclude',
+    motivation: { mode: 'rules', congressEnabled: false }
+  });
+  assert.equal(excluded.travelAnnual, 0);
+  assert.equal(excluded.monthly, 0);
+});
+
+test('manual general reserve keeps its total while exposing travel obligation', () => {
+  const reserve = calculator.calculateMotivationReserve({
+    halfYearCommission: 2000000,
+    travelQuarterPartnershipConfirmed: true,
+    travelDecision: 'auto',
+    motivation: {
+      mode: 'manual',
+      manualReserveMonthly: 12345,
+      congressEnabled: false
+    }
+  });
+
+  assert.equal(reserve.travelEarned, true);
+  assert.equal(reserve.travelCounted, true);
+  assert.equal(reserve.travelAnnual, 200000);
+  assert.equal(reserve.monthly, 12345);
+});
+
+test('travel UI exposes one contextual decision and always offers return to auto', () => {
+  const blocked = appHelpers.renderTravelMotivationCard({
+    id: 'blocked-ui',
+    halfYearCommission: 1000000,
+    travelQuarterPartnershipConfirmed: false,
+    travelDecision: 'auto',
+    motivation: { travelPerTrip: 100000, travelTripsPerYear: 2 }
+  });
+  assert.match(blocked, /data-agent-field="travelDecision"[^>]*value="forceInclude"/);
+  assert.doesNotMatch(blocked, /value="forceExclude"/);
+  assert.match(blocked, /Расчётная сумма поездки/);
+  assert.match(blocked, /200(?: |\u00a0)000/);
+
+  const earned = appHelpers.renderTravelMotivationCard({
+    id: 'earned-ui',
+    halfYearCommission: 2000000,
+    travelQuarterPartnershipConfirmed: true,
+    travelDecision: 'auto'
+  });
+  assert.match(earned, /data-agent-field="travelDecision"[^>]*value="forceExclude"/);
+  assert.doesNotMatch(earned, /value="forceInclude"/);
+
+  const forced = appHelpers.renderTravelMotivationCard({
+    id: 'forced-ui',
+    halfYearCommission: 1000000,
+    travelQuarterPartnershipConfirmed: false,
+    travelDecision: 'forceInclude'
+  });
+  assert.match(forced, /data-agent-field="travelDecision"[^>]*value="auto"/);
+  assert.match(forced, /Вернуть расчёт по правилу/);
+
+  const manualHtml = appHelpers.renderMotivationControls({
+    id: 'manual-ui',
+    status: 'partner',
+    paymentType: 'standard',
+    halfYearCommission: 2000000,
+    travelQuarterPartnershipConfirmed: true,
+    travelDecision: 'auto',
+    motivation: { mode: 'manual', manualReserveMonthly: 1000 }
+  });
+  assert.match(manualHtml, /data-agent-field="travelQuarterPartnershipConfirmed"/);
+  assert.match(manualHtml, /data-motivation-card="travel"/);
 });
