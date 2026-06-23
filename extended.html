@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Домиан — расширенный расчёт офиса</title>
+  <link rel="stylesheet" href="assets/css/modes.css">
+  <link rel="stylesheet" href="assets/css/navigation.css">
+  <link rel="stylesheet" href="assets/css/extended-mode.css">
+</head>
+<body>
+  <main class="page extended-page">
+    <header class="mode-header">
+      <div class="mode-header__top">
+        <div>
+          <p class="mode-header__project">Домиан — калькулятор офиса</p>
+          <h1 class="mode-header__title">Расширенный расчёт офиса</h1>
+          <p class="mode-header__subtitle">Период, агенты, сделки, расходы и обязательства</p>
+        </div>
+      </div>
+      <nav class="mode-nav" aria-label="Навигация по режимам">
+        <a href="start.html">На старт</a>
+        <a href="index.html">A4</a>
+        <a href="table.html">Ведомость</a>
+        <a href="simple.html">Простой</a>
+        <a href="extended.html" aria-current="page">Расширенный</a>
+      </nav>
+    </header>
+
+    <section class="extended-status" id="draftStatus" hidden>
+      <span>Найден сохранённый черновик.</span>
+      <button class="button primary" type="button" data-action="load-draft">Загрузить</button>
+    </section>
+
+    <section class="extended-grid">
+      <div class="extended-main">
+        <section class="panel step-panel">
+          <div class="step-head">
+            <span class="step-label">Шаг 1</span>
+            <div>
+              <h2>Выберите период</h2>
+              <p>Extended считает выбранный период как один управленческий период.</p>
+            </div>
+          </div>
+          <div class="period-options" role="radiogroup" aria-label="Период расчёта">
+            <label><input type="radio" name="period" value="month" checked> Месяц <span>1 месяц</span></label>
+            <label><input type="radio" name="period" value="quarter"> Квартал <span>3 месяца</span></label>
+            <label><input type="radio" name="period" value="halfyear"> Полугодие <span>6 месяцев</span></label>
+            <label><input type="radio" name="period" value="year"> Год <span>12 месяцев</span></label>
+          </div>
+          <p class="calculation-note" id="periodNote">Выбран период: месяц, 1 месяц.</p>
+        </section>
+
+        <section class="panel step-panel">
+          <div class="step-head">
+            <span class="step-label">Шаг 2</span>
+            <div>
+              <h2>Выберите способ ввода</h2>
+              <p>Быстрый ввод даёт грубую оценку, подробный ввод считает агентов и сделки строками.</p>
+            </div>
+          </div>
+          <div class="input-mode-tabs">
+            <button class="button primary" type="button" data-input-mode="quick">Общий ручной ввод периода</button>
+            <button class="button" type="button" data-input-mode="detailed">Подробный ввод по агентам и сделкам</button>
+          </div>
+        </section>
+
+        <section class="panel step-panel" id="quickModePanel">
+          <div class="step-head">
+            <span class="step-label">Шаг 3</span>
+            <div>
+              <h2>Общий ручной ввод периода</h2>
+              <p>Подходит для быстрой модели, когда точных сделок ещё нет.</p>
+            </div>
+          </div>
+          <div class="field-grid extended-form-grid">
+            <label class="field-row">Общий оборот/комиссия за период
+              <input type="text" inputmode="numeric" data-quick-field="commission" placeholder="Например, 400 000">
+            </label>
+            <label class="field-row">Количество агентов
+              <input type="number" min="1" step="1" data-quick-field="agentCount" placeholder="Например, 1">
+            </label>
+            <label class="field-row">Расходы офиса за период
+              <input type="text" inputmode="numeric" data-quick-field="expenses" placeholder="Например, 215 000">
+            </label>
+            <label class="field-row">Примерное количество сделок
+              <input type="number" min="1" step="1" data-quick-field="dealCount" placeholder="Например, 4">
+            </label>
+          </div>
+        </section>
+
+        <section class="panel step-panel" id="detailedModePanel" hidden>
+          <div class="step-head split">
+            <div>
+              <span class="step-label">Шаг 3</span>
+              <h2>Агенты и сделки</h2>
+              <p>Добавляйте агентов, схему выплаты и точные сделки за выбранный период.</p>
+            </div>
+            <button class="button primary" type="button" data-action="add-agent">+ Агент</button>
+          </div>
+          <div class="agents-editor" id="agentsEditor"></div>
+        </section>
+
+        <section class="panel step-panel">
+          <div class="step-head">
+            <span class="step-label">Шаг 4</span>
+            <div>
+              <h2>Расходы и мотивации</h2>
+              <p>Конгресс включён по умолчанию. Звезда может быть только у одного агента.</p>
+            </div>
+          </div>
+          <div class="field-grid extended-form-grid">
+            <label class="field-row">Расходы офиса за период для подробного режима
+              <input type="text" inputmode="numeric" data-office-field="expenses" placeholder="Например, 420 000">
+            </label>
+            <label class="field-row flag-line">
+              <input type="checkbox" data-office-field="mountainSeaEnabled">
+              Считать море/горы как управленческий резерв
+            </label>
+            <label class="field-row flag-line">
+              <input type="checkbox" data-office-field="travelEnabled">
+              Считать путешествие как управленческий резерв
+            </label>
+            <label class="field-row flag-line">
+              <input type="checkbox" data-office-field="stipendEnabled">
+              Считать стипендию/обязательство следующего квартала, если применимо
+            </label>
+          </div>
+          <p class="calculation-note">Календарная детализация мотиваций не строится в этом MVP. Резервы показываются управленчески за выбранный период.</p>
+        </section>
+
+        <section class="panel step-panel">
+          <div class="step-head">
+            <span class="step-label">Шаг 5</span>
+            <div>
+              <h2>Сохранение черновика</h2>
+              <p>Долгий ввод можно сохранить локально в этом браузере.</p>
+            </div>
+          </div>
+          <div class="button-row">
+            <button class="button primary" type="button" data-action="save-draft">Сохранить черновик</button>
+            <button class="button" type="button" data-action="load-draft">Загрузить черновик</button>
+            <button class="button danger-button" type="button" data-action="clear-draft">Очистить черновик</button>
+          </div>
+          <p class="calculation-note" id="saveMessage" aria-live="polite"></p>
+        </section>
+      </div>
+
+      <aside class="extended-summary" aria-label="Итоговая сводка">
+        <section class="panel result-panel">
+          <p class="eyebrow">Итог периода</p>
+          <h2 id="ownerResult">0 ₽</h2>
+          <p>Итог собственнику после выплат, рефералов, роялти, расходов и обязательств.</p>
+        </section>
+        <section class="panel summary-block" id="summaryBlock"></section>
+        <section class="panel summary-block">
+          <p class="calculation-note">В MVP роялти считается от общей комиссии выбранного периода. Если нужен помесячный юридический расчёт, это будет отдельный этап.</p>
+        </section>
+      </aside>
+    </section>
+
+    <section class="panel agent-summary-panel">
+      <div class="step-head">
+        <span class="step-label">Сводка</span>
+        <div>
+          <h2>Сводка по агентам</h2>
+          <p>Показывает, кто участвует в расчёте и какой вклад остаётся после основных расходов.</p>
+        </div>
+      </div>
+      <div id="agentSummary"></div>
+    </section>
+
+    <footer class="mode-footer">
+      <p>Расчёт является управленческой моделью и помогает оценить экономику офиса.</p>
+      <nav class="mode-footer__links" aria-label="Нижняя навигация">
+        <a href="start.html">На старт</a>
+        <a href="index.html">Основной A4</a>
+        <a href="table.html">Ведомость сделок</a>
+        <a href="simple.html">Простой режим</a>
+        <a href="extended.html" aria-current="page">Расширенный режим</a>
+      </nav>
+    </footer>
+  </main>
+
+  <script src="assets/js/constants.js"></script>
+  <script src="assets/js/calculations.js"></script>
+  <script src="assets/js/extended-mode.js"></script>
+</body>
+</html>
