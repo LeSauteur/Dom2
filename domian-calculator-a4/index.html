@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Домиан — лист А4 собственника</title>
+  <title>Домиан — калькулятор экономики офиса</title>
   <link rel="stylesheet" href="assets/css/a4-calculator.css">
   <link rel="stylesheet" href="assets/css/navigation.css">
 </head>
@@ -13,7 +13,7 @@
       <div class="mode-header__top">
         <div>
           <p class="mode-header__project">Домиан — калькулятор офиса</p>
-          <h1 class="mode-header__title">Основной A4-калькулятор</h1>
+          <h1 class="mode-header__title">Калькулятор экономики офиса</h1>
           <p class="mode-header__subtitle">Текущий месяц: агенты, сделки, расходы, роялти, мотивации и итог собственнику.</p>
         </div>
         <div class="return-actions">
@@ -23,7 +23,7 @@
       </div>
       <nav class="mode-nav" aria-label="Навигация по режимам">
         <a href="start.html">На старт</a>
-        <a href="index.html" aria-current="page">A4</a>
+        <a href="index.html" aria-current="page">Калькулятор</a>
         <a href="table.html">Ведомость</a>
         <a href="simple.html">Простой</a>
         <a href="extended.html">Расширенный</a>
@@ -31,8 +31,8 @@
     </header>
     <header class="hero">
       <div>
-        <p class="small-label">Новая A4-версия</p>
-        <h1>Домиан — лист А4 собственника</h1>
+        <p class="small-label">Основной калькулятор</p>
+        <h1>Экономика офиса Домиан</h1>
         <p class="lead">Начните с расходов, затем добавьте агентов и личные сделки собственника. Калькулятор покажет, окупается ли офис сам или плюс появляется только благодаря собственнику.</p>
       </div>
       <aside class="hero-note">
@@ -42,7 +42,7 @@
     </header>
 
     <section class="toolbar" aria-label="Управление примером">
-      <a class="button ghost" href="start.html" title="Открыть экран выбора режима расчёта. Основной A4 остаётся доступным отдельно.">Выбор режима</a>
+      <a class="button ghost" href="start.html" title="Открыть экран выбора режима расчёта. Основной калькулятор остаётся доступным отдельно.">Выбор режима</a>
       <button class="button ghost" type="button" data-action="open-table-mode" title="Дополнительный формат просмотра. Основной расчёт можно пройти и без него.">Табличный режим</button>
       <button class="button ghost" type="button" data-action="clear-all" title="Удалит текущие введённые данные из этой страницы после подтверждения.">Очистить всё</button>
       <button class="button primary" type="button" data-action="restore-example" title="Заменит текущие данные демонстрационным примером после подтверждения.">Вернуть пример</button>
@@ -98,12 +98,12 @@
               <strong id="expensesInlineTotal">0 ₽</strong>
             </div>
             <div class="section-actions bottom-actions">
-              <button class="button add-action-button" type="button" data-action="add-expense">Добавить расход</button>
+              <button class="button add-action-button" type="button" data-action="add-expense">+ Добавить еще расход</button>
             </div>
             <div class="workflow-next-action">
               <button class="button workflow-next-button" type="button" data-action="collapse-section" data-section-key="expenses">
                 <span class="workflow-next-kicker">✓ Расходы заполнены</span>
-                <span class="workflow-next-label">Свернуть раздел расходов<br>и перейти к агентам</span>
+                <span class="workflow-next-label">Перейти к агентам →</span>
               </button>
             </div>
           </div>
@@ -127,7 +127,7 @@
             <div class="workflow-next-action">
               <button class="button workflow-next-button" type="button" data-action="collapse-section" data-section-key="agents">
                 <span class="workflow-next-kicker">✓ Агенты заполнены</span>
-                <span class="workflow-next-label">Свернуть раздел агентов<br>и перейти к личным сделкам</span>
+                <span class="workflow-next-label">Перейти к личным сделкам →</span>
               </button>
             </div>
           </div>
@@ -150,7 +150,7 @@
             <div class="workflow-next-action">
               <button class="button workflow-next-button" type="button" data-action="collapse-section" data-section-key="ownerDeals">
                 <span class="workflow-next-kicker">✓ Личные сделки заполнены</span>
-                <span class="workflow-next-label">Свернуть личные сделки<br>и перейти к итогам</span>
+                <span class="workflow-next-label">Перейти к итогам →</span>
               </button>
             </div>
           </div>
@@ -321,7 +321,7 @@
       <p>Расчёт является управленческой моделью и помогает оценить экономику офиса.</p>
       <nav class="mode-footer__links" aria-label="Нижняя навигация">
         <a href="start.html">На старт</a>
-        <a href="index.html" aria-current="page">Основной A4</a>
+        <a href="index.html" aria-current="page">Калькулятор</a>
         <a href="table.html">Ведомость сделок</a>
         <a href="simple.html">Простой режим</a>
         <a href="extended.html">Расширенный режим</a>

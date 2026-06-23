@@ -1833,12 +1833,12 @@ test('collapsed motivation summary shows status, reserve and explicit CTA', () =
   assert.match(rulesHtml, /РАССЧИТАТЬ МОТИВАЦИИ АГЕНТА/);
 });
 
-test('add actions use red dashed full-width styling', () => {
+test('add actions use soft blue workflow styling', () => {
   assert.match(calculatorCssSource, /\.add-action-button\s*\{/);
   assert.match(calculatorCssSource, /\.add-action-button\s*\{[\s\S]*width:\s*100%/);
-  assert.match(calculatorCssSource, /\.add-action-button\s*\{[\s\S]*border:\s*1px dashed var\(--red\)/);
-  assert.match(calculatorCssSource, /\.add-action-button\s*\{[\s\S]*color:\s*var\(--red\)/);
-  assert.match(calculatorCssSource, /\.section-head\.split \.add-action-button\s*\{[\s\S]*width:\s*auto/);
+  assert.match(calculatorCssSource, /\.add-action-button\s*\{[\s\S]*border:\s*1px solid rgba\(36, 92, 153, \.24\)/);
+  assert.match(calculatorCssSource, /\.add-action-button\s*\{[\s\S]*color:\s*var\(--blue-dark\)/);
+  assert.match(calculatorCssSource, /\.section-head\.split \.add-action-button\s*\{[\s\S]*min-width:\s*210px/);
 });
 
 test('collapsed motivation summary uses warm variant 3 styling', () => {
@@ -1868,10 +1868,10 @@ test('A4 workflow sections use external collapsedSections UI layer', () => {
   assert.match(indexSource, /data-workflow-section="expenses"/);
   assert.match(indexSource, /data-workflow-section="agents"/);
   assert.match(indexSource, /data-workflow-section="ownerDeals"/);
-  assert.match(indexSource, /workflow-next-action[\s\S]*data-section-key="expenses"[\s\S]*Свернуть раздел расходов[\s\S]*и перейти к агентам/);
-  assert.match(indexSource, /workflow-next-action[\s\S]*data-section-key="agents"[\s\S]*Свернуть раздел агентов[\s\S]*и перейти к личным сделкам/);
-  assert.match(indexSource, /workflow-next-action[\s\S]*data-section-key="ownerDeals"[\s\S]*Свернуть личные сделки[\s\S]*и перейти к итогам/);
-  assert.match(calculatorCssSource, /\.workflow-next-button\s*\{[\s\S]*width:\s*100%/);
+  assert.match(indexSource, /workflow-next-action[\s\S]*data-section-key="expenses"[\s\S]*Перейти к агентам →/);
+  assert.match(indexSource, /workflow-next-action[\s\S]*data-section-key="agents"[\s\S]*Перейти к личным сделкам →/);
+  assert.match(indexSource, /workflow-next-action[\s\S]*data-section-key="ownerDeals"[\s\S]*Перейти к итогам →/);
+  assert.match(calculatorCssSource, /\.workflow-next-button\s*\{[\s\S]*width:\s*min\(100%, 420px\)/);
   assert.match(calculatorCssSource, /\.workflow-next-action\s*\{[\s\S]*border-top:/);
   assert.match(calculatorCssSource, /\.workflow-section\.is-collapsed\s+\.workflow-summary/);
 });
