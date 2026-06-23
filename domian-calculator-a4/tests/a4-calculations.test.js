@@ -62,13 +62,18 @@ function loadAppHelpers() {
       '  createState: createState,',
       '  createExampleState: createExampleState,',
       '  createBlankState: createBlankState,',
+      '  createAgent: createAgent,',
       '  normalizeAgent: normalizeAgent,',
       '  renderExpenses: renderExpenses,',
       '  renderExactDeals: renderExactDeals,',
       '  renderMotivationControls: renderMotivationControls,',
       '  renderTravelMotivationCard: renderTravelMotivationCard,',
       '  updateTravelMotivationCard: updateTravelMotivationCard,',
+      '  collapsePreviousAgentIfReady: collapsePreviousAgentIfReady,',
       '  setState: function (nextState) { state = nextState; },',
+      '  getState: function () { return state; },',
+      '  setUiState: function (nextUiState) { uiState = nextUiState; },',
+      '  getUiState: function () { return uiState; },',
       '  setElements: function (nextElements) { elements = nextElements; },',
       '  setDocumentQuerySelector: function (querySelector) { document.querySelector = querySelector; }',
       '};',
@@ -141,9 +146,13 @@ test('A4 blank state starts empty while example state keeps demo data', () => {
   const example = appHelpers.createExampleState();
 
   assert.equal(blank.ownerSales, 0);
-  assert.equal(blank.expenses.length, 1);
+  assert.equal(blank.expenses.length, 3);
   assert.equal(blank.expenses[0].amount, 0);
   assert.equal(blank.expenses[0].name, '');
+  assert.equal(blank.expenses[1].amount, 0);
+  assert.equal(blank.expenses[1].name, '');
+  assert.equal(blank.expenses[2].amount, 0);
+  assert.equal(blank.expenses[2].name, '');
   assert.equal(blank.agents.length, 1);
   assert.equal(blank.agents[0].commission, 0);
   assert.equal(blank.schemeCheck.commission, 0);
@@ -155,6 +164,16 @@ test('A4 blank state starts empty while example state keeps demo data', () => {
   assert.equal(example.agents[0].commission, 0);
   assert.equal(example.schemeCheck.commission, 400000);
   assert.equal(example.schemeCheck.manualRate, 75);
+});
+
+test('adding a new agent always collapses the previous card even if it is blank', () => {
+  const state = appHelpers.createBlankState();
+
+  appHelpers.setState(state);
+  appHelpers.setUiState({ collapsedAgents: {} });
+  appHelpers.collapsePreviousAgentIfReady();
+
+  assert.equal(appHelpers.getUiState().collapsedAgents[state.agents[0].id], true);
 });
 
 test('stipend recalculates when quarterly commission changes from 650000 to 1500000', () => {
@@ -1244,8 +1263,13 @@ test('expense placeholders stay visual only and never seed state', () => {
   assert.match(elements.expensesList.innerHTML, /Что можно добавить/);
   assert.match(elements.expensesList.innerHTML, /Не добавляйте сюда роялти/);
   assert.match(elements.expensesList.innerHTML, /placeholder="Например: аренда офиса"/);
+  assert.match(elements.expensesList.innerHTML, /placeholder="Например: связь"/);
+  assert.match(elements.expensesList.innerHTML, /placeholder="Например: интернет"/);
   assert.match(elements.expensesList.innerHTML, /placeholder="Введите сумму расхода"/);
+  assert.equal(state.expenses.length, 3);
   assert.equal(state.expenses[0].name, '');
+  assert.equal(state.expenses[1].name, '');
+  assert.equal(state.expenses[2].name, '');
   assert.equal(appSource.includes('Новый расход'), false);
 });
 
@@ -1348,12 +1372,15 @@ test('standard trainee sixth exact deal reaches 55 percent', () => {
   closeTo(trainee.payout, 127500);
 });
 
-test('motivation block source uses concise urgent summaries', () => {
-  assert.match(appSource, /Добавьте мотивации агенту!/);
-  assert.match(appSource, /Мотивации не положены на особых условиях! Откройте, если всё равно хотите добавить\./);
-  assert.doesNotMatch(appSource, /Без проверки мотиваций расчёт может быть неполным\./);
-  assert.doesNotMatch(appSource, /Открыть и проверить мотивации/);
-  assert.doesNotMatch(appSource, /Проверьте: конгресс, звезда, море\/горы, путешествие, стипендия\./);
+test('motivation block source uses status-card entry copy', () => {
+  assert.match(appSource, /Мотивации агента/);
+  assert.match(appSource, /Не настроены/);
+  assert.match(appSource, /Указаны вручную/);
+  assert.match(appSource, /Рассчитываются по правилам/);
+  assert.match(appSource, /Настроить мотивации/);
+  assert.match(appSource, /Изменить мотивации/);
+  assert.doesNotMatch(appSource, /Добавьте мотивации агенту!/);
+  assert.doesNotMatch(appSource, /Мотивации не положены на особых условиях! Откройте, если всё равно хотите добавить\./);
 });
 
 test('exact deals summary repeats agent payout with the same amount', () => {
@@ -1371,6 +1398,7 @@ test('exact deals summary repeats agent payout with the same amount', () => {
   assert.match(html, /Итого зарплата агенту/);
   assert.match(html, /465\s?000/);
   assert.match(html, /data-agent-summary="payout"/);
+  assert.match(html, /class="button add-action-button"[^>]*data-action="add-deal"/);
 });
 
 test('quarterly result field is disabled until partnership is confirmed and stays effective in rules mode', () => {
@@ -1748,37 +1776,102 @@ test('expense add action appears once below the inline total', () => {
   const action = 'data-action="add-expense"';
   assert.equal(indexSource.split(action).length - 1, 1);
   assert.ok(indexSource.indexOf(action) > indexSource.indexOf('id="expensesInlineTotal"'));
-  assert.match(indexSource, /paper-total[\s\S]*section-actions bottom-actions[\s\S]*data-action="add-expense"/);
+  assert.match(indexSource, /paper-total[\s\S]*section-actions bottom-actions[\s\S]*class="button add-action-button"[\s\S]*data-action="add-expense"/);
+  assert.match(indexSource, /class="button add-action-button" id="addAgentBtn"/);
+  assert.match(indexSource, /class="button add-action-button" id="addAgentBottomBtn"/);
 });
 
-test('collapsed motivation summary uses one urgent message per payment mode', () => {
-  const standardHtml = appHelpers.renderMotivationControls({
+test('collapsed motivation summary shows status, reserve and explicit CTA', () => {
+  const offHtml = appHelpers.renderMotivationControls({
     id: 'summary-standard',
     status: 'partner',
     paymentType: 'standard',
-    motivation: { mode: 'rules' }
-  });
-  assert.match(standardHtml, /summary-closed">Добавьте мотивации агенту!</);
-  assert.match(standardHtml, /summary-open">Скрыть мотивации</);
-  assert.doesNotMatch(standardHtml, /Без проверки мотиваций расчёт может быть неполным/);
-  assert.doesNotMatch(standardHtml, /Проверьте: конгресс/);
-  assert.doesNotMatch(standardHtml, /Открыть и проверить мотивации/);
-  assert.doesNotMatch(standardHtml, /data-agent-summary="motivationInline"/);
-
-  const specialHtml = appHelpers.renderMotivationControls({
-    id: 'summary-special',
-    status: 'partner',
-    paymentType: 'fixed',
-    fixedRate: 80,
     motivation: { mode: 'off' }
   });
-  assert.match(specialHtml, /summary-closed">Мотивации не положены на особых условиях! Откройте, если всё равно хотите добавить\./);
-  assert.match(specialHtml, /summary-open">Скрыть мотивации</);
-  assert.doesNotMatch(specialHtml, /data-agent-summary="motivationInline"/);
+  assert.match(offHtml, /motivation-summary motivation-summary--off/);
+  assert.match(offHtml, /motivation-summary-heading">Мотивации агента</);
+  assert.match(offHtml, /motivation-summary-status">Не настроены</);
+  assert.match(offHtml, /Без настройки стипендии, поездки и дополнительные резервы не попадут в расчёт агента\./);
+  assert.match(offHtml, /summary-closed">Настроить мотивации</);
+  assert.match(offHtml, /motivation-summary-icon/);
+  assert.match(offHtml, /motivation-summary-cta/);
+  assert.match(offHtml, /РАССЧИТАТЬ МОТИВАЦИИ АГЕНТА/);
+  assert.doesNotMatch(offHtml, /motivation-summary-pointer/);
+  assert.doesNotMatch(offHtml, /↓/);
+  assert.doesNotMatch(offHtml, /ЖМИТЕ СЮДА/);
+
+  const manualHtml = appHelpers.renderMotivationControls({
+    id: 'summary-manual',
+    status: 'partner',
+    paymentType: 'standard',
+    motivation: { mode: 'manual', manualReserveMonthly: 1500 }
+  });
+  assert.match(manualHtml, /motivation-summary motivation-summary--manual/);
+  assert.match(manualHtml, /motivation-summary-status">Указаны вручную</);
+  assert.match(manualHtml, /motivation-summary-amount">В резерве сейчас: [^<]*₽<\/span>/);
+  assert.match(manualHtml, /summary-closed">Изменить мотивации</);
+  assert.match(manualHtml, /РАССЧИТАТЬ МОТИВАЦИИ АГЕНТА/);
+
+  const rulesHtml = appHelpers.renderMotivationControls({
+    id: 'summary-rules',
+    status: 'partner',
+    paymentType: 'standard',
+    partnerConfirmed: true,
+    quarterlyCommission: 400000,
+    halfYearCommission: 2000000,
+    travelQuarterPartnershipConfirmed: true,
+    motivation: {
+      mode: 'rules',
+      travelEnabled: true
+    }
+  });
+  assert.match(rulesHtml, /motivation-summary motivation-summary--rules/);
+  assert.match(rulesHtml, /motivation-summary-status">Рассчитываются по правилам</);
+  assert.match(rulesHtml, /Стипендия, поездки и годовые резервы учитываются по выбранным условиям\./);
+  assert.match(rulesHtml, /motivation-summary-amount">В резерве сейчас: [^<]*₽<\/span>/);
+  assert.match(rulesHtml, /summary-closed">Изменить мотивации</);
+  assert.match(rulesHtml, /РАССЧИТАТЬ МОТИВАЦИИ АГЕНТА/);
 });
 
-test('collapsed motivation alert is bright red with an exclamation marker', () => {
-  assert.match(calculatorCssSource, /\.motivation-box:not\(\[open\]\) \.motivation-summary\s*\{[\s\S]*background:[^;]*#(?:c|d|e|f)[0-9a-f]{5}/i);
-  assert.match(calculatorCssSource, /\.motivation-box:not\(\[open\]\) \.motivation-summary::before\s*\{[\s\S]*content:\s*"!"/);
-  assert.match(calculatorCssSource, /\.motivation-box:not\(\[open\]\) \.motivation-summary[\s\S]*color:\s*#fff/);
+test('add actions use red dashed full-width styling', () => {
+  assert.match(calculatorCssSource, /\.add-action-button\s*\{/);
+  assert.match(calculatorCssSource, /\.add-action-button\s*\{[\s\S]*width:\s*100%/);
+  assert.match(calculatorCssSource, /\.add-action-button\s*\{[\s\S]*border:\s*1px dashed var\(--red\)/);
+  assert.match(calculatorCssSource, /\.add-action-button\s*\{[\s\S]*color:\s*var\(--red\)/);
+  assert.match(calculatorCssSource, /\.section-head\.split \.add-action-button\s*\{[\s\S]*width:\s*auto/);
+});
+
+test('collapsed motivation summary uses warm variant 3 styling', () => {
+  assert.doesNotMatch(calculatorCssSource, /\.motivation-summary-pointer\s*\{/);
+  assert.doesNotMatch(calculatorCssSource, /\.motivation-summary-arrows\s*\{/);
+  assert.match(calculatorCssSource, /\.motivation-summary-icon\s*\{/);
+  assert.match(calculatorCssSource, /\.motivation-summary-cta\s*\{/);
+  assert.match(calculatorCssSource, /\.motivation-summary-cta\s*\{[\s\S]*linear-gradient\(180deg,\s*#f59e0b,\s*#dc5b1f\)/);
+  assert.match(calculatorCssSource, /\.motivation-summary-action\s*\{/);
+  assert.match(calculatorCssSource, /\.motivation-summary--off\s*\{[\s\S]*border-left-color:\s*#f59e0b/i);
+  assert.match(calculatorCssSource, /\.motivation-summary--manual\s*\{[\s\S]*border-left-color:\s*#f59e0b/i);
+  assert.match(calculatorCssSource, /\.motivation-summary--rules\s*\{[\s\S]*border-left-color:\s*#f59e0b/i);
+  assert.doesNotMatch(calculatorCssSource, /\.motivation-box:not\(\[open\]\) \.motivation-summary::before\s*\{[\s\S]*content:\s*"!"/);
+  assert.doesNotMatch(calculatorCssSource, /\.motivation-box:not\(\[open\]\) \.motivation-summary\s*\{[\s\S]*background:[^;]*#(?:c|d|e|f)[0-9a-f]{5}/i);
+});
+
+test('A4 workflow sections use external collapsedSections UI layer', () => {
+  assert.match(appSource, /collapsedSections:\s*\{/);
+  assert.match(appSource, /function setSectionCollapsed/);
+  assert.match(appSource, /function renderWorkflowSections/);
+  assert.match(appSource, /function scrollToNextWorkflowSection/);
+  assert.match(appSource, /ownerDeals:\s*'\[aria-labelledby="resultTitle"\]'/);
+  assert.match(appSource, /scrollIntoView/);
+  assert.match(appSource, /data-action="expand-section"/);
+  assert.doesNotMatch(appSource, /state\.collapsedSections/);
+  assert.match(indexSource, /data-action="collapse-section"/);
+  assert.match(indexSource, /data-workflow-section="expenses"/);
+  assert.match(indexSource, /data-workflow-section="agents"/);
+  assert.match(indexSource, /data-workflow-section="ownerDeals"/);
+  assert.match(indexSource, /workflow-next-action[\s\S]*data-section-key="expenses"[\s\S]*Свернуть раздел расходов[\s\S]*и перейти к агентам/);
+  assert.match(indexSource, /workflow-next-action[\s\S]*data-section-key="agents"[\s\S]*Свернуть раздел агентов[\s\S]*и перейти к личным сделкам/);
+  assert.match(indexSource, /workflow-next-action[\s\S]*data-section-key="ownerDeals"[\s\S]*Свернуть личные сделки[\s\S]*и перейти к итогам/);
+  assert.match(calculatorCssSource, /\.workflow-next-button\s*\{[\s\S]*width:\s*100%/);
+  assert.match(calculatorCssSource, /\.workflow-next-action\s*\{[\s\S]*border-top:/);
+  assert.match(calculatorCssSource, /\.workflow-section\.is-collapsed\s+\.workflow-summary/);
 });

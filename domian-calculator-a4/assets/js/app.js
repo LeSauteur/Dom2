@@ -145,10 +145,18 @@
     };
   }
 
+  function createInitialExpenses() {
+    return [
+      createBlankExpense(),
+      createBlankExpense(),
+      createBlankExpense()
+    ];
+  }
+
   function createState() {
     return {
       version: STATE_VERSION,
-      expenses: [createBlankExpense()],
+      expenses: createInitialExpenses(),
       agents: [normalizeAgent(createAgent())],
       ownerSales: 0,
       schemeCheck: {
@@ -188,7 +196,7 @@
   function createBlankState() {
     return {
       version: STATE_VERSION,
-      expenses: [createBlankExpense()],
+      expenses: createInitialExpenses(),
       agents: [normalizeAgent(createAgent())],
       ownerSales: 0,
       schemeCheck: {
@@ -205,7 +213,8 @@
 
   function createUiState() {
     return {
-      collapsedAgents: {}
+      collapsedAgents: {},
+      collapsedSections: {}
     };
   }
 
@@ -318,6 +327,9 @@
     if (!uiState.collapsedAgents) {
       uiState.collapsedAgents = {};
     }
+    if (!uiState.collapsedSections) {
+      uiState.collapsedSections = {};
+    }
     return uiState;
   }
 
@@ -345,6 +357,85 @@
       ensureUiState().collapsedAgents[agentId] = true;
     } else if (uiState && uiState.collapsedAgents) {
       delete uiState.collapsedAgents[agentId];
+    }
+  }
+
+  function isSectionCollapsed(sectionKey) {
+    return Boolean(ensureUiState().collapsedSections[sectionKey]);
+  }
+
+  function setSectionCollapsed(sectionKey, collapsed) {
+    if (sectionKey !== 'expenses' && sectionKey !== 'agents' && sectionKey !== 'ownerDeals') {
+      return;
+    }
+    if (collapsed) {
+      ensureUiState().collapsedSections[sectionKey] = true;
+    } else if (uiState && uiState.collapsedSections) {
+      delete uiState.collapsedSections[sectionKey];
+    }
+  }
+
+  function countFilledExpenses() {
+    return state.expenses.filter(function (expense) {
+      return String(expense.name || '').trim() || positiveNumber(expense.amount) > 0;
+    }).length;
+  }
+
+  function renderWorkflowSectionSummary(sectionKey, totals) {
+    var title = '';
+    var summary = '';
+
+    if (sectionKey === 'expenses') {
+      title = 'Шаг 1 · Расходы офиса';
+      summary = 'Заполнено: ' + countFilledExpenses() + ' статей · Итого: ' + money(totals.expenses) + '/мес';
+    } else if (sectionKey === 'agents') {
+      title = 'Шаг 2 · Агенты и сделки';
+      summary = 'Агентов: ' + state.agents.length + ' · Оборот: ' + money(totals.agentTurnover) + ' · Выплаты: ' + money(totals.agentPayouts);
+    } else if (sectionKey === 'ownerDeals') {
+      title = 'Шаг 3 · Личные сделки собственника';
+      summary = 'Комиссия: ' + money(totals.ownerSales);
+    }
+
+    return '<div class="workflow-summary-main">'
+      + '<strong>' + escapeHtml(title) + '</strong>'
+      + '<span>' + escapeHtml(summary) + '</span>'
+      + '</div>'
+      + '<button class="button ghost" type="button" data-action="expand-section" data-section-key="' + sectionKey + '">Развернуть</button>';
+  }
+
+  function renderWorkflowSections(totals) {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-workflow-section]'), function (sectionNode) {
+      var sectionKey = sectionNode.dataset.workflowSection;
+      var collapsed = isSectionCollapsed(sectionKey);
+      var bodyNode = sectionNode.querySelector('[data-workflow-body="' + sectionKey + '"]');
+      var summaryNode = sectionNode.querySelector('[data-workflow-summary="' + sectionKey + '"]');
+      var bodyControls = sectionNode.querySelectorAll('[data-workflow-body-control="' + sectionKey + '"]');
+
+      sectionNode.classList.toggle('is-collapsed', collapsed);
+      if (bodyNode) {
+        bodyNode.hidden = collapsed;
+      }
+      if (summaryNode) {
+        summaryNode.hidden = !collapsed;
+        summaryNode.innerHTML = collapsed ? renderWorkflowSectionSummary(sectionKey, totals) : '';
+      }
+      Array.prototype.forEach.call(bodyControls, function (controlNode) {
+        controlNode.hidden = collapsed;
+      });
+    });
+  }
+
+  function scrollToNextWorkflowSection(sectionKey) {
+    var nextTargets = {
+      expenses: '[data-workflow-section="agents"]',
+      agents: '[data-workflow-section="ownerDeals"]',
+      ownerDeals: '[aria-labelledby="resultTitle"]'
+    };
+    var selector = nextTargets[sectionKey];
+    var targetNode = selector ? document.querySelector(selector) : null;
+
+    if (targetNode && typeof targetNode.scrollIntoView === 'function') {
+      targetNode.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
 
@@ -554,7 +645,7 @@
           + '</div>';
       }).join('')
       + '</div>'
-      + '<button class="button ghost" type="button" data-action="add-deal" data-agent-id="' + agent.id + '">Добавить сделку</button>'
+      + '<button class="button add-action-button" type="button" data-action="add-deal" data-agent-id="' + agent.id + '">Добавить сделку</button>'
       + '<dl class="exact-deals-total">'
       + '<div><dt>Итого комиссия по сделкам</dt><dd data-agent-summary="commission" data-agent-id="' + agent.id + '">' + money(result.commission) + '</dd></div>'
       + '<div><dt>Итого зарплата агенту</dt><dd data-agent-summary="payout" data-agent-id="' + agent.id + '">' + money(result.payout) + '</dd></div>'
@@ -581,12 +672,26 @@
   }
 
   function renderExpenses() {
+    var defaultExpensePlaceholders = [
+      'Например: аренда офиса',
+      'Например: связь',
+      'Например: интернет'
+    ];
+
     elements.expensesList.innerHTML = '<div class="notice info expense-guidance wide-field">'
-      + '<p>Что можно добавить: аренда офиса, связь, CRM, реклама, интернет, бухгалтерия, уборка, коммунальные платежи, зарплата администратора, прочие постоянные расходы.</p>'
-      + '<p>Не добавляйте сюда роялти, выплаты агентам, рефералы и мотивации — калькулятор считает их отдельно.</p>'
+      + '<div class="expense-guidance-panels">'
+      + '<div class="expense-guidance-card expense-guidance-card--success">'
+      + '<h3>Примеры расходов</h3>'
+      + '<p>аренда офиса, связь, CRM, реклама, интернет, бухгалтерия, уборка, коммунальные платежи, зарплата администратора, прочие постоянные расходы.</p>'
+      + '</div>'
+      + '<div class="expense-guidance-card expense-guidance-card--danger">'
+      + '<h3>Не добавляйте в расходы</h3>'
+      + '<p>Роялти, выплаты агентам, рефералы и мотивации.</p>'
+      + '<p class="expense-guidance-footnote">Калькулятор считает их автоматически в других разделах.</p>'
+      + '</div>'
       + '</div>'
       + state.expenses.map(function (expense, index) {
-      var namePlaceholder = index === 0 ? 'Например: аренда офиса' : 'Добавьте категорию расхода';
+      var namePlaceholder = defaultExpensePlaceholders[index] || 'Добавьте категорию расхода';
       return '<label class="field expense-row">'
         + '<span>Категория</span>'
         + '<input type="text" data-expense-id="' + expense.id + '" data-expense-field="name" value="' + escapeHtml(expense.name) + '" placeholder="' + escapeHtml(namePlaceholder) + '">'
@@ -903,7 +1008,7 @@
     if (previousAgent && previousAgent.commissionMode === 'exact') {
       syncAgentTotalsFromDeals(previousAgent);
     }
-    if (previousAgent && !isAgentDraft(previousAgent, calculateAgent(previousAgent))) {
+    if (previousAgent) {
       setAgentCollapsed(previousAgent.id, true);
     }
   }
@@ -985,15 +1090,55 @@
       + '</div></section>';
   }
 
-  function renderMotivationSummary(agent) {
-    var closedText = hasSpecialPaymentTermsUi(agent)
-      ? 'Мотивации не положены на особых условиях! Откройте, если всё равно хотите добавить.'
-      : 'Добавьте мотивации агенту!';
+  function getMotivationSummaryState(agent, reserve, currentMode) {
+    if (currentMode === 'manual') {
+      return {
+        className: 'manual',
+        status: 'Указаны вручную',
+        description: 'Резерв задаётся вручную. Автоматические правила мотиваций сейчас не применяются.',
+        reserveText: 'В резерве сейчас: ' + money(reserve.total),
+        actionText: 'Изменить мотивации'
+      };
+    }
 
-    return '<summary class="motivation-summary">'
+    if (currentMode === 'rules') {
+      return {
+        className: 'rules',
+        status: 'Рассчитываются по правилам',
+        description: 'Стипендия, поездки и годовые резервы учитываются по выбранным условиям.',
+        reserveText: 'В резерве сейчас: ' + money(reserve.total),
+        actionText: 'Изменить мотивации'
+      };
+    }
+
+    return {
+      className: 'off',
+      status: 'Не настроены',
+      description: hasSpecialPaymentTermsUi(agent)
+        ? 'На особых условиях мотивации обычно не учитываются, но здесь можно заложить ручной резерв при необходимости.'
+        : 'Без настройки стипендии, поездки и дополнительные резервы не попадут в расчёт агента.',
+      reserveText: '',
+      actionText: 'Настроить мотивации'
+    };
+  }
+
+  function renderMotivationSummary(agent, reserve, currentMode) {
+    var summaryState = getMotivationSummaryState(agent, reserve, currentMode);
+
+    return '<summary class="motivation-summary motivation-summary--' + summaryState.className + '">'
+      + '<span class="motivation-summary-icon" aria-hidden="true">☆</span>'
       + '<span class="motivation-summary-main">'
-      + '<span class="motivation-summary-title"><span class="summary-closed">' + closedText + '</span><span class="summary-open">Скрыть мотивации</span></span>'
+      + '<span class="motivation-summary-heading">Мотивации агента</span>'
+      + '<span class="motivation-summary-status">' + escapeHtml(summaryState.status) + '</span>'
+      + '<span class="motivation-summary-text">' + escapeHtml(summaryState.description) + '</span>'
       + '</span>'
+      + '<span class="motivation-summary-side">'
+      + (summaryState.reserveText
+        ? '<span class="motivation-summary-amount">' + escapeHtml(summaryState.reserveText) + '</span>'
+        : '')
+      + '<span class="motivation-summary-action"><span class="summary-closed">' + escapeHtml(summaryState.actionText) + '</span><span class="summary-open">Скрыть мотивации</span></span>'
+      + '</span>'
+      + '<span class="motivation-summary-cta"><span class="motivation-summary-cta-icon" aria-hidden="true">⚡</span><span>РАССЧИТАТЬ МОТИВАЦИИ АГЕНТА</span></span>'
       + '</summary>';
   }
 
@@ -1020,7 +1165,7 @@
 
     if (agent.status === 'trainee') {
       return '<details class="motivation-box" data-agent-id="' + agent.id + '">'
-        + renderMotivationSummary(agent)
+        + renderMotivationSummary(agent, reserve, currentMode)
         + '<div class="motivation-content">'
         + '<div class="form-grid compact-grid">'
         + renderMotivationModeSelect(agent, 'Учитывать резерв мотиваций?', 'Для стажёра здесь только выбор: оставить резерв 0 ₽ или заложить сумму вручную.', [
@@ -1039,7 +1184,7 @@
 
     if (hasSpecialPaymentTermsUi(agent)) {
       return '<details class="motivation-box" data-agent-id="' + agent.id + '">'
-        + renderMotivationSummary(agent)
+        + renderMotivationSummary(agent, reserve, currentMode)
         + '<div class="motivation-content">'
         + '<p class="motivation-lead">Особые условия — это повышенная или фиксированная выплата, которую дают, чтобы привлечь или удержать сильного агента. Главный вопрос здесь: остаётся ли офис в плюсе после такой выплаты.</p>'
         + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-motivation-field="specialManualReserveEnabled" data-structural="true"' + checked(Boolean(motivation.specialManualReserveEnabled)) + '><span>Заложить ручной резерв мотиваций при особых условиях</span></label>'
@@ -1053,7 +1198,7 @@
     }
 
     return '<details class="motivation-box" data-agent-id="' + agent.id + '">'
-      + renderMotivationSummary(agent)
+      + renderMotivationSummary(agent, reserve, currentMode)
       + '<div class="motivation-content">'
       + '<div class="form-grid compact-grid">'
       + renderMotivationModeSelect(agent, 'Учитывать мотивации агента?', 'Не учитывать — резерв 0 ₽. Вручную — вы задаёте сумму сами. По правилам — калькулятор откроет дополнительные поля.', [
@@ -1402,6 +1547,7 @@
     renderForecast(totals);
     renderSchemeChecker(totals);
     renderWarnings(totals);
+    renderWorkflowSections(totals);
   }
 
   function updateAgentSummaries() {
@@ -1989,6 +2135,16 @@
 
     if (target.dataset.action === 'open-table-mode') {
       openTableModePage();
+      return;
+    }
+
+    if (target.dataset.action === 'collapse-section' || target.dataset.action === 'expand-section') {
+      var isCollapsingSection = target.dataset.action === 'collapse-section';
+      setSectionCollapsed(target.dataset.sectionKey, isCollapsingSection);
+      renderTotals();
+      if (isCollapsingSection) {
+        scrollToNextWorkflowSection(target.dataset.sectionKey);
+      }
       return;
     }
 

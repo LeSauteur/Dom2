@@ -82,7 +82,7 @@
 
     <section class="sheet-grid">
       <div class="main-column">
-        <section class="section-card" aria-labelledby="expensesTitle">
+        <section class="section-card workflow-section" aria-labelledby="expensesTitle" data-workflow-section="expenses">
           <div class="section-head">
             <div>
               <span class="step-label">Шаг 1</span>
@@ -90,33 +90,50 @@
             </div>
           <p class="hint">Сюда вводятся только постоянные расходы офиса. Роялти, выплаты агентам, рефералы и мотивации калькулятор считает отдельно, чтобы не было двойного учёта.</p>
           </div>
-          <div class="notice info">Роялти не добавляйте в расходы — калькулятор считает его автоматически.</div>
-          <div id="expensesList" class="expense-list"></div>
-          <div class="paper-total">
-            <span>Итого расходов офиса</span>
-            <strong id="expensesInlineTotal">0 ₽</strong>
-          </div>
-          <div class="section-actions bottom-actions">
-            <button class="button primary" type="button" data-action="add-expense">Добавить расход</button>
+          <div class="workflow-summary" data-workflow-summary="expenses" hidden></div>
+          <div class="workflow-body" data-workflow-body="expenses">
+            <div id="expensesList" class="expense-list"></div>
+            <div class="paper-total">
+              <span>Итого расходов офиса</span>
+              <strong id="expensesInlineTotal">0 ₽</strong>
+            </div>
+            <div class="section-actions bottom-actions">
+              <button class="button add-action-button" type="button" data-action="add-expense">Добавить расход</button>
+            </div>
+            <div class="workflow-next-action">
+              <button class="button workflow-next-button" type="button" data-action="collapse-section" data-section-key="expenses">
+                <span class="workflow-next-kicker">✓ Расходы заполнены</span>
+                <span class="workflow-next-label">Свернуть раздел расходов<br>и перейти к агентам</span>
+              </button>
+            </div>
           </div>
         </section>
 
-        <section class="section-card" aria-labelledby="agentsTitle">
+        <section class="section-card workflow-section" aria-labelledby="agentsTitle" data-workflow-section="agents">
           <div class="section-head split">
             <div>
               <span class="step-label">Шаг 2</span>
               <h2 id="agentsTitle">Кто приносит деньги</h2>
             </div>
-            <button class="button primary" id="addAgentBtn" type="button">Добавить агента</button>
+            <button class="button add-action-button" id="addAgentBtn" type="button" data-workflow-body-control="agents">Добавить агента</button>
           </div>
-          <p class="hint">Сначала выберите статус агента и способ ввода сделок. Комиссия агента — это вся сумма за месяц до выплаты агенту. Если точных сделок нет, можно использовать быстрый режим для грубой оценки.</p>
-          <div id="agentsList" class="agents-list"></div>
-          <div class="section-actions bottom-actions">
-            <button class="button primary" id="addAgentBottomBtn" type="button">Добавить агента</button>
+          <div class="workflow-summary" data-workflow-summary="agents" hidden></div>
+          <div class="workflow-body" data-workflow-body="agents">
+            <p class="hint">Сначала выберите статус агента и способ ввода сделок. Комиссия агента — это вся сумма за месяц до выплаты агенту. Если точных сделок нет, можно использовать быстрый режим для грубой оценки.</p>
+            <div id="agentsList" class="agents-list"></div>
+            <div class="section-actions bottom-actions">
+              <button class="button add-action-button" id="addAgentBottomBtn" type="button">Добавить агента</button>
+            </div>
+            <div class="workflow-next-action">
+              <button class="button workflow-next-button" type="button" data-action="collapse-section" data-section-key="agents">
+                <span class="workflow-next-kicker">✓ Агенты заполнены</span>
+                <span class="workflow-next-label">Свернуть раздел агентов<br>и перейти к личным сделкам</span>
+              </button>
+            </div>
           </div>
         </section>
 
-        <section class="section-card" aria-labelledby="ownerTitle">
+        <section class="section-card workflow-section" aria-labelledby="ownerTitle" data-workflow-section="ownerDeals">
           <div class="section-head">
             <div>
               <span class="step-label">Шаг 3</span>
@@ -124,10 +141,19 @@
             </div>
             <p class="hint">Этот блок показывает, держится ли офис сам или плюс появляется только благодаря личным продажам собственника. По этим сделкам агентская выплата равна 0, но роялти считается.</p>
           </div>
-          <label class="field">
-            <span>Комиссия личных сделок за месяц</span>
-            <input id="ownerSalesInput" type="text" inputmode="numeric" autocomplete="off" data-money-input="true">
-          </label>
+          <div class="workflow-summary" data-workflow-summary="ownerDeals" hidden></div>
+          <div class="workflow-body" data-workflow-body="ownerDeals">
+            <label class="field">
+              <span>Комиссия личных сделок за месяц</span>
+              <input id="ownerSalesInput" type="text" inputmode="numeric" autocomplete="off" data-money-input="true">
+            </label>
+            <div class="workflow-next-action">
+              <button class="button workflow-next-button" type="button" data-action="collapse-section" data-section-key="ownerDeals">
+                <span class="workflow-next-kicker">✓ Личные сделки заполнены</span>
+                <span class="workflow-next-label">Свернуть личные сделки<br>и перейти к итогам</span>
+              </button>
+            </div>
+          </div>
         </section>
 
         <section class="section-card result-card" aria-labelledby="resultTitle">
