@@ -1,0 +1,2215 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Домиан — A4 premium demo</title>
+  <style>
+    /* ==========================================================
+       A4 PREMIUM DEMO — CSS
+       Автономный прототип. Не подключает боевые CSS/JS проекта.
+       ========================================================== */
+
+    :root {
+      --bg: #eef2f6;
+      --paper: #fffdf8;
+      --paper-2: #f8fafc;
+      --ink: #142033;
+      --muted: #64748b;
+      --muted-2: #94a3b8;
+      --line: #d9e1ea;
+      --line-strong: #bcc7d4;
+      --blue: #245c99;
+      --blue-dark: #173f6d;
+      --blue-soft: #e8f1fb;
+      --green: #138a49;
+      --green-soft: #e9f8ef;
+      --orange: #b7791f;
+      --orange-soft: #fff6e5;
+      --red: #b42318;
+      --red-soft: #fff1f0;
+      --shadow-soft: 0 20px 60px rgba(15, 23, 42, .10);
+      --shadow-card: 0 10px 28px rgba(15, 23, 42, .06);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+      --focus: 0 0 0 4px rgba(36, 92, 153, .16);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Trebuchet MS", "Segoe UI", Arial, sans-serif;
+      line-height: 1.45;
+      background:
+        radial-gradient(circle at 15% 0%, rgba(36, 92, 153, .13), transparent 32rem),
+        radial-gradient(circle at 85% 8%, rgba(19, 138, 73, .08), transparent 28rem),
+        linear-gradient(180deg, #f7f9fc 0%, var(--bg) 42%, #e9eef5 100%);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:disabled,
+    input:disabled,
+    select:disabled {
+      cursor: not-allowed;
+      opacity: .62;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    p {
+      margin-top: 0;
+    }
+
+    .page {
+      width: min(1160px, calc(100% - 28px));
+      margin: 24px auto 44px;
+    }
+
+    .a4-sheet {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,253,248,.98)),
+        var(--paper);
+      border: 1px solid rgba(20, 32, 51, .08);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      padding: 22px 26px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, .72);
+      backdrop-filter: blur(10px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      color: #fff;
+      background: linear-gradient(145deg, var(--blue), var(--blue-dark));
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: .06em;
+      box-shadow: 0 10px 22px rgba(36, 92, 153, .24);
+      flex: 0 0 auto;
+    }
+
+    .brand-text strong {
+      display: block;
+      font-size: 18px;
+      line-height: 1.1;
+    }
+
+    .brand-text span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.3;
+    }
+
+    .topbar-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .hero {
+      padding: 38px 44px 30px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      color: var(--blue-dark);
+      background: var(--blue-soft);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 830px;
+      margin-bottom: 12px;
+      font-size: clamp(34px, 5.6vw, 62px);
+      line-height: .98;
+      letter-spacing: -.055em;
+    }
+
+    .lead {
+      max-width: 720px;
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: clamp(17px, 2vw, 20px);
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 28px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      box-shadow: 0 12px 26px rgba(15, 23, 42, .04);
+    }
+
+    .step-pill {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 900;
+      white-space: nowrap;
+      transition: .18s ease;
+    }
+
+    .step-pill span {
+      display: grid;
+      place-items: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      color: var(--blue);
+      background: var(--blue-soft);
+      font-size: 11px;
+    }
+
+    .step-pill:hover,
+    .step-pill:focus-visible {
+      color: var(--blue-dark);
+      background: var(--blue-soft);
+      outline: none;
+    }
+
+    .intro-toggle {
+      margin-top: 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: rgba(248, 250, 252, .78);
+      overflow: hidden;
+    }
+
+    .intro-toggle summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 18px;
+      list-style: none;
+      color: var(--blue-dark);
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .intro-toggle summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .intro-toggle summary:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
+    }
+
+    .intro-body {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      padding: 0 18px 18px;
+    }
+
+    .intro-body p {
+      margin: 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      color: var(--muted);
+      background: #fff;
+      font-size: 14px;
+    }
+
+    .content {
+      display: grid;
+      gap: 22px;
+      padding: 28px 44px 44px;
+    }
+
+    .section-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, .82);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 22px;
+      align-items: flex-start;
+      padding: 24px 24px 18px;
+      border-bottom: 1px solid rgba(217, 225, 234, .76);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.94), rgba(248,250,252,.82));
+    }
+
+    .section-title {
+      max-width: 760px;
+    }
+
+    .step-label {
+      display: inline-flex;
+      margin-bottom: 8px;
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin-bottom: 8px;
+      font-size: clamp(24px, 3vw, 32px);
+      line-height: 1.08;
+      letter-spacing: -.03em;
+    }
+
+    h3 {
+      margin-bottom: 8px;
+      font-size: 19px;
+      line-height: 1.2;
+    }
+
+    h4 {
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+
+    .hint,
+    .soft-note,
+    .microcopy {
+      color: var(--muted);
+    }
+
+    .hint {
+      max-width: 760px;
+      margin-bottom: 0;
+      font-size: 15px;
+    }
+
+    .section-body {
+      display: grid;
+      gap: 16px;
+      padding: 22px 24px 24px;
+    }
+
+    .notice {
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .notice strong {
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .notice.info {
+      color: var(--blue-dark);
+      border-color: rgba(36, 92, 153, .18);
+      background: var(--blue-soft);
+    }
+
+    .notice.warning {
+      color: #7a4a0a;
+      border-color: rgba(183, 121, 31, .22);
+      background: var(--orange-soft);
+    }
+
+    .notice.danger {
+      color: var(--red);
+      border-color: rgba(180, 35, 24, .18);
+      background: var(--red-soft);
+    }
+
+    .button {
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 15px;
+      border: 1px solid rgba(36, 92, 153, .24);
+      border-radius: 999px;
+      color: var(--blue-dark);
+      background: #fff;
+      font-weight: 900;
+      text-decoration: none;
+      transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease;
+    }
+
+    .button:hover,
+    .button:focus-visible {
+      transform: translateY(-1px);
+      border-color: rgba(36, 92, 153, .42);
+      box-shadow: 0 12px 22px rgba(36, 92, 153, .12);
+      outline: none;
+    }
+
+    .button.primary {
+      color: #fff;
+      border-color: var(--blue);
+      background: linear-gradient(145deg, var(--blue), var(--blue-dark));
+      box-shadow: 0 12px 26px rgba(36, 92, 153, .18);
+    }
+
+    .button.success {
+      color: #fff;
+      border-color: var(--green);
+      background: linear-gradient(145deg, #16a05a, #0d743b);
+    }
+
+    .button.danger {
+      color: var(--red);
+      border-color: rgba(180, 35, 24, .22);
+      background: #fff;
+    }
+
+    .button.ghost {
+      color: var(--muted);
+      border-color: var(--line);
+      background: rgba(255, 255, 255, .72);
+    }
+
+    .button.small {
+      min-height: 34px;
+      padding: 7px 11px;
+      font-size: 13px;
+    }
+
+    .row-list,
+    .agents-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .expense-row {
+      display: grid;
+      grid-template-columns: minmax(190px, 1fr) minmax(150px, .42fr) auto;
+      gap: 12px;
+      align-items: start;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: #fff;
+    }
+
+    .expense-row.has-royalty {
+      border-color: rgba(183, 121, 31, .44);
+      background: linear-gradient(180deg, #fff, #fff9ed);
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .field span {
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .field small {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    input,
+    select {
+      width: 100%;
+      min-height: 46px;
+      padding: 11px 12px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      color: var(--ink);
+      background: #fff;
+      transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+    }
+
+    input::placeholder {
+      color: #a7b1bf;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--blue);
+      box-shadow: var(--focus);
+      outline: none;
+    }
+
+    .royalty-inline-warning {
+      grid-column: 1 / -1;
+      display: none;
+      margin: -2px 0 0;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      color: #7a4a0a;
+      background: var(--orange-soft);
+      border: 1px solid rgba(183, 121, 31, .2);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .expense-row.has-royalty .royalty-inline-warning {
+      display: block;
+    }
+
+    .section-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: linear-gradient(180deg, #fff, var(--paper-2));
+    }
+
+    .section-total span {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    .section-total strong {
+      font-size: 25px;
+      letter-spacing: -.03em;
+    }
+
+    .agent-card {
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--blue);
+      border-radius: var(--radius-lg);
+      background: #fff;
+      overflow: hidden;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, .04);
+    }
+
+    .agent-card.is-collapsed {
+      border-left-color: var(--muted-2);
+    }
+
+    .agent-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 16px;
+      background: linear-gradient(180deg, #fff, #f9fbfd);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .agent-name-line {
+      display: grid;
+      gap: 8px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .agent-title-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .agent-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      padding: 0 9px;
+      border-radius: 999px;
+      color: #fff;
+      background: var(--blue);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .agent-card h3 {
+      margin: 0;
+    }
+
+    .agent-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      color: var(--muted);
+      background: #f1f5f9;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .chip.blue {
+      color: var(--blue-dark);
+      background: var(--blue-soft);
+    }
+
+    .chip.green {
+      color: var(--green);
+      background: var(--green-soft);
+    }
+
+    .chip.orange {
+      color: #7a4a0a;
+      background: var(--orange-soft);
+    }
+
+    .agent-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .agent-body {
+      display: grid;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .agent-body[hidden] {
+      display: none;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .form-grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .wide {
+      grid-column: 1 / -1;
+    }
+
+    .segmented {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 5px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #f8fafc;
+    }
+
+    .segmented label {
+      flex: 1 1 180px;
+      min-height: 38px;
+      display: grid;
+      place-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .segmented input {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .segmented label:has(input:checked) {
+      color: #fff;
+      background: var(--blue);
+      box-shadow: 0 8px 16px rgba(36, 92, 153, .18);
+    }
+
+    .panel {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: #fbfdff;
+    }
+
+    .deal-row {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) minmax(170px, .5fr) auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .deal-preview {
+      display: grid;
+      gap: 2px;
+      min-height: 46px;
+      padding: 10px 12px;
+      border: 1px solid rgba(36, 92, 153, .14);
+      border-radius: var(--radius-sm);
+      background: #fff;
+    }
+
+    .deal-preview strong {
+      color: var(--blue-dark);
+      font-size: 15px;
+    }
+
+    .deal-preview small {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .subsection {
+      display: grid;
+      gap: 12px;
+    }
+
+    .subsection-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding-top: 4px;
+    }
+
+    .subsection-head p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .motivation-box {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid rgba(36, 92, 153, .16);
+      border-radius: var(--radius-md);
+      background: linear-gradient(180deg, #fbfdff, #fff);
+    }
+
+    .motivation-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .check-card {
+      min-height: 74px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: #fff;
+    }
+
+    .check-card input {
+      width: 18px;
+      min-height: 18px;
+      margin-top: 2px;
+      accent-color: var(--blue);
+    }
+
+    .check-card strong {
+      display: block;
+      margin-bottom: 2px;
+      font-size: 14px;
+    }
+
+    .check-card small {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .check-card.is-disabled {
+      background: #f8fafc;
+      color: var(--muted);
+    }
+
+    .agent-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 2px;
+    }
+
+    .metric {
+      display: grid;
+      gap: 4px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: #fff;
+    }
+
+    .metric dt {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    .metric dd {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: -.03em;
+    }
+
+    .metric.primary dd {
+      color: var(--blue-dark);
+    }
+
+    .metric.positive dd {
+      color: var(--green);
+    }
+
+    .metric.warning dd {
+      color: var(--orange);
+    }
+
+    .result-hero {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .result-main {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: linear-gradient(180deg, #fff, var(--paper-2));
+    }
+
+    .result-main strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .result-main span {
+      display: block;
+      font-size: clamp(30px, 4vw, 46px);
+      font-weight: 900;
+      letter-spacing: -.06em;
+      line-height: 1;
+    }
+
+    .result-main.positive {
+      border-color: rgba(19, 138, 73, .22);
+      background: linear-gradient(180deg, #fff, var(--green-soft));
+    }
+
+    .result-main.positive span {
+      color: var(--green);
+    }
+
+    .result-main.neutral span {
+      color: var(--blue-dark);
+    }
+
+    .breakdown {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .warnings-list,
+    .profitability-list,
+    .forecast-grid,
+    .checker-output {
+      display: grid;
+      gap: 10px;
+    }
+
+    .warning-item {
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .warning-item.good {
+      border-color: rgba(19, 138, 73, .2);
+      color: var(--green);
+      background: var(--green-soft);
+    }
+
+    .warning-item.warn {
+      border-color: rgba(183, 121, 31, .22);
+      color: #7a4a0a;
+      background: var(--orange-soft);
+    }
+
+    .warning-item.danger {
+      border-color: rgba(180, 35, 24, .18);
+      color: var(--red);
+      background: var(--red-soft);
+    }
+
+    .profit-row {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) repeat(4, minmax(110px, .45fr));
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: #fff;
+    }
+
+    .profit-row strong {
+      display: block;
+    }
+
+    .profit-row span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .management-card {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: linear-gradient(180deg, #fff, #f8fafc);
+    }
+
+    .management-card p {
+      margin-bottom: 0;
+      color: var(--muted);
+    }
+
+    .forecast-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .footer-note {
+      margin: 0;
+      padding: 20px 44px 30px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--line);
+      background: rgba(248, 250, 252, .72);
+    }
+
+    .mini-divider {
+      height: 1px;
+      background: var(--line);
+      margin: 2px 0;
+    }
+
+    .empty-state {
+      padding: 18px;
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--radius-md);
+      color: var(--muted);
+      background: #fbfdff;
+      text-align: center;
+    }
+
+    @media (max-width: 920px) {
+      .topbar,
+      .hero,
+      .content,
+      .footer-note {
+        padding-left: 22px;
+        padding-right: 22px;
+      }
+
+      .steps {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        border-radius: var(--radius-lg);
+      }
+
+      .step-pill {
+        border-radius: var(--radius-md);
+      }
+
+      .intro-body,
+      .form-grid,
+      .form-grid.three,
+      .result-hero,
+      .breakdown,
+      .forecast-grid,
+      .motivation-grid,
+      .agent-summary {
+        grid-template-columns: 1fr;
+      }
+
+      .expense-row,
+      .deal-row,
+      .profit-row {
+        grid-template-columns: 1fr;
+      }
+
+      .section-head,
+      .agent-header,
+      .subsection-head {
+        flex-direction: column;
+      }
+
+      .agent-actions,
+      .topbar-actions {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .page {
+        width: min(100% - 16px, 1160px);
+        margin-top: 8px;
+      }
+
+      .a4-sheet {
+        border-radius: 20px;
+      }
+
+      .steps {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .hero {
+        padding-top: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="a4-sheet">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">D</div>
+          <div class="brand-text">
+            <strong>Домиан</strong>
+            <span>Демо премиального A4-интерфейса</span>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button class="button ghost small" type="button" data-action="reset-demo">Вернуть демо</button>
+          <button class="button primary small" type="button" data-action="add-agent">Добавить агента</button>
+        </div>
+      </header>
+
+      <section class="hero">
+        <span class="eyebrow">A4 premium demo</span>
+        <h1>A4-калькулятор рентабельности офиса</h1>
+        <p class="lead">Один спокойный маршрут: расходы, агенты, личные сделки, итог, контроль и прогноз. Без бокового дашборда, без красных подсказок ради красных подсказок, потому что хаос и так справляется сам.</p>
+
+        <nav class="steps" aria-label="Маршрут расчёта">
+          <a class="step-pill" href="#expenses"><span>1</span>Расходы</a>
+          <a class="step-pill" href="#agents"><span>2</span>Агенты</a>
+          <a class="step-pill" href="#owner"><span>3</span>Личные</a>
+          <a class="step-pill" href="#results"><span>4</span>Итог</a>
+          <a class="step-pill" href="#analysis"><span>5</span>Анализ</a>
+          <a class="step-pill" href="#forecast"><span>6</span>Прогноз</a>
+        </nav>
+
+        <details class="intro-toggle">
+          <summary>
+            <span>Первый раз здесь? Показать инструкцию</span>
+            <span class="chip blue">Свернуто по умолчанию</span>
+          </summary>
+          <div class="intro-body">
+            <p><strong>Идите сверху вниз.</strong><br>Сначала вводятся постоянные расходы, затем агенты и сделки, потом личные сделки собственника.</p>
+            <p><strong>Роялти не добавляйте вручную.</strong><br>В демо оно считается упрощённо отдельно, чтобы показать UX-поведение.</p>
+            <p><strong>Это не боевой расчёт.</strong><br>Формулы ниже демонстрационные. Финансовую правду оставим calculation.js, пусть он страдает по профессии.</p>
+          </div>
+        </details>
+      </section>
+
+      <div class="content">
+        <section class="section-card" id="expenses">
+          <div class="section-head">
+            <div class="section-title">
+              <span class="step-label">Шаг 1</span>
+              <h2>Расходы офиса</h2>
+              <p class="hint">Универсальные строки без декоративных категорий. Пользователь сам решает, как назвать расход: аренда, связь, реклама, администратор, уборка или очередной бессмертный “прочее”.</p>
+            </div>
+            <button class="button primary" type="button" data-action="add-expense">Добавить расход</button>
+          </div>
+          <div class="section-body">
+            <div class="notice warning">
+              <strong>Роялти не добавляется в расходы</strong>
+              Калькулятор показывает роялти отдельной строкой в итогах. Если в названии расхода написать “роялти”, строка подсветится и даст локальную подсказку.
+            </div>
+            <div class="row-list" id="expensesList"></div>
+            <div class="section-total">
+              <span>Итого расходов в месяц</span>
+              <strong id="expensesTotal">0 ₽</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card" id="agents">
+          <div class="section-head">
+            <div class="section-title">
+              <span class="step-label">Шаг 2</span>
+              <h2>Агенты и сделки</h2>
+              <p class="hint">Каждый агент — отдельная карточка: имя, статус, сделки, условия выплаты, мотивации и краткий итог. Мотивации остаются внутри агента, а не улетают в отдельную панель, где их потом ищут археологи.</p>
+            </div>
+            <button class="button primary" type="button" data-action="add-agent">Добавить агента</button>
+          </div>
+          <div class="section-body">
+            <div class="agents-list" id="agentsList"></div>
+          </div>
+        </section>
+
+        <section class="section-card" id="owner">
+          <div class="section-head">
+            <div class="section-title">
+              <span class="step-label">Шаг 3</span>
+              <h2>Личные сделки собственника</h2>
+              <p class="hint">Короткий спокойный блок. Без красной тревоги, будто поле суммы лично виновато в кассовом разрыве.</p>
+            </div>
+          </div>
+          <div class="section-body">
+            <label class="field">
+              <span>Комиссия личных сделок за месяц</span>
+              <input type="text" inputmode="numeric" autocomplete="off" id="ownerSalesInput" data-money-input="true" placeholder="Например: 150 000">
+              <small>В демо сумма влияет на итог моково: показывает зависимость офиса от собственника.</small>
+            </label>
+          </div>
+        </section>
+
+        <section class="section-card" id="results">
+          <div class="section-head">
+            <div class="section-title">
+              <span class="step-label">Шаг 4</span>
+              <h2>Итог собственнику</h2>
+              <p class="hint">Главные строки — итог без личных сделок и итог с личными сделками. Остальная детализация ниже, чтобы не превращать первый взгляд в налоговую декларацию.</p>
+            </div>
+          </div>
+          <div class="section-body">
+            <div class="result-hero">
+              <div class="result-main neutral">
+                <strong>Итог без личных сделок</strong>
+                <span id="resultWithoutOwner">0 ₽</span>
+              </div>
+              <div class="result-main positive">
+                <strong>Итог с личными сделками</strong>
+                <span id="resultWithOwner">0 ₽</span>
+              </div>
+            </div>
+            <dl class="breakdown">
+              <div class="metric"><dt>Оборот агентов</dt><dd id="agentTurnover">0 ₽</dd></div>
+              <div class="metric"><dt>Личные сделки</dt><dd id="ownerSalesTotal">0 ₽</dd></div>
+              <div class="metric"><dt>Выплаты агентам</dt><dd id="agentPayouts">0 ₽</dd></div>
+              <div class="metric"><dt>Расходы</dt><dd id="officeExpenses">0 ₽</dd></div>
+              <div class="metric"><dt>Роялти</dt><dd id="royaltyTotal">0 ₽</dd></div>
+              <div class="metric"><dt>Мотивации</dt><dd id="motivationTotal">0 ₽</dd></div>
+              <div class="metric"><dt>Рефералы</dt><dd id="referralTotal">0 ₽</dd></div>
+              <div class="metric primary"><dt>Общий оборот</dt><dd id="totalTurnover">0 ₽</dd></div>
+            </dl>
+          </div>
+        </section>
+
+        <section class="section-card" id="analysis">
+          <div class="section-head">
+            <div class="section-title">
+              <span class="step-label">Шаг 5</span>
+              <h2>Контроль и опасные места</h2>
+              <p class="hint">Здесь показываются UX-предупреждения: роялти в расходах, минус без собственника, отсутствие сделок, единственная “Звезда”.</p>
+            </div>
+          </div>
+          <div class="section-body">
+            <div class="warnings-list" id="warningsList"></div>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-head">
+            <div class="section-title">
+              <span class="step-label">Анализ</span>
+              <h2>Окупаемость агентов</h2>
+              <p class="hint">Упрощённая демонстрационная оценка: сколько агент оставляет после выплаты, мотиваций и условной доли расходов.</p>
+            </div>
+          </div>
+          <div class="section-body">
+            <div class="profitability-list" id="profitabilityList"></div>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-head">
+            <div class="section-title">
+              <span class="step-label">Управленческий итог</span>
+              <h2>Что видно собственнику</h2>
+              <p class="hint">Короткий текстовый вывод по текущей картине. В боевом A4 сюда уже нужно подключать настоящую расчётную логику.</p>
+            </div>
+          </div>
+          <div class="section-body">
+            <div class="management-card" id="managementSummary"></div>
+          </div>
+        </section>
+
+        <section class="section-card" id="forecast">
+          <div class="section-head">
+            <div class="section-title">
+              <span class="step-label">Шаг 6</span>
+              <h2>Прогноз</h2>
+              <p class="hint">Демо-прогноз умножает текущий результат на период. Это визуальная реакция интерфейса, не бизнес-прогноз и не пророчество, как бы людям ни хотелось заменить думание кнопкой.</p>
+            </div>
+          </div>
+          <div class="section-body">
+            <div class="forecast-grid" id="forecastGrid"></div>
+          </div>
+        </section>
+
+        <section class="section-card" id="rate-checker">
+          <div class="section-head">
+            <div class="section-title">
+              <span class="step-label">Дополнительно</span>
+              <h2>Проверка процента агенту</h2>
+              <p class="hint">Отдельный быстрый тест: что будет, если агенту поставить другой процент. Не связан с карточками агентов выше.</p>
+            </div>
+          </div>
+          <div class="section-body">
+            <div class="form-grid three">
+              <label class="field">
+                <span>Комиссия агента</span>
+                <input type="text" inputmode="numeric" autocomplete="off" id="checkerCommission" data-money-input="true" placeholder="Например: 400 000">
+              </label>
+              <label class="field">
+                <span>Количество сделок</span>
+                <input type="number" min="1" step="1" id="checkerDeals" value="4">
+              </label>
+              <label class="field">
+                <span>Процент агенту</span>
+                <select id="checkerRate">
+                  <option value="45">45%</option>
+                  <option value="50">50%</option>
+                  <option value="55">55%</option>
+                  <option value="60">60%</option>
+                  <option value="70">70%</option>
+                  <option value="80" selected>80%</option>
+                </select>
+              </label>
+            </div>
+            <div class="checker-output" id="checkerOutput"></div>
+          </div>
+        </section>
+      </div>
+
+      <p class="footer-note">
+        Комментарий для интеграции: этот файл — автономный UX/UI-прототип. Расчёты внутри упрощены и специально отделены от боевой логики. При переносе в основной A4 нужно подключать настоящее расчётное ядро, а не копировать демо-формулы.
+      </p>
+    </div>
+  </main>
+
+  <script>
+    /* ==========================================================
+       A4 PREMIUM DEMO — JS
+       Автономный интерфейсный прототип.
+       ВАЖНО: расчёты ниже демонстрационные, упрощённые и не являются
+       боевой финансовой логикой Domian A4.
+       ========================================================== */
+
+    (function () {
+      'use strict';
+
+      var state;
+      var counters = { expense: 3, agent: 1 };
+
+      var els = {};
+
+      function createInitialState() {
+        counters = { expense: 3, agent: 1 };
+        return {
+          expenses: [
+            { id: 'expense-1', name: 'Аренда офиса', amount: '650 000' },
+            { id: 'expense-2', name: 'Реклама', amount: '120 000' },
+            { id: 'expense-3', name: '', amount: '' }
+          ],
+          agents: [
+            createAgent({
+              id: 'agent-1',
+              name: 'Агент 1',
+              deals: ['300 000', '250 000'],
+              motivationsOpen: false,
+              motivations: { congress: true, star: true, stipend: false, mountainSea: true, travel: false },
+              introduced: false
+            })
+          ],
+          ownerSales: '150 000',
+          checker: {
+            commission: '400 000',
+            deals: 4,
+            rate: 80
+          }
+        };
+      }
+
+      function createAgent(overrides) {
+        counters.agent += 1;
+        return Object.assign({
+          id: 'agent-' + counters.agent,
+          name: '',
+          status: 'partner',
+          mode: 'exact',
+          quickCommission: '',
+          quickCount: 1,
+          deals: [''],
+          paymentSystem: 'standard',
+          specialType: 'boosted',
+          startingRate: 55,
+          fixedRate: 80,
+          introduced: false,
+          collapsed: false,
+          motivationsOpen: false,
+          motivations: {
+            congress: true,
+            star: false,
+            stipend: false,
+            mountainSea: false,
+            travel: false
+          }
+        }, overrides || {});
+      }
+
+      function cacheElements() {
+        els.expensesList = document.getElementById('expensesList');
+        els.expensesTotal = document.getElementById('expensesTotal');
+        els.agentsList = document.getElementById('agentsList');
+        els.ownerSalesInput = document.getElementById('ownerSalesInput');
+        els.resultWithoutOwner = document.getElementById('resultWithoutOwner');
+        els.resultWithOwner = document.getElementById('resultWithOwner');
+        els.agentTurnover = document.getElementById('agentTurnover');
+        els.ownerSalesTotal = document.getElementById('ownerSalesTotal');
+        els.agentPayouts = document.getElementById('agentPayouts');
+        els.officeExpenses = document.getElementById('officeExpenses');
+        els.royaltyTotal = document.getElementById('royaltyTotal');
+        els.motivationTotal = document.getElementById('motivationTotal');
+        els.referralTotal = document.getElementById('referralTotal');
+        els.totalTurnover = document.getElementById('totalTurnover');
+        els.warningsList = document.getElementById('warningsList');
+        els.profitabilityList = document.getElementById('profitabilityList');
+        els.managementSummary = document.getElementById('managementSummary');
+        els.forecastGrid = document.getElementById('forecastGrid');
+        els.checkerCommission = document.getElementById('checkerCommission');
+        els.checkerDeals = document.getElementById('checkerDeals');
+        els.checkerRate = document.getElementById('checkerRate');
+        els.checkerOutput = document.getElementById('checkerOutput');
+      }
+
+      function escapeHtml(value) {
+        return String(value == null ? '' : value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      function parseMoney(value) {
+        var raw = String(value == null ? '' : value)
+          .replace(/[\s\u00a0\u202f]+/g, '')
+          .replace(',', '.')
+          .replace(/[^\d.]/g, '');
+
+        if (!raw) {
+          return 0;
+        }
+
+        var parts = raw.split('.');
+        if (parts.length > 2) {
+          raw = parts.shift() + '.' + parts.join('');
+        }
+
+        var number = Number(raw);
+        return Number.isFinite(number) && number > 0 ? number : 0;
+      }
+
+      function formatMoney(value) {
+        var number = Math.round(Number(value) || 0);
+        return number.toLocaleString('ru-RU').replace(/\u00a0/g, ' ') + ' ₽';
+      }
+
+      function formatSignedMoney(value) {
+        var number = Math.round(Number(value) || 0);
+        return (number > 0 ? '+' : '') + formatMoney(number);
+      }
+
+      function formatInputMoney(value) {
+        var raw = String(value == null ? '' : value).trim();
+        if (!raw) {
+          return '';
+        }
+        var amount = parseMoney(raw);
+        if (amount === 0 && /0/.test(raw)) {
+          return '0';
+        }
+        return amount ? Math.round(amount).toLocaleString('ru-RU').replace(/\u00a0/g, ' ') : '';
+      }
+
+      function getExpense(id) {
+        return state.expenses.find(function (expense) { return expense.id === id; });
+      }
+
+      function getAgent(id) {
+        return state.agents.find(function (agent) { return agent.id === id; });
+      }
+
+      function getDisplayAgentName(agent, index) {
+        var name = String(agent.name || '').trim();
+        return name || 'Новый агент ' + (index + 1);
+      }
+
+      function isRoyaltyName(name) {
+        return /роялти/i.test(String(name || ''));
+      }
+
+      function getSelectedStarAgentId() {
+        var selected = null;
+        state.agents.some(function (agent) {
+          if (agent.motivations && agent.motivations.star) {
+            selected = agent.id;
+            return true;
+          }
+          return false;
+        });
+        return selected;
+      }
+
+      function renderExpenses() {
+        if (!state.expenses.length) {
+          els.expensesList.innerHTML = '<div class="empty-state">Пока расходов нет. Добавьте хотя бы одну строку, иначе офис подозрительно похож на фантазию.</div>';
+          return;
+        }
+
+        els.expensesList.innerHTML = state.expenses.map(function (expense, index) {
+          var hasRoyalty = isRoyaltyName(expense.name);
+          var namePlaceholder = index === 0 ? 'Например: аренда офиса' : (index === 1 ? 'Например: зарплата уборщика' : 'Например: реклама');
+          return '' +
+            '<div class="expense-row' + (hasRoyalty ? ' has-royalty' : '') + '" data-expense-row="' + escapeHtml(expense.id) + '">' +
+              '<label class="field">' +
+                '<span>Название расхода</span>' +
+                '<input type="text" data-expense-id="' + escapeHtml(expense.id) + '" data-expense-field="name" value="' + escapeHtml(expense.name) + '" placeholder="' + escapeHtml(namePlaceholder) + '">' +
+              '</label>' +
+              '<label class="field">' +
+                '<span>Сумма в месяц</span>' +
+                '<input type="text" inputmode="numeric" autocomplete="off" data-money-input="true" data-expense-id="' + escapeHtml(expense.id) + '" data-expense-field="amount" value="' + escapeHtml(expense.amount) + '" placeholder="Например: 650 000">' +
+              '</label>' +
+              '<button class="button danger" type="button" data-action="remove-expense" data-expense-id="' + escapeHtml(expense.id) + '">Удалить</button>' +
+              '<p class="royalty-inline-warning">Роялти не добавляется в расходы — калькулятор считает его отдельно.</p>' +
+            '</div>';
+        }).join('');
+      }
+
+      function renderAgents() {
+        if (!state.agents.length) {
+          els.agentsList.innerHTML = '<div class="empty-state">Агентов пока нет. Можно считать только личные сделки, но тогда это уже не офис, а одиночный режим выживания.</div>';
+          return;
+        }
+
+        els.agentsList.innerHTML = state.agents.map(function (agent, index) {
+          var metrics = calculateAgent(agent);
+          var name = getDisplayAgentName(agent, index);
+          var starAgentId = getSelectedStarAgentId();
+          var starLocked = Boolean(starAgentId && starAgentId !== agent.id && !agent.motivations.star);
+          var starOwner = starAgentId ? getDisplayAgentName(getAgent(starAgentId), state.agents.findIndex(function (item) { return item.id === starAgentId; })) : '';
+          var specialVisible = agent.paymentSystem === 'special';
+          var quickVisible = agent.mode === 'quick';
+          var exactVisible = agent.mode === 'exact';
+
+          return '' +
+            '<article class="agent-card' + (agent.collapsed ? ' is-collapsed' : '') + '" data-agent-card="' + escapeHtml(agent.id) + '">' +
+              '<div class="agent-header">' +
+                '<div class="agent-name-line">' +
+                  '<div class="agent-title-row">' +
+                    '<span class="agent-number">' + (index + 1) + '</span>' +
+                    '<h3>' + escapeHtml(name) + '</h3>' +
+                    '<span class="chip ' + (metrics.contribution >= 0 ? 'green' : 'orange') + '">' + (metrics.contribution >= 0 ? 'окупается' : 'требует контроля') + '</span>' +
+                  '</div>' +
+                  '<div class="agent-meta">' +
+                    '<span>' + escapeHtml(statusLabel(agent.status)) + '</span>' +
+                    '<span>Оборот: ' + formatMoney(metrics.commission) + '</span>' +
+                    '<span>Агенту: ' + formatMoney(metrics.payout) + '</span>' +
+                  '</div>' +
+                '</div>' +
+                '<div class="agent-actions">' +
+                  '<button class="button ghost small" type="button" data-action="toggle-agent" data-agent-id="' + escapeHtml(agent.id) + '">' + (agent.collapsed ? 'Развернуть' : 'Свернуть') + '</button>' +
+                  '<button class="button danger small" type="button" data-action="remove-agent" data-agent-id="' + escapeHtml(agent.id) + '">Удалить</button>' +
+                '</div>' +
+              '</div>' +
+
+              '<div class="agent-body" ' + (agent.collapsed ? 'hidden' : '') + '>' +
+                '<div class="form-grid">' +
+                  '<label class="field">' +
+                    '<span>Имя агента</span>' +
+                    '<input type="text" data-agent-id="' + escapeHtml(agent.id) + '" data-agent-field="name" value="' + escapeHtml(agent.name) + '" placeholder="Новый агент">' +
+                  '</label>' +
+                  '<label class="field">' +
+                    '<span>Статус</span>' +
+                    '<select data-agent-id="' + escapeHtml(agent.id) + '" data-agent-field="status">' +
+                      option('partner', 'Партнёр', agent.status) +
+                      option('trainee', 'Стажёр', agent.status) +
+                    '</select>' +
+                  '</label>' +
+                '</div>' +
+
+                '<div class="subsection">' +
+                  '<div class="subsection-head">' +
+                    '<div>' +
+                      '<h4>Способ расчёта сделок</h4>' +
+                      '<p>Точный режим — по каждой сделке. Быстрый — одна общая сумма и количество сделок.</p>' +
+                    '</div>' +
+                  '</div>' +
+                  '<div class="segmented">' +
+                    radioPill('mode', agent.id, 'exact', 'Точный ввод сделок', agent.mode) +
+                    radioPill('mode', agent.id, 'quick', 'Быстрый режим', agent.mode) +
+                  '</div>' +
+                  '<div class="panel" ' + (exactVisible ? '' : 'hidden') + '>' +
+                    renderDeals(agent, metrics) +
+                    '<button class="button primary small" type="button" data-action="add-deal" data-agent-id="' + escapeHtml(agent.id) + '">Добавить сделку</button>' +
+                  '</div>' +
+                  '<div class="panel" ' + (quickVisible ? '' : 'hidden') + '>' +
+                    '<p class="microcopy">Быстрый режим делит общую комиссию условно. Для неровных сделок точный режим честнее, как это ни неприятно для ленивого ввода.</p>' +
+                    '<div class="form-grid">' +
+                      '<label class="field"><span>Комиссия агента за месяц</span><input type="text" inputmode="numeric" autocomplete="off" data-money-input="true" data-agent-id="' + escapeHtml(agent.id) + '" data-agent-field="quickCommission" value="' + escapeHtml(agent.quickCommission) + '" placeholder="Например: 400 000"></label>' +
+                      '<label class="field"><span>Количество сделок</span><input type="number" min="1" step="1" data-agent-id="' + escapeHtml(agent.id) + '" data-agent-field="quickCount" value="' + escapeHtml(agent.quickCount) + '"></label>' +
+                    '</div>' +
+                  '</div>' +
+                '</div>' +
+
+                '<div class="subsection">' +
+                  '<div class="subsection-head">' +
+                    '<div>' +
+                      '<h4>Система выплаты агенту</h4>' +
+                      '<p>Демо показывает переключение стандартной системы и особых условий без переноса боевых ставок.</p>' +
+                    '</div>' +
+                  '</div>' +
+                  '<div class="segmented">' +
+                    radioPill('paymentSystem', agent.id, 'standard', 'Стандартная система', agent.paymentSystem) +
+                    radioPill('paymentSystem', agent.id, 'special', 'Особые условия', agent.paymentSystem) +
+                  '</div>' +
+                  '<div class="panel" ' + (specialVisible ? '' : 'hidden') + '>' +
+                    '<div class="form-grid three">' +
+                      '<label class="field"><span>Тип особых условий</span><select data-agent-id="' + escapeHtml(agent.id) + '" data-agent-field="specialType">' + option('boosted', 'Повышенный старт', agent.specialType) + option('fixed', 'Фиксированный процент', agent.specialType) + '</select></label>' +
+                      '<label class="field"><span>Стартовый процент</span><input type="number" min="0" max="100" step="1" data-agent-id="' + escapeHtml(agent.id) + '" data-agent-field="startingRate" value="' + escapeHtml(agent.startingRate) + '"><small>Для демо применяется как минимум к стандартной шкале.</small></label>' +
+                      '<label class="field"><span>Фиксированный процент</span><input type="number" min="0" max="100" step="1" data-agent-id="' + escapeHtml(agent.id) + '" data-agent-field="fixedRate" value="' + escapeHtml(agent.fixedRate) + '"><small>Используется при типе “фикс”.</small></label>' +
+                    '</div>' +
+                  '</div>' +
+                  '<label class="check-card wide">' +
+                    '<input type="checkbox" data-agent-id="' + escapeHtml(agent.id) + '" data-agent-field="introduced" ' + (agent.introduced ? 'checked' : '') + '>' +
+                    '<span><strong>Агент приведён</strong><small>В демо добавляет условный реферальный расход 2,5% от оборота агента.</small></span>' +
+                  '</label>' +
+                '</div>' +
+
+                '<div class="subsection">' +
+                  '<div class="subsection-head">' +
+                    '<div>' +
+                      '<h4>Мотивации агента</h4>' +
+                      '<p>Конгресс и “Звезда” относятся к конкретному агенту. “Звезда” доступна только одному агенту.</p>' +
+                    '</div>' +
+                    '<button class="button ghost small" type="button" data-action="toggle-motivation" data-agent-id="' + escapeHtml(agent.id) + '">' + (agent.motivationsOpen ? 'Скрыть мотивации' : 'Раскрыть мотивации') + '</button>' +
+                  '</div>' +
+                  '<div class="motivation-box" ' + (agent.motivationsOpen ? '' : 'hidden') + '>' +
+                    '<div class="motivation-grid">' +
+                      motivationCheckbox(agent, 'congress', 'Конгресс', 'Годовой расход, включён по умолчанию.') +
+                      motivationCheckbox(agent, 'star', 'Звезда', starLocked ? 'Недоступно: уже выбрана у агента “' + starOwner + '”.' : 'Можно назначить только одному агенту.', starLocked) +
+                      motivationCheckbox(agent, 'stipend', 'Стипендия', 'Демо-переключатель мотивационного резерва.') +
+                      motivationCheckbox(agent, 'mountainSea', 'Море / Горы', 'Показывает годовой резерв внутри агента.') +
+                      motivationCheckbox(agent, 'travel', 'Заграница / Путешествие', 'Демо-переключатель поездки.', false, true) +
+                    '</div>' +
+                  '</div>' +
+                '</div>' +
+
+                '<dl class="agent-summary">' +
+                  '<div class="metric primary"><dt>Оборот</dt><dd data-agent-metric="commission">' + formatMoney(metrics.commission) + '</dd></div>' +
+                  '<div class="metric"><dt>Агенту</dt><dd data-agent-metric="payout">' + formatMoney(metrics.payout) + '</dd></div>' +
+                  '<div class="metric"><dt>Мотивации</dt><dd data-agent-metric="motivation">' + formatMoney(metrics.motivation) + '</dd></div>' +
+                  '<div class="metric ' + (metrics.contribution >= 0 ? 'positive' : 'warning') + '"><dt>Вклад</dt><dd data-agent-metric="contribution">' + formatSignedMoney(metrics.contribution) + '</dd></div>' +
+                '</dl>' +
+              '</div>' +
+            '</article>';
+        }).join('');
+      }
+
+      function option(value, label, current) {
+        return '<option value="' + escapeHtml(value) + '"' + (String(current) === String(value) ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
+      }
+
+      function radioPill(field, agentId, value, label, current) {
+        return '<label><input type="radio" name="' + escapeHtml(field + '-' + agentId) + '" data-agent-id="' + escapeHtml(agentId) + '" data-agent-field="' + escapeHtml(field) + '" value="' + escapeHtml(value) + '"' + (String(current) === String(value) ? ' checked' : '') + '>' + escapeHtml(label) + '</label>';
+      }
+
+      function motivationCheckbox(agent, key, title, description, disabled, wide) {
+        return '' +
+          '<label class="check-card ' + (disabled ? 'is-disabled' : '') + (wide ? ' wide' : '') + '">' +
+            '<input type="checkbox" data-agent-id="' + escapeHtml(agent.id) + '" data-motivation-key="' + escapeHtml(key) + '"' + (agent.motivations[key] ? ' checked' : '') + (disabled ? ' disabled' : '') + '>' +
+            '<span><strong>' + escapeHtml(title) + '</strong><small>' + escapeHtml(description) + '</small></span>' +
+          '</label>';
+      }
+
+      function renderDeals(agent, metrics) {
+        var deals = agent.deals.length ? agent.deals : [''];
+        return deals.map(function (deal, dealIndex) {
+          var amount = parseMoney(deal);
+          var rate = getRateForDeal(agent, dealIndex);
+          var payout = amount * rate;
+          return '' +
+            '<div class="deal-row" data-deal-row="' + escapeHtml(agent.id) + '-' + dealIndex + '">' +
+              '<label class="field">' +
+                '<span>Сделка ' + (dealIndex + 1) + ' — комиссия</span>' +
+                '<input type="text" inputmode="numeric" autocomplete="off" data-money-input="true" data-agent-id="' + escapeHtml(agent.id) + '" data-deal-index="' + dealIndex + '" value="' + escapeHtml(deal) + '" placeholder="Например: 100 000">' +
+              '</label>' +
+              '<div class="deal-preview">' +
+                '<strong>' + Math.round(rate * 100) + '% · ' + formatMoney(payout) + '</strong>' +
+                '<small>Демо-выплата агенту по сделке</small>' +
+              '</div>' +
+              '<button class="button danger small" type="button" data-action="remove-deal" data-agent-id="' + escapeHtml(agent.id) + '" data-deal-index="' + dealIndex + '"' + (deals.length <= 1 ? ' disabled' : '') + '>Удалить</button>' +
+            '</div>';
+        }).join('');
+      }
+
+      function statusLabel(status) {
+        return status === 'trainee' ? 'Стажёр' : 'Партнёр';
+      }
+
+      function getRateForDeal(agent, dealIndex) {
+        if (agent.status === 'trainee') {
+          return 0.30;
+        }
+
+        var standard = [0.45, 0.50, 0.55, 0.60][Math.min(dealIndex, 3)];
+
+        if (agent.paymentSystem !== 'special') {
+          return standard;
+        }
+
+        if (agent.specialType === 'fixed') {
+          return clamp(Number(agent.fixedRate) || 80, 0, 100) / 100;
+        }
+
+        return Math.max(standard, clamp(Number(agent.startingRate) || 55, 0, 100) / 100);
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function getAgentDeals(agent) {
+        if (agent.mode === 'quick') {
+          var total = parseMoney(agent.quickCommission);
+          var count = Math.max(1, Math.floor(Number(agent.quickCount) || 1));
+          var perDeal = count ? total / count : 0;
+          var deals = [];
+          for (var i = 0; i < count; i += 1) {
+            deals.push(perDeal);
+          }
+          return deals;
+        }
+
+        return (agent.deals || []).map(parseMoney);
+      }
+
+      function calculateAgent(agent) {
+        var deals = getAgentDeals(agent);
+        var commission = deals.reduce(function (sum, amount) { return sum + amount; }, 0);
+        var payout = deals.reduce(function (sum, amount, index) {
+          return sum + amount * getRateForDeal(agent, index);
+        }, 0);
+
+        var referral = agent.introduced ? commission * 0.025 : 0;
+        var motivation = calculateMotivation(agent);
+        var contribution = commission - payout - referral - motivation;
+
+        return {
+          commission: commission,
+          payout: payout,
+          referral: referral,
+          motivation: motivation,
+          contribution: contribution
+        };
+      }
+
+      function calculateMotivation(agent) {
+        var m = agent.motivations || {};
+        return (m.congress ? 3500 / 12 : 0)
+          + (m.star ? 5000 / 12 : 0)
+          + (m.stipend ? 120000 / 12 : 0)
+          + (m.mountainSea ? 30000 / 12 : 0)
+          + (m.travel ? 200000 / 12 : 0);
+      }
+
+      function calculateTotals() {
+        var expenses = state.expenses.reduce(function (sum, expense) {
+          return sum + parseMoney(expense.amount);
+        }, 0);
+
+        var ownerSales = parseMoney(state.ownerSales);
+
+        var agentResults = state.agents.map(function (agent) {
+          return { agent: agent, metrics: calculateAgent(agent) };
+        });
+
+        var agentTurnover = agentResults.reduce(function (sum, item) { return sum + item.metrics.commission; }, 0);
+        var payouts = agentResults.reduce(function (sum, item) { return sum + item.metrics.payout; }, 0);
+        var motivation = agentResults.reduce(function (sum, item) { return sum + item.metrics.motivation; }, 0);
+        var referral = agentResults.reduce(function (sum, item) { return sum + item.metrics.referral; }, 0);
+        var totalTurnover = agentTurnover + ownerSales;
+
+        /* Демо-роялти: упрощённая визуальная оценка.
+           Не переносить как боевую финансовую формулу. */
+        var royaltyWithoutOwner = agentTurnover * getDemoRoyaltyRate(agentTurnover);
+        var royalty = totalTurnover * getDemoRoyaltyRate(totalTurnover);
+
+        var resultWithoutOwner = agentTurnover - payouts - expenses - motivation - referral - royaltyWithoutOwner;
+        var resultWithOwner = totalTurnover - payouts - expenses - motivation - referral - royalty;
+
+        return {
+          expenses: expenses,
+          ownerSales: ownerSales,
+          agentResults: agentResults,
+          agentTurnover: agentTurnover,
+          payouts: payouts,
+          motivation: motivation,
+          referral: referral,
+          totalTurnover: totalTurnover,
+          royalty: royalty,
+          royaltyWithoutOwner: royaltyWithoutOwner,
+          resultWithoutOwner: resultWithoutOwner,
+          resultWithOwner: resultWithOwner
+        };
+      }
+
+      function getDemoRoyaltyRate(turnover) {
+        if (turnover >= 4000000) return 0.03;
+        if (turnover >= 3000000) return 0.035;
+        if (turnover >= 2500000) return 0.04;
+        if (turnover >= 2000000) return 0.045;
+        if (turnover >= 1500000) return 0.05;
+        if (turnover >= 1000000) return 0.055;
+        if (turnover >= 750000) return 0.06;
+        if (turnover >= 500000) return 0.065;
+        return 0.07;
+      }
+
+      function updateAllOutputs() {
+        var totals = calculateTotals();
+
+        els.expensesTotal.textContent = formatMoney(totals.expenses);
+        els.resultWithoutOwner.textContent = formatSignedMoney(totals.resultWithoutOwner);
+        els.resultWithOwner.textContent = formatSignedMoney(totals.resultWithOwner);
+        els.agentTurnover.textContent = formatMoney(totals.agentTurnover);
+        els.ownerSalesTotal.textContent = formatMoney(totals.ownerSales);
+        els.agentPayouts.textContent = formatMoney(totals.payouts);
+        els.officeExpenses.textContent = formatMoney(totals.expenses);
+        els.royaltyTotal.textContent = formatMoney(totals.royalty);
+        els.motivationTotal.textContent = formatMoney(totals.motivation);
+        els.referralTotal.textContent = formatMoney(totals.referral);
+        els.totalTurnover.textContent = formatMoney(totals.totalTurnover);
+
+        renderWarnings(totals);
+        renderProfitability(totals);
+        renderManagementSummary(totals);
+        renderForecast(totals);
+        renderChecker();
+      }
+
+      function renderWarnings(totals) {
+        var items = [];
+
+        var royaltyRows = state.expenses.filter(function (expense) {
+          return isRoyaltyName(expense.name);
+        });
+
+        if (royaltyRows.length) {
+          items.push({
+            type: 'warn',
+            text: 'В расходах найдено слово “роялти”. Строка подсвечена, потому что роялти должно считаться отдельно.'
+          });
+        }
+
+        if (!state.agents.length || totals.agentTurnover === 0) {
+          items.push({
+            type: 'warn',
+            text: 'Нет оборота агентов. Итог держится на расходах и личных сделках собственника.'
+          });
+        }
+
+        if (totals.resultWithoutOwner < 0 && totals.resultWithOwner > 0) {
+          items.push({
+            type: 'warn',
+            text: 'Офис без личных сделок в минусе, но с личными сделками выходит в плюс. Это ключевой управленческий риск.'
+          });
+        }
+
+        if (totals.resultWithOwner < 0) {
+          items.push({
+            type: 'danger',
+            text: 'Итог с личными сделками отрицательный. В боевом калькуляторе здесь нужна точная проверка расходов, выплат и роялти.'
+          });
+        }
+
+        var starAgents = state.agents.filter(function (agent) { return agent.motivations.star; });
+        if (starAgents.length === 1) {
+          items.push({
+            type: 'good',
+            text: '“Звезда” назначена одному агенту. У остальных агентов она заблокирована до снятия выбора.'
+          });
+        }
+
+        if (!items.length) {
+          items.push({
+            type: 'good',
+            text: 'Критических UX-предупреждений нет. Это не значит, что бизнес спасён, просто интерфейс пока не кричит.'
+          });
+        }
+
+        els.warningsList.innerHTML = items.map(function (item) {
+          return '<div class="warning-item ' + item.type + '">' + escapeHtml(item.text) + '</div>';
+        }).join('');
+      }
+
+      function renderProfitability(totals) {
+        if (!totals.agentResults.length) {
+          els.profitabilityList.innerHTML = '<div class="empty-state">Нет агентов для анализа окупаемости.</div>';
+          return;
+        }
+
+        var expenseShare = totals.agentResults.length ? totals.expenses / totals.agentResults.length : 0;
+
+        els.profitabilityList.innerHTML = totals.agentResults.map(function (item, index) {
+          var name = getDisplayAgentName(item.agent, index);
+          var finalContribution = item.metrics.contribution - expenseShare;
+          return '' +
+            '<div class="profit-row">' +
+              '<div><strong>' + escapeHtml(name) + '</strong><span>' + escapeHtml(statusLabel(item.agent.status)) + '</span></div>' +
+              '<div><strong>' + formatMoney(item.metrics.commission) + '</strong><span>оборот</span></div>' +
+              '<div><strong>' + formatMoney(item.metrics.payout) + '</strong><span>агенту</span></div>' +
+              '<div><strong>' + formatMoney(expenseShare) + '</strong><span>доля расходов</span></div>' +
+              '<div><strong>' + formatSignedMoney(finalContribution) + '</strong><span>вклад демо</span></div>' +
+            '</div>';
+        }).join('');
+      }
+
+      function renderManagementSummary(totals) {
+        var dependencyText = totals.resultWithoutOwner < 0 && totals.resultWithOwner > 0
+          ? 'Офис зависит от личных сделок собственника: без них демо-итог отрицательный.'
+          : (totals.resultWithoutOwner > 0
+            ? 'Офис выглядит самостоятельным: демо-итог без личных сделок положительный.'
+            : 'Офис пока не показывает устойчивый плюс: нужен контроль расходов и условий выплат.');
+
+        els.managementSummary.innerHTML = '' +
+          '<h3>' + escapeHtml(dependencyText) + '</h3>' +
+          '<p>В расчёте участвуют агенты: ' + escapeHtml(state.agents.map(getDisplayAgentName).join(', ') || 'нет') + '. Главная точка контроля — разница между итогом без личных сделок и итогом с ними.</p>';
+      }
+
+      function renderForecast(totals) {
+        var periods = [
+          ['Месяц', 1],
+          ['Квартал', 3],
+          ['Полугодие', 6],
+          ['Год', 12]
+        ];
+
+        els.forecastGrid.innerHTML = periods.map(function (period) {
+          var value = totals.resultWithOwner * period[1];
+          return '<div class="metric ' + (value >= 0 ? 'positive' : 'warning') + '"><dt>' + period[0] + '</dt><dd>' + formatSignedMoney(value) + '</dd></div>';
+        }).join('');
+      }
+
+      function renderChecker() {
+        var commission = parseMoney(state.checker.commission);
+        var deals = Math.max(1, Number(state.checker.deals) || 1);
+        var rate = clamp(Number(state.checker.rate) || 0, 0, 100) / 100;
+        var payout = commission * rate;
+        var remains = commission - payout;
+
+        els.checkerOutput.innerHTML = '' +
+          '<div class="breakdown">' +
+            '<div class="metric primary"><dt>Комиссия</dt><dd>' + formatMoney(commission) + '</dd></div>' +
+            '<div class="metric"><dt>Сделок</dt><dd>' + deals + '</dd></div>' +
+            '<div class="metric"><dt>Агенту</dt><dd>' + formatMoney(payout) + '</dd></div>' +
+            '<div class="metric ' + (remains >= 0 ? 'positive' : 'warning') + '"><dt>Остаётся до расходов</dt><dd>' + formatSignedMoney(remains) + '</dd></div>' +
+          '</div>';
+      }
+
+      function updateExpenseRoyaltyHint(input) {
+        var row = input.closest('.expense-row');
+        if (!row) {
+          return;
+        }
+        row.classList.toggle('has-royalty', isRoyaltyName(input.value));
+      }
+
+      function updateStarControls() {
+        var starAgentId = getSelectedStarAgentId();
+        var starAgent = starAgentId ? getAgent(starAgentId) : null;
+        var starName = starAgent ? getDisplayAgentName(starAgent, state.agents.indexOf(starAgent)) : '';
+
+        Array.prototype.forEach.call(document.querySelectorAll('[data-motivation-key="star"]'), function (input) {
+          var agentId = input.dataset.agentId;
+          var locked = Boolean(starAgentId && starAgentId !== agentId && !input.checked);
+          input.disabled = locked;
+
+          var card = input.closest('.check-card');
+          if (card) {
+            card.classList.toggle('is-disabled', locked);
+            var small = card.querySelector('small');
+            if (small) {
+              small.textContent = locked
+                ? 'Недоступно: уже выбрана у агента “' + starName + '”.'
+                : 'Можно назначить только одному агенту.';
+            }
+          }
+        });
+      }
+
+      function handleAction(target) {
+        var actionNode = target.closest('[data-action]');
+        if (!actionNode) {
+          return false;
+        }
+
+        var action = actionNode.dataset.action;
+
+        if (action === 'add-expense') {
+          counters.expense += 1;
+          state.expenses.push({ id: 'expense-' + counters.expense, name: '', amount: '' });
+          renderExpenses();
+          updateAllOutputs();
+          return true;
+        }
+
+        if (action === 'remove-expense') {
+          state.expenses = state.expenses.filter(function (expense) {
+            return expense.id !== actionNode.dataset.expenseId;
+          });
+          renderExpenses();
+          updateAllOutputs();
+          return true;
+        }
+
+        if (action === 'add-agent') {
+          state.agents.forEach(function (agent) {
+            agent.collapsed = true;
+          });
+          var agent = createAgent();
+          agent.collapsed = false;
+          state.agents.push(agent);
+          renderAgents();
+          updateAllOutputs();
+          return true;
+        }
+
+        if (action === 'remove-agent') {
+          state.agents = state.agents.filter(function (agent) {
+            return agent.id !== actionNode.dataset.agentId;
+          });
+          renderAgents();
+          updateAllOutputs();
+          return true;
+        }
+
+        if (action === 'toggle-agent') {
+          var toggleAgent = getAgent(actionNode.dataset.agentId);
+          if (toggleAgent) {
+            toggleAgent.collapsed = !toggleAgent.collapsed;
+            renderAgents();
+            updateAllOutputs();
+          }
+          return true;
+        }
+
+        if (action === 'add-deal') {
+          var dealAgent = getAgent(actionNode.dataset.agentId);
+          if (dealAgent) {
+            dealAgent.deals.push('');
+            renderAgents();
+            updateAllOutputs();
+          }
+          return true;
+        }
+
+        if (action === 'remove-deal') {
+          var removeAgent = getAgent(actionNode.dataset.agentId);
+          var index = Number(actionNode.dataset.dealIndex);
+          if (removeAgent && removeAgent.deals.length > 1) {
+            removeAgent.deals.splice(index, 1);
+            renderAgents();
+            updateAllOutputs();
+          }
+          return true;
+        }
+
+        if (action === 'toggle-motivation') {
+          var motivationAgent = getAgent(actionNode.dataset.agentId);
+          if (motivationAgent) {
+            motivationAgent.motivationsOpen = !motivationAgent.motivationsOpen;
+            renderAgents();
+            updateAllOutputs();
+          }
+          return true;
+        }
+
+        if (action === 'reset-demo') {
+          state = createInitialState();
+          renderAll();
+          return true;
+        }
+
+        return false;
+      }
+
+      function handleInput(event) {
+        var target = event.target;
+
+        if (target.dataset.expenseId) {
+          var expense = getExpense(target.dataset.expenseId);
+          if (!expense) return;
+
+          if (target.dataset.expenseField === 'name') {
+            expense.name = target.value;
+            updateExpenseRoyaltyHint(target);
+          }
+
+          if (target.dataset.expenseField === 'amount') {
+            expense.amount = target.value;
+          }
+
+          updateAllOutputs();
+          return;
+        }
+
+        if (target.dataset.dealIndex !== undefined && target.dataset.agentId) {
+          var dealAgent = getAgent(target.dataset.agentId);
+          if (dealAgent) {
+            dealAgent.deals[Number(target.dataset.dealIndex)] = target.value;
+            updateAllOutputs();
+          }
+          return;
+        }
+
+        if (target.dataset.agentId && target.dataset.agentField) {
+          var agent = getAgent(target.dataset.agentId);
+          if (!agent) return;
+
+          var field = target.dataset.agentField;
+          if (target.type === 'checkbox') {
+            agent[field] = target.checked;
+          } else {
+            agent[field] = target.value;
+          }
+
+          var rerenderFields = ['status', 'mode', 'paymentSystem', 'specialType'];
+          if (rerenderFields.indexOf(field) >= 0) {
+            renderAgents();
+          }
+
+          updateAllOutputs();
+          return;
+        }
+
+        if (target.id === 'ownerSalesInput') {
+          state.ownerSales = target.value;
+          updateAllOutputs();
+          return;
+        }
+
+        if (target.id === 'checkerCommission') {
+          state.checker.commission = target.value;
+          updateAllOutputs();
+          return;
+        }
+
+        if (target.id === 'checkerDeals') {
+          state.checker.deals = target.value;
+          updateAllOutputs();
+          return;
+        }
+
+        if (target.id === 'checkerRate') {
+          state.checker.rate = target.value;
+          updateAllOutputs();
+        }
+      }
+
+      function handleChange(event) {
+        var target = event.target;
+
+        if (target.dataset.motivationKey && target.dataset.agentId) {
+          var agent = getAgent(target.dataset.agentId);
+          if (!agent) return;
+
+          if (target.dataset.motivationKey === 'star' && target.checked) {
+            state.agents.forEach(function (item) {
+              if (item.id !== agent.id) {
+                item.motivations.star = false;
+              }
+            });
+          }
+
+          agent.motivations[target.dataset.motivationKey] = target.checked;
+          updateStarControls();
+          updateAllOutputs();
+          return;
+        }
+
+        if (target.matches('select, input[type="radio"], input[type="checkbox"], input[type="number"]')) {
+          handleInput(event);
+        }
+      }
+
+      function handleBlur(event) {
+        var target = event.target;
+        if (target.dataset.moneyInput === 'true') {
+          target.value = formatInputMoney(target.value);
+
+          if (target.dataset.expenseId) {
+            var expense = getExpense(target.dataset.expenseId);
+            if (expense && target.dataset.expenseField === 'amount') {
+              expense.amount = target.value;
+            }
+          }
+
+          if (target.dataset.dealIndex !== undefined && target.dataset.agentId) {
+            var dealAgent = getAgent(target.dataset.agentId);
+            if (dealAgent) {
+              dealAgent.deals[Number(target.dataset.dealIndex)] = target.value;
+            }
+          }
+
+          if (target.dataset.agentId && target.dataset.agentField === 'quickCommission') {
+            var agent = getAgent(target.dataset.agentId);
+            if (agent) {
+              agent.quickCommission = target.value;
+            }
+          }
+
+          if (target.id === 'ownerSalesInput') {
+            state.ownerSales = target.value;
+          }
+
+          if (target.id === 'checkerCommission') {
+            state.checker.commission = target.value;
+          }
+
+          updateAllOutputs();
+        }
+      }
+
+      function renderAll() {
+        els.ownerSalesInput.value = state.ownerSales;
+        els.checkerCommission.value = state.checker.commission;
+        els.checkerDeals.value = state.checker.deals;
+        els.checkerRate.value = state.checker.rate;
+        renderExpenses();
+        renderAgents();
+        updateAllOutputs();
+      }
+
+      function init() {
+        cacheElements();
+        state = createInitialState();
+        renderAll();
+
+        document.addEventListener('click', function (event) {
+          if (handleAction(event.target)) {
+            event.preventDefault();
+          }
+        });
+
+        document.addEventListener('input', handleInput);
+        document.addEventListener('change', handleChange);
+        document.addEventListener('blur', handleBlur, true);
+      }
+
+      document.addEventListener('DOMContentLoaded', init);
+    }());
+  </script>
+</body>
+</html>

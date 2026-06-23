@@ -55,12 +55,12 @@
         <p>Идите сверху вниз, как по бумажному листу. Табличный режим сверху не обязателен: он нужен только для дополнительного управленческого обзора.</p>
       </div>
       <ol class="route-list">
-        <li><strong>Введите расходы офиса</strong><span>Сюда идут только постоянные расходы: аренда, реклама, связь, зарплаты и другие траты.</span></li>
-        <li><strong>Добавьте агентов и условия</strong><span>Укажите комиссию, количество сделок и схему выплаты. От этих выборов зависит итог по офису.</span></li>
-        <li><strong>Укажите личные сделки собственника</strong><span>Они считаются отдельно: агентской выплаты нет, но роялти остаётся.</span></li>
-        <li><strong>Посмотрите результат собственника</strong><span>Так видно, живёт ли офис сам как система и как личные сделки меняют итог.</span></li>
-        <li><strong>Проверьте окупаемость агентов</strong><span>Здесь видно, кто оставляет офису вклад, а кто съедает долю расходов.</span></li>
-        <li><strong>Сравните условия дополнительно</strong><span>Это отдельная проверка процента для гипотетического агента, а не основной ввод.</span></li>
+        <li><a href="#expenses">Расходы</a></li>
+        <li><a href="#agents">Агенты</a></li>
+        <li><a href="#ownerDeals">Личные сделки</a></li>
+        <li><a href="#result">Итог</a></li>
+        <li><a href="#profitability">Анализ</a></li>
+        <li><a href="#forecast">Прогноз</a></li>
       </ol>
     </section>
 
@@ -82,7 +82,7 @@
 
     <section class="sheet-grid">
       <div class="main-column">
-        <section class="section-card workflow-section" aria-labelledby="expensesTitle" data-workflow-section="expenses">
+        <section class="section-card workflow-section" id="expenses" aria-labelledby="expensesTitle" data-workflow-section="expenses">
           <div class="section-head">
             <div>
               <span class="step-label">Шаг 1</span>
@@ -109,7 +109,7 @@
           </div>
         </section>
 
-        <section class="section-card workflow-section" aria-labelledby="agentsTitle" data-workflow-section="agents">
+        <section class="section-card workflow-section" id="agents" aria-labelledby="agentsTitle" data-workflow-section="agents">
           <div class="section-head split">
             <div>
               <span class="step-label">Шаг 2</span>
@@ -133,7 +133,7 @@
           </div>
         </section>
 
-        <section class="section-card workflow-section" aria-labelledby="ownerTitle" data-workflow-section="ownerDeals">
+        <section class="section-card workflow-section" id="ownerDeals" aria-labelledby="ownerTitle" data-workflow-section="ownerDeals">
           <div class="section-head">
             <div>
               <span class="step-label">Шаг 3</span>
@@ -156,7 +156,7 @@
           </div>
         </section>
 
-        <section class="section-card result-card" aria-labelledby="resultTitle">
+        <section class="section-card result-card" id="result" aria-labelledby="resultTitle">
           <div class="section-head">
             <div>
               <span class="step-label">Результат 1</span>
@@ -191,7 +191,7 @@
           <div id="warningsList" class="warnings-list"></div>
         </section>
 
-        <section class="section-card" aria-labelledby="profitabilityTitle">
+        <section class="section-card" id="profitability" aria-labelledby="profitabilityTitle">
           <div class="section-head">
             <div>
               <span class="step-label">Результат 2</span>
@@ -218,7 +218,7 @@
           <div id="managementSummary" class="management-summary"></div>
         </section>
 
-        <section class="section-card forecast-card" aria-labelledby="forecastTitle">
+        <section class="section-card forecast-card" id="forecast" aria-labelledby="forecastTitle">
           <div class="section-head">
             <div>
               <span class="step-label">Прогноз</span>
@@ -247,7 +247,7 @@
           </div>
         </section>
 
-        <section class="section-card" aria-labelledby="schemeTitle">
+        <section class="section-card" id="scheme" aria-labelledby="schemeTitle">
           <div class="section-head">
             <div>
               <span class="step-label">Дополнительно</span>

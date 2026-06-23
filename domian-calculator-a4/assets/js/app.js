@@ -681,11 +681,11 @@
     elements.expensesList.innerHTML = '<div class="notice info expense-guidance wide-field">'
       + '<div class="expense-guidance-panels">'
       + '<div class="expense-guidance-card expense-guidance-card--success">'
-      + '<h3>Примеры расходов</h3>'
+      + '<h3>Что можно добавить</h3>'
       + '<p>аренда офиса, связь, CRM, реклама, интернет, бухгалтерия, уборка, коммунальные платежи, зарплата администратора, прочие постоянные расходы.</p>'
       + '</div>'
       + '<div class="expense-guidance-card expense-guidance-card--danger">'
-      + '<h3>Не добавляйте в расходы</h3>'
+      + '<h3>Не добавляйте сюда роялти</h3>'
       + '<p>Роялти, выплаты агентам, рефералы и мотивации.</p>'
       + '<p class="expense-guidance-footnote">Калькулятор считает их автоматически в других разделах.</p>'
       + '</div>'
@@ -2286,6 +2286,91 @@
     }
   }
 
+  function initRouteActiveObserver() {
+    var routeNode = document.querySelector('.route-note');
+    var links = Array.prototype.slice.call(document.querySelectorAll('.route-list a[href^="#"]'));
+    var sections = links.map(function (link) {
+      var id = link.getAttribute('href').slice(1);
+      return document.getElementById(id);
+    }).filter(Boolean);
+    var scheduled = false;
+
+    if (!links.length || !sections.length) {
+      return;
+    }
+
+    function setActiveRouteLink(activeId) {
+      links.forEach(function (link) {
+        var isActive = link.getAttribute('href') === '#' + activeId;
+        link.classList.toggle('is-active', isActive);
+        if (link.parentElement) {
+          link.parentElement.classList.toggle('is-active', isActive);
+        }
+      });
+    }
+
+    function getRouteOffset() {
+      return routeNode ? routeNode.getBoundingClientRect().height + 16 : 64;
+    }
+
+    function updateActiveRoute() {
+      var marker = getRouteOffset();
+      var nearestId = sections[0].id;
+      var nearestDistance = Infinity;
+
+      sections.forEach(function (section) {
+        var rect = section.getBoundingClientRect();
+        var distance = Math.abs(rect.top - marker);
+
+        if (rect.top <= marker && rect.bottom > marker) {
+          nearestId = section.id;
+          nearestDistance = -1;
+          return;
+        }
+
+        if (nearestDistance >= 0 && distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestId = section.id;
+        }
+      });
+
+      setActiveRouteLink(nearestId);
+    }
+
+    function scheduleActiveRouteUpdate() {
+      if (scheduled) {
+        return;
+      }
+
+      scheduled = true;
+      window.requestAnimationFrame(function () {
+        scheduled = false;
+        updateActiveRoute();
+      });
+    }
+
+    links.forEach(function (link) {
+      link.addEventListener('click', function () {
+        setActiveRouteLink(link.getAttribute('href').slice(1));
+      });
+    });
+
+    if ('IntersectionObserver' in window) {
+      var observer = new IntersectionObserver(scheduleActiveRouteUpdate, {
+        root: null,
+        rootMargin: '-' + getRouteOffset() + 'px 0px -45% 0px',
+        threshold: [0, 0.15, 0.5, 1]
+      });
+
+      sections.forEach(function (section) {
+        observer.observe(section);
+      });
+    }
+
+    window.addEventListener('hashchange', scheduleActiveRouteUpdate);
+    updateActiveRoute();
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     collectElements();
     updateForecastNotice();
@@ -2316,6 +2401,7 @@
     elements.addAgentBtn.addEventListener('click', addAgentCard);
     elements.addAgentBottomBtn.addEventListener('click', addAgentCard);
     render();
+    initRouteActiveObserver();
     window.domianA4State = state;
   });
 }());
