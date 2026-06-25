@@ -63,11 +63,7 @@ function loadAppHelpers() {
       '  createExampleState: createExampleState,',
       '  createBlankState: createBlankState,',
       '  createAgent: createAgent,',
-      '  createBlankExpense: createBlankExpense,',
       '  normalizeAgent: normalizeAgent,',
-      '  serializeDraftState: typeof serializeDraftState === "function" ? serializeDraftState : undefined,',
-      '  normalizeDraftState: typeof normalizeDraftState === "function" ? normalizeDraftState : undefined,',
-      '  syncCountersFromState: typeof syncCountersFromState === "function" ? syncCountersFromState : undefined,',
       '  renderExpenses: renderExpenses,',
       '  renderExactDeals: renderExactDeals,',
       '  renderMotivationControls: renderMotivationControls,',
@@ -171,140 +167,6 @@ test('A4 blank state starts empty while example state keeps demo data', () => {
   assert.equal(example.agents[0].commission, 0);
   assert.equal(example.schemeCheck.commission, 400000);
   assert.equal(example.schemeCheck.manualRate, 75);
-});
-
-test('A4 draft serialization stores only restorable calculator state', () => {
-  assert.equal(typeof appHelpers.serializeDraftState, 'function');
-
-  const state = appHelpers.createState();
-  state.selectedMonth = '2026-06';
-  state.ownerSales = 250000;
-  state.expenses = [
-    { id: 'expense-101', name: 'Аренда', amount: 35000 },
-    { id: 'expense-102', name: 'CRM', amount: 12000 }
-  ];
-  state.agents = [
-    appHelpers.normalizeAgent({
-      id: 'agent-30',
-      name: 'Иван',
-      commissionMode: 'exact',
-      dealsInput: [100000, '', 250000],
-      paymentType: 'boosted',
-      startingRate: 70,
-      fixedRate: 80,
-      status: 'partner',
-      introduced: true,
-      motivation: {
-        mode: 'manual',
-        manualReserveMonthly: 15000,
-        travelPerTrip: 120000
-      }
-    })
-  ];
-  state.schemeCheck = {
-    commission: 400000,
-    dealCount: 4,
-    introduced: true,
-    expenseShareMode: 'manual',
-    manualExpenseShare: 21000,
-    motivationReserve: 5000,
-    manualRate: 75
-  };
-
-  appHelpers.setState(state);
-  const draft = appHelpers.serializeDraftState();
-
-  assert.deepEqual(Object.keys(draft).sort(), ['agents', 'expenses', 'ownerSales', 'schemeCheck', 'selectedMonth', 'version'].sort());
-  assert.equal(draft.version, 1);
-  assert.equal(draft.selectedMonth, '2026-06');
-  assert.equal(draft.ownerSales, 250000);
-  assert.equal(JSON.stringify(draft.expenses), JSON.stringify(state.expenses));
-  assert.equal(draft.agents[0].name, 'Иван');
-  assert.equal(JSON.stringify(draft.agents[0].dealsInput), JSON.stringify([100000, '', 250000]));
-  assert.equal(draft.agents[0].startingRate, 70);
-  assert.equal(draft.agents[0].motivation.manualReserveMonthly, 15000);
-  assert.equal(draft.schemeCheck.manualExpenseShare, 21000);
-});
-
-test('A4 draft normalization restores partial state without changing calculation rules', () => {
-  assert.equal(typeof appHelpers.normalizeDraftState, 'function');
-
-  const restored = appHelpers.normalizeDraftState({
-    selectedMonth: '2026-06',
-    ownerSales: '300000',
-    expenses: [
-      { id: 'expense-120', name: 'Реклама', amount: '45000' },
-      { name: 'Связь', amount: '7000' }
-    ],
-    agents: [
-      {
-        id: 'agent-30',
-        name: 'Мария',
-        commissionMode: 'exact',
-        dealsInput: [120000, '', 90000],
-        paymentType: 'boosted',
-        startingRate: 70,
-        status: 'partner',
-        motivation: {
-          mode: 'manual',
-          manualReserveMonthly: 9000
-        }
-      }
-    ],
-    schemeCheck: {
-      commission: '400000',
-      expenseShareMode: 'auto'
-    }
-  });
-
-  assert.equal(restored.version, 1);
-  assert.equal(restored.selectedMonth, '2026-06');
-  assert.equal(restored.ownerSales, 300000);
-  assert.equal(restored.expenses.length, 2);
-  assert.equal(restored.expenses[0].amount, 45000);
-  assert.match(restored.expenses[1].id, /^expense-/);
-  assert.equal(restored.agents.length, 1);
-  assert.equal(restored.agents[0].id, 'agent-30');
-  assert.equal(restored.agents[0].name, 'Мария');
-  assert.deepEqual(restored.agents[0].dealsInput, [120000, '', 90000]);
-  assert.equal(restored.agents[0].startingRate, 70);
-  assert.equal(restored.agents[0].motivation.manualReserveMonthly, 9000);
-  assert.equal(restored.schemeCheck.commission, 400000);
-  assert.equal(restored.schemeCheck.dealCount, 1);
-  assert.equal(restored.schemeCheck.expenseShareMode, 'auto');
-  assert.equal(restored.schemeCheck.manualRate, 80);
-});
-
-test('A4 draft normalization falls back safely for broken draft shapes', () => {
-  assert.equal(typeof appHelpers.normalizeDraftState, 'function');
-
-  assert.equal(appHelpers.normalizeDraftState(null), null);
-  assert.equal(appHelpers.normalizeDraftState('broken'), null);
-
-  const restored = appHelpers.normalizeDraftState({
-    expenses: 'broken',
-    agents: 'broken',
-    ownerSales: -100
-  });
-
-  assert.equal(restored.expenses.length, 3);
-  assert.equal(restored.agents.length, 1);
-  assert.equal(restored.ownerSales, 0);
-  assert.equal(calculator.calculateOffice(restored).agentTurnover, 0);
-});
-
-test('A4 draft counter sync keeps new ids unique after restoring a large draft', () => {
-  assert.equal(typeof appHelpers.syncCountersFromState, 'function');
-
-  const restored = {
-    agents: Array.from({ length: 30 }, (_, index) => ({ id: `agent-${index + 1}` })),
-    expenses: Array.from({ length: 30 }, (_, index) => ({ id: `expense-${index + 101}` }))
-  };
-
-  appHelpers.syncCountersFromState(restored);
-
-  assert.equal(appHelpers.createAgent().id, 'agent-31');
-  assert.equal(appHelpers.createBlankExpense().id, 'expense-131');
 });
 
 test('adding a new agent always collapses the previous card even if it is blank', () => {
@@ -1673,9 +1535,7 @@ test('new A4 agent keeps congress ready by default but does not charge blank dra
 
 test('restore-example path keeps the demo state separate from the blank starter', () => {
   assert.match(appSource, /state = createExampleState\(\);/);
-  assert.match(appSource, /restoredState = loadDraftState\(\);/);
-  assert.match(appSource, /state = restoredState \|\| createState\(\);/);
-  assert.match(appSource, /saveDraft\('restore-example'\)/);
+  assert.match(appSource, /state = createState\(\);/);
 });
 
 test('mandatory congress and star survive off, manual and special payment modes', () => {
@@ -1922,37 +1782,6 @@ test('expense add action appears once below the inline total', () => {
   assert.match(indexSource, /paper-total[\s\S]*section-actions bottom-actions[\s\S]*class="button add-action-button"[\s\S]*data-action="add-expense"/);
   assert.match(indexSource, /class="button add-action-button" id="addAgentBtn"/);
   assert.match(indexSource, /class="button add-action-button" id="addAgentBottomBtn"/);
-});
-
-test('A4 draft save controls are visible in toolbar and fixed panel', () => {
-  assert.match(indexSource, /data-action="save-draft"/);
-  assert.match(indexSource, /id="draftSaveStatus"/);
-  assert.match(indexSource, /class="draft-save-panel"/);
-  assert.match(indexSource, /data-draft-save-status/);
-  assert.match(calculatorCssSource, /\.draft-save-panel\s*\{/);
-  assert.match(calculatorCssSource, /\.draft-save-panel\s*\{[\s\S]*position:\s*fixed/);
-  assert.match(calculatorCssSource, /\.draft-save-status--dirty/);
-  assert.match(calculatorCssSource, /\.draft-save-status--error/);
-});
-
-test('A4 draft save handlers cover shortcut, unload, clear, restore and destructive confirms', () => {
-  assert.match(appSource, /A4_DRAFT_KEY = 'domianA4DraftV1'/);
-  assert.match(appSource, /TABLE_SNAPSHOT_KEY = 'domianA4TableSnapshot'/);
-  assert.match(appSource, /localStorage\.setItem\(A4_DRAFT_KEY/);
-  assert.match(appSource, /function openTableModePage\(\)[\s\S]*localStorage\.setItem\(TABLE_SNAPSHOT_KEY/);
-  assert.match(appSource, /target\.dataset\.action === 'save-draft'[\s\S]*saveDraft\('manual'\)/);
-  assert.match(appSource, /event\.ctrlKey \|\| event\.metaKey/);
-  assert.match(appSource, /saveDraft\('shortcut'\)/);
-  assert.match(appSource, /window\.addEventListener\('pagehide'/);
-  assert.match(appSource, /saveDraft\('pagehide'\)/);
-  assert.match(appSource, /document\.addEventListener\('visibilitychange'/);
-  assert.match(appSource, /saveDraft\('hidden'\)/);
-  assert.match(appSource, /window\.addEventListener\('beforeunload'[\s\S]*saveDraft\('beforeunload'\)/);
-  assert.match(appSource, /saveDraft\('clear'\)/);
-  assert.match(appSource, /saveDraft\('restore-example'\)/);
-  assert.match(appSource, /Удалить агента и все его сделки/);
-  assert.match(appSource, /Удалить расход\?/);
-  assert.match(appSource, /Удалить сделку\?/);
 });
 
 test('collapsed motivation summary shows status, reserve and explicit CTA', () => {

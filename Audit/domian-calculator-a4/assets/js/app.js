@@ -7,16 +7,11 @@
   var expenseCounter = 100;
   var elements = {};
   var STATE_VERSION = 1;
-  var A4_DRAFT_VERSION = 1;
-  var A4_DRAFT_KEY = 'domianA4DraftV1';
-  var AUTOSAVE_DELAY_MS = 800;
   var TABLE_SNAPSHOT_VERSION = 2;
   var TABLE_SNAPSHOT_KEY = 'domianA4TableSnapshot';
   var DEFAULT_AGENT_NAME = 'Новый агент';
   var DEAL_PLACEHOLDER = '100 000';
   var hasUnsavedChanges = false;
-  var autosaveTimer = null;
-  var lastDraftStatusType = '';
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -158,18 +153,6 @@
     ];
   }
 
-  function createDefaultSchemeCheck() {
-    return {
-      commission: 0,
-      dealCount: 1,
-      introduced: false,
-      expenseShareMode: 'manual',
-      manualExpenseShare: 0,
-      motivationReserve: 0,
-      manualRate: 80
-    };
-  }
-
   function createState() {
     return {
       version: STATE_VERSION,
@@ -177,7 +160,15 @@
       expenses: createInitialExpenses(),
       agents: [normalizeAgent(createAgent())],
       ownerSales: 0,
-      schemeCheck: createDefaultSchemeCheck()
+      schemeCheck: {
+        commission: 0,
+        dealCount: 1,
+        introduced: false,
+        expenseShareMode: 'manual',
+        manualExpenseShare: 0,
+        motivationReserve: 0,
+        manualRate: 80
+      }
     };
   }
 
@@ -192,7 +183,7 @@
       expenses: clone(DEFAULT_EXPENSES),
       agents: agents,
       ownerSales: 150000,
-      schemeCheck: Object.assign(createDefaultSchemeCheck(), {
+      schemeCheck: {
         commission: 400000,
         dealCount: 4,
         introduced: false,
@@ -200,7 +191,7 @@
         manualExpenseShare: 20000,
         motivationReserve: 0,
         manualRate: 75
-      })
+      }
     };
   }
 
@@ -211,7 +202,15 @@
       expenses: createInitialExpenses(),
       agents: [normalizeAgent(createAgent())],
       ownerSales: 0,
-      schemeCheck: createDefaultSchemeCheck()
+      schemeCheck: {
+        commission: 0,
+        dealCount: 1,
+        introduced: false,
+        expenseShareMode: 'manual',
+        manualExpenseShare: 0,
+        motivationReserve: 0,
+        manualRate: 80
+      }
     };
   }
 
@@ -269,246 +268,6 @@
     return amount > 0 ? formatMoneyInputValue(amount) : '0';
   }
 
-  function parseBoolean(value) {
-    return value === true || value === 'true';
-  }
-
-  function normalizeDraftExpense(expense, index) {
-    var source = expense && typeof expense === 'object' ? expense : {};
-    var id = String(source.id || '').trim();
-
-    return {
-      id: id || ('expense-' + (expenseCounter + index + 1)),
-      name: String(source.name || ''),
-      amount: inputNumber(source.amount)
-    };
-  }
-
-  function normalizeDraftAgent(agent, index) {
-    var source = agent && typeof agent === 'object' ? agent : {};
-    var fallback = createAgent();
-    var normalized;
-
-    normalized = Object.assign(fallback, source);
-    normalized.id = String(normalized.id || '').trim() || ('agent-' + (idCounter + index + 1));
-    normalized.dealsInput = Array.isArray(normalized.dealsInput) && normalized.dealsInput.length
-      ? normalized.dealsInput.slice()
-      : [''];
-    normalized.motivation = Object.assign(createMotivation(), normalized.motivation || {});
-
-    return normalizeAgent(normalized);
-  }
-
-  function normalizeDraftSchemeCheck(schemeCheck) {
-    var source = schemeCheck && typeof schemeCheck === 'object' ? schemeCheck : {};
-    var defaults = createDefaultSchemeCheck();
-
-    return {
-      commission: inputNumber(source.commission !== undefined ? source.commission : defaults.commission),
-      dealCount: Math.max(1, Math.floor(inputNumber(source.dealCount !== undefined ? source.dealCount : defaults.dealCount))),
-      introduced: parseBoolean(source.introduced),
-      expenseShareMode: source.expenseShareMode === 'auto' ? 'auto' : 'manual',
-      manualExpenseShare: inputNumber(source.manualExpenseShare !== undefined ? source.manualExpenseShare : defaults.manualExpenseShare),
-      motivationReserve: inputNumber(source.motivationReserve !== undefined ? source.motivationReserve : defaults.motivationReserve),
-      manualRate: inputNumber(source.manualRate !== undefined ? source.manualRate : defaults.manualRate) || defaults.manualRate
-    };
-  }
-
-  function normalizeDraftState(draftState) {
-    var source = draftState && typeof draftState === 'object' ? draftState : null;
-    var expenses;
-    var agents;
-
-    if (!source) {
-      return null;
-    }
-
-    expenses = Array.isArray(source.expenses)
-      ? source.expenses.map(normalizeDraftExpense)
-      : createInitialExpenses();
-    if (!expenses.length) {
-      expenses = createInitialExpenses();
-    }
-
-    agents = Array.isArray(source.agents) && source.agents.length
-      ? source.agents.map(normalizeDraftAgent)
-      : [normalizeAgent(createAgent())];
-
-    return {
-      version: STATE_VERSION,
-      selectedMonth: normalizeSelectedMonth(source.selectedMonth),
-      expenses: expenses,
-      agents: agents,
-      ownerSales: inputNumber(source.ownerSales),
-      schemeCheck: normalizeDraftSchemeCheck(source.schemeCheck)
-    };
-  }
-
-  function serializeDraftState() {
-    var currentState = state || createState();
-
-    return {
-      version: STATE_VERSION,
-      selectedMonth: normalizeSelectedMonth(currentState.selectedMonth),
-      expenses: clone(currentState.expenses || []),
-      agents: clone(currentState.agents || []),
-      ownerSales: inputNumber(currentState.ownerSales),
-      schemeCheck: clone(Object.assign(createDefaultSchemeCheck(), currentState.schemeCheck || {}))
-    };
-  }
-
-  function syncCountersFromState(nextState) {
-    var maxAgentId = 0;
-    var maxExpenseId = 100;
-
-    (nextState && nextState.agents || []).forEach(function (agent) {
-      var match = String(agent && agent.id || '').match(/^agent-(\d+)$/);
-      if (match) {
-        maxAgentId = Math.max(maxAgentId, Number(match[1]));
-      }
-    });
-
-    (nextState && nextState.expenses || []).forEach(function (expense) {
-      var match = String(expense && expense.id || '').match(/^expense-(\d+)$/);
-      if (match) {
-        maxExpenseId = Math.max(maxExpenseId, Number(match[1]));
-      }
-    });
-
-    idCounter = Math.max(1, maxAgentId);
-    expenseCounter = Math.max(100, maxExpenseId);
-  }
-
-  function clearAutosaveTimer() {
-    if (!autosaveTimer) {
-      return;
-    }
-    if (typeof window !== 'undefined' && typeof window.clearTimeout === 'function') {
-      window.clearTimeout(autosaveTimer);
-    } else if (typeof clearTimeout === 'function') {
-      clearTimeout(autosaveTimer);
-    }
-    autosaveTimer = null;
-  }
-
-  function getDraftTimeLabel(date) {
-    var source = date || new Date();
-    return source.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-  }
-
-  function setDraftStatus(type, message) {
-    var statusType = type || 'clean';
-    var statusMessage = message || 'Черновик не сохранён';
-    var nodes;
-
-    lastDraftStatusType = statusType;
-
-    if (typeof document === 'undefined' || typeof document.querySelectorAll !== 'function') {
-      return;
-    }
-
-    nodes = document.querySelectorAll('#draftSaveStatus, [data-draft-save-status]');
-    Array.prototype.forEach.call(nodes, function (node) {
-      node.textContent = statusMessage;
-      node.className = 'draft-save-status draft-save-status--' + statusType;
-    });
-  }
-
-  function getSaveSuccessMessage(reason, savedAt) {
-    var time = getDraftTimeLabel(savedAt);
-
-    if (reason === 'autosave' || reason === 'pagehide' || reason === 'hidden') {
-      return 'Автосохранено ' + time;
-    }
-    if (reason === 'clear') {
-      return 'Черновик очищен';
-    }
-    if (reason === 'restore-example') {
-      return 'Пример сохранён ' + time;
-    }
-    if (reason === 'restored') {
-      return 'Черновик восстановлен';
-    }
-    return 'Сохранено ' + time;
-  }
-
-  function saveDraft(reason) {
-    var savedAt = new Date();
-    var payload;
-
-    if (typeof localStorage === 'undefined' || typeof localStorage.setItem !== 'function') {
-      setDraftStatus('error', 'Ошибка сохранения');
-      return false;
-    }
-
-    try {
-      payload = {
-        version: A4_DRAFT_VERSION,
-        savedAt: savedAt.toISOString(),
-        state: serializeDraftState()
-      };
-      localStorage.setItem(A4_DRAFT_KEY, JSON.stringify(payload));
-      hasUnsavedChanges = false;
-      clearAutosaveTimer();
-      setDraftStatus(reason === 'autosave' || reason === 'pagehide' || reason === 'hidden' ? 'autosaved' : 'saved', getSaveSuccessMessage(reason, savedAt));
-      return true;
-    } catch (error) {
-      hasUnsavedChanges = true;
-      setDraftStatus('error', 'Ошибка сохранения');
-      console.warn('Не удалось сохранить черновик A4.', error);
-      return false;
-    }
-  }
-
-  function scheduleAutosave() {
-    if (typeof window !== 'undefined' && typeof window.setTimeout === 'function') {
-      clearAutosaveTimer();
-      autosaveTimer = window.setTimeout(function () {
-        saveDraft('autosave');
-      }, AUTOSAVE_DELAY_MS);
-    } else if (typeof setTimeout === 'function') {
-      clearAutosaveTimer();
-      autosaveTimer = setTimeout(function () {
-        saveDraft('autosave');
-      }, AUTOSAVE_DELAY_MS);
-    }
-  }
-
-  function loadDraftState() {
-    var raw;
-    var payload;
-    var nextState;
-
-    if (typeof localStorage === 'undefined' || typeof localStorage.getItem !== 'function') {
-      return null;
-    }
-
-    try {
-      raw = localStorage.getItem(A4_DRAFT_KEY);
-      if (!raw) {
-        return null;
-      }
-      payload = JSON.parse(raw);
-      if (!payload || payload.version !== A4_DRAFT_VERSION || !payload.state) {
-        setDraftStatus('error', 'Черновик не удалось восстановить');
-        return null;
-      }
-      nextState = normalizeDraftState(payload.state);
-      if (!nextState) {
-        setDraftStatus('error', 'Черновик не удалось восстановить');
-        return null;
-      }
-      syncCountersFromState(nextState);
-      hasUnsavedChanges = false;
-      setDraftStatus('restored', getSaveSuccessMessage('restored'));
-      return nextState;
-    } catch (error) {
-      setDraftStatus('error', 'Черновик не удалось восстановить');
-      console.warn('Не удалось восстановить черновик A4.', error);
-      return null;
-    }
-  }
-
   function moneyInput(attributes, value, placeholder) {
     return '<input type="text" inputmode="numeric" autocomplete="off" data-money-input="true" '
       + (placeholder ? 'placeholder="' + escapeHtml(placeholder) + '" ' : '')
@@ -554,8 +313,6 @@
 
   function markStateDirty() {
     hasUnsavedChanges = true;
-    setDraftStatus('dirty', 'Есть несохранённые изменения');
-    scheduleAutosave();
   }
 
   function checked(value) {
@@ -568,15 +325,7 @@
 
   function normalizeSelectedMonth(value) {
     var parsed = window.parseSelectedMonth ? window.parseSelectedMonth(value) : null;
-    var fallbackMatch;
-    if (parsed) {
-      return parsed.value;
-    }
-    fallbackMatch = String(value || '').match(/^(\d{4})-(\d{2})$/);
-    if (fallbackMatch && Number(fallbackMatch[2]) >= 1 && Number(fallbackMatch[2]) <= 12) {
-      return fallbackMatch[1] + '-' + fallbackMatch[2];
-    }
-    return '';
+    return parsed ? parsed.value : '';
   }
 
   function ensureUiState() {
@@ -2460,11 +2209,6 @@
       return;
     }
 
-    if (target.dataset.action === 'save-draft') {
-      saveDraft('manual');
-      return;
-    }
-
     if (target.dataset.action === 'set-travel-decision') {
       var travelAgent = findAgent(target.dataset.agentId);
       if (travelAgent) {
@@ -2485,9 +2229,6 @@
 
     if (target.dataset.action === 'collapse-section' || target.dataset.action === 'expand-section') {
       var isCollapsingSection = target.dataset.action === 'collapse-section';
-      if (isCollapsingSection) {
-        saveDraft('section');
-      }
       setSectionCollapsed(target.dataset.sectionKey, isCollapsingSection);
       renderTotals();
       if (isCollapsingSection) {
@@ -2497,11 +2238,6 @@
     }
 
     if (target.dataset.action === 'remove-agent') {
-      var removingAgent = findAgent(target.dataset.agentId);
-      if (removingAgent && hasMeaningfulAgentData(removingAgent, calculateAgent(removingAgent))
-        && !window.confirm('Удалить агента и все его сделки? Это действие нельзя отменить.')) {
-        return;
-      }
       markStateDirty();
       state.agents = state.agents.filter(function (agent) {
         return agent.id !== target.dataset.agentId;
@@ -2536,18 +2272,13 @@
     if (target.dataset.action === 'remove-deal') {
       var removeDealAgent = findAgent(target.dataset.agentId);
       if (removeDealAgent) {
-        var dealIndex = Number(target.dataset.dealIndex);
-        if (positiveNumber(removeDealAgent.dealsInput && removeDealAgent.dealsInput[dealIndex]) > 0
-          && !window.confirm('Удалить сделку?')) {
-          return;
-        }
         markStateDirty();
         removeDealAgent.dealsInput = normalizeExactDealsInput(removeDealAgent.dealsInput);
         if (removeDealAgent.dealsInput.length > 1) {
-          removeDealAgent.dealsInput.splice(dealIndex, 1);
+          removeDealAgent.dealsInput.splice(Number(target.dataset.dealIndex), 1);
         }
         syncAgentTotalsFromDeals(removeDealAgent);
-        renderPreservingUiState('[data-deal-index="' + Math.max(0, dealIndex - 1) + '"][data-agent-id="' + removeDealAgent.id + '"]');
+        renderPreservingUiState('[data-deal-index="' + Math.max(0, Number(target.dataset.dealIndex) - 1) + '"][data-agent-id="' + removeDealAgent.id + '"]');
       }
     }
 
@@ -2558,7 +2289,6 @@
       markStateDirty();
       state = createBlankState();
       uiState = createUiState();
-      syncCountersFromState(state);
       try {
         localStorage.removeItem(TABLE_SNAPSHOT_KEY);
       } catch (error) {
@@ -2566,7 +2296,6 @@
       }
       window.domianA4State = state;
       render();
-      saveDraft('clear');
     }
 
     if (target.dataset.action === 'restore-example') {
@@ -2576,10 +2305,8 @@
       markStateDirty();
       state = createExampleState();
       uiState = createUiState();
-      syncCountersFromState(state);
       window.domianA4State = state;
       render();
-      saveDraft('restore-example');
     }
 
     if (target.dataset.action === 'add-expense') {
@@ -2593,13 +2320,6 @@
     }
 
     if (target.dataset.action === 'remove-expense') {
-      var removingExpense = state.expenses.find(function (expense) {
-        return expense.id === target.dataset.expenseId;
-      });
-      if (removingExpense && (String(removingExpense.name || '').trim() || positiveNumber(removingExpense.amount) > 0)
-        && !window.confirm('Удалить расход?')) {
-        return;
-      }
       markStateDirty();
       state.expenses = state.expenses.filter(function (expense) {
         return expense.id !== target.dataset.expenseId;
@@ -2644,8 +2364,7 @@
       'schemeManualRate',
       'schemeExpenseShare',
       'schemeResults',
-      'schemeAdvice',
-      'draftSaveStatus'
+      'schemeAdvice'
     ].forEach(function (id) {
       elements[id] = document.getElementById(id);
     });
@@ -2744,41 +2463,16 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    var restoredState;
     collectElements();
     updateForecastNotice();
-    restoredState = loadDraftState();
-    state = restoredState || createState();
-    syncCountersFromState(state);
+    state = createState();
     uiState = createUiState();
-    if (!lastDraftStatusType) {
-      setDraftStatus('clean', 'Черновик не сохранён');
-    }
     window.addEventListener('beforeunload', function (event) {
       if (!hasUnsavedChanges) {
         return;
       }
-      if (saveDraft('beforeunload')) {
-        return;
-      }
       event.preventDefault();
       event.returnValue = '';
-    });
-    window.addEventListener('pagehide', function () {
-      if (hasUnsavedChanges) {
-        saveDraft('pagehide');
-      }
-    });
-    document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'hidden' && hasUnsavedChanges) {
-        saveDraft('hidden');
-      }
-    });
-    document.addEventListener('keydown', function (event) {
-      if ((event.ctrlKey || event.metaKey) && String(event.key || '').toLowerCase() === 's') {
-        event.preventDefault();
-        saveDraft('shortcut');
-      }
     });
     document.body.addEventListener('compositionstart', function (event) {
       if (event.target && event.target.dataset && event.target.dataset.moneyInput === 'true') {

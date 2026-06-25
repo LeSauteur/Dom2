@@ -158,7 +158,7 @@ test('table input stores formatted money fields as normalized numbers', () => {
 
 test('table loadSnapshotState accepts current versioned A4 snapshot and rejects incompatible versions', () => {
   const currentSnapshot = {
-    version: 2,
+    version: 1,
     state: makeA4State([
       {
         id: 'snapshot-agent',
@@ -173,14 +173,13 @@ test('table loadSnapshotState accepts current versioned A4 snapshot and rejects 
           starEnabled: true
         })
       }
-    ], { expenses: 123000, ownerSales: 456000, selectedMonth: '2026-07' })
+    ], { expenses: 123000, ownerSales: 456000 })
   };
 
   tableWindow.__localStorageStore.domianA4TableSnapshot = JSON.stringify(currentSnapshot);
   const loaded = table.loadSnapshotState();
 
   assert.equal(loaded.ownerSales, 456000);
-  assert.equal(loaded.selectedMonth, '2026-07');
   assert.equal(loaded.agents[0].commissionMode, 'exact');
   assert.deepEqual(Array.from(loaded.agents[0].dealsInput), [100000, 200000]);
   assert.equal(loaded.agents[0].motivation.congressEnabled, true);
@@ -188,29 +187,6 @@ test('table loadSnapshotState accepts current versioned A4 snapshot and rejects 
 
   tableWindow.__localStorageStore.domianA4TableSnapshot = JSON.stringify({ version: 999, state: currentSnapshot.state });
   assert.equal(table.loadSnapshotState(), null);
-});
-
-test('table loadSnapshotState keeps backward compatibility with v1 snapshots without selectedMonth', () => {
-  const legacySnapshot = {
-    version: 1,
-    state: makeA4State([
-      {
-        id: 'legacy-snapshot-agent',
-        name: 'Legacy snapshot agent',
-        commissionMode: 'exact',
-        dealsInput: [100000],
-        paymentType: 'standard',
-        status: 'partner'
-      }
-    ], { expenses: 10000, ownerSales: 20000 })
-  };
-
-  tableWindow.__localStorageStore.domianA4TableSnapshot = JSON.stringify(legacySnapshot);
-  const loaded = table.loadSnapshotState();
-
-  assert.equal(loaded.ownerSales, 20000);
-  assert.equal(loaded.selectedMonth, '');
-  assert.equal(loaded.agents[0].name, 'Legacy snapshot agent');
 });
 
 const parityFields = [
@@ -236,7 +212,6 @@ function makeExpenseCategories(amount) {
 function makeA4State(agents, options = {}) {
   const expenses = options.expenses || 0;
   return {
-    selectedMonth: options.selectedMonth || '',
     ownerSales: options.ownerSales || 0,
     expenses: [
       { id: 'test-expenses', name: 'Test expenses', amount: expenses }
@@ -248,7 +223,6 @@ function makeA4State(agents, options = {}) {
 function makeTableState(agents, options = {}) {
   const expenses = options.expenses || 0;
   return {
-    selectedMonth: options.selectedMonth || '',
     ownerSales: options.ownerSales || 0,
     expenses,
     expenseCategories: makeExpenseCategories(expenses),
@@ -291,7 +265,7 @@ test('table-mode preserves uneven exact deals instead of recalculating as quick 
 
   assert.equal(row.calculated.commission, 400000);
   assert.equal(row.calculated.dealCount, 4);
-  closeTo(row.calculated.payout, 180000);
+  closeTo(row.calculated.payout, 237000);
 });
 
 test('table-mode switches manual quick rows to exact mode without runtime errors', () => {
@@ -349,7 +323,7 @@ test('table-mode treats legacy custom boosted rates as a starting-rate source', 
   closeTo(calculated.payout, 225000);
 });
 
-test('legacy table-mode does not infer isolated travel from travelEnabled', () => {
+test('table-mode preserves imported motivation model details', () => {
   const agent = table.toTableAgent({
     id: 'motivation-agent',
     name: 'Motivation agent',
@@ -380,9 +354,9 @@ test('legacy table-mode does not infer isolated travel from travelEnabled', () =
   const calculated = tableWindow.calculateAgent(table.getCalculationAgent(agent));
 
   assert.equal(agent.motivation.travelEnabled, true);
-  assert.equal(calculated.motivation.travelAnnual, 0);
+  assert.equal(calculated.motivation.travelAnnual, 200000);
   assert.equal(calculated.motivation.congressAnnual, 3500);
-  closeTo(calculated.motivationReserve, 4291.666666666667);
+  closeTo(calculated.motivationReserve, 20958.333333333332);
 });
 
 test('table-mode quick, fixed, referral and royalty controls still match shared calculations', () => {

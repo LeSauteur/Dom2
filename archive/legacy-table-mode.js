@@ -2,7 +2,7 @@
   'use strict';
 
   var SNAPSHOT_KEY = 'domianA4TableSnapshot';
-  var SNAPSHOT_VERSION = 2;
+  var SNAPSHOT_VERSION = 1;
   var DEFAULT_AGENT_ROWS = 10;
   var DEFAULT_TABLE_EXPENSE_CATEGORIES = [
     { id: 'rent', label: 'Аренда', amount: 0 },
@@ -67,10 +67,6 @@
       return '';
     }
     return amount > 0 ? formatMoneyInputValue(amount) : '0';
-  }
-
-  function normalizeSelectedMonth(value) {
-    return /^\d{4}-(0[1-9]|1[0-2])$/.test(String(value || '')) ? String(value) : '';
   }
 
   function moneyInput(attributes, value) {
@@ -151,7 +147,6 @@
   function createBlankState() {
     var expenseItems = createDefaultExpenseItems();
     return {
-      selectedMonth: '',
       expenses: 0,
       expenseItems: expenseItems,
       expenseCategories: expenseItems,
@@ -478,7 +473,7 @@
     try {
       var snapshot = JSON.parse(raw);
       if (snapshot && snapshot.version !== undefined) {
-        if ((snapshot.version !== 1 && snapshot.version !== SNAPSHOT_VERSION) || !snapshot.state) {
+        if (snapshot.version !== SNAPSHOT_VERSION || !snapshot.state) {
           return null;
         }
         snapshot = snapshot.state;
@@ -493,7 +488,6 @@
       var expenseItems = mapSnapshotExpenseItems(snapshot.expenses || []);
 
       return {
-        selectedMonth: normalizeSelectedMonth(snapshot.selectedMonth),
         expenses: calculateExpenseItems(expenseItems),
         expenseItems: expenseItems,
         expenseCategories: expenseCategories,
@@ -620,7 +614,6 @@
     });
 
     return {
-      selectedMonth: normalizeSelectedMonth(state.selectedMonth),
       rows: rows,
       activeAgentIds: activeSources.map(function (agent) { return agent.id; }),
       expenses: expenses,
