@@ -22,9 +22,11 @@ function loadCalculator() {
 }
 
 function loadAppHelpers() {
+  const localStorageStore = {};
   const context = {
     window: {},
     console,
+    localStorageStore,
     document: {
       addEventListener() {},
       body: {
@@ -38,8 +40,21 @@ function loadAppHelpers() {
       }
     },
     localStorage: {
-      setItem() {},
-      removeItem() {}
+      getItem(key) {
+        return Object.prototype.hasOwnProperty.call(localStorageStore, key) ? localStorageStore[key] : null;
+      },
+      setItem(key, value) {
+        localStorageStore[key] = String(value);
+      },
+      removeItem(key) {
+        delete localStorageStore[key];
+      },
+      key(index) {
+        return Object.keys(localStorageStore)[index] || null;
+      },
+      get length() {
+        return Object.keys(localStorageStore).length;
+      }
     }
   };
   vm.createContext(context);
@@ -65,9 +80,25 @@ function loadAppHelpers() {
       '  createAgent: createAgent,',
       '  createBlankExpense: createBlankExpense,',
       '  normalizeAgent: normalizeAgent,',
+      '  normalizeDealRowMetadata: typeof normalizeDealRowMetadata === "function" ? normalizeDealRowMetadata : undefined,',
+      '  addExactDealRow: typeof addExactDealRow === "function" ? addExactDealRow : undefined,',
+      '  removeExactDealRow: typeof removeExactDealRow === "function" ? removeExactDealRow : undefined,',
       '  serializeDraftState: typeof serializeDraftState === "function" ? serializeDraftState : undefined,',
       '  normalizeDraftState: typeof normalizeDraftState === "function" ? normalizeDraftState : undefined,',
       '  syncCountersFromState: typeof syncCountersFromState === "function" ? syncCountersFromState : undefined,',
+      '  createDraftWorkspace: typeof createDraftWorkspace === "function" ? createDraftWorkspace : undefined,',
+      '  normalizeDraftWorkspace: typeof normalizeDraftWorkspace === "function" ? normalizeDraftWorkspace : undefined,',
+      '  migrateLegacyDraft: typeof migrateLegacyDraft === "function" ? migrateLegacyDraft : undefined,',
+      '  storeActiveStateInWorkspace: typeof storeActiveStateInWorkspace === "function" ? storeActiveStateInWorkspace : undefined,',
+      '  activateMonth: typeof activateMonth === "function" ? activateMonth : undefined,',
+      '  loadDraftState: typeof loadDraftState === "function" ? loadDraftState : undefined,',
+      '  saveDraft: typeof saveDraft === "function" ? saveDraft : undefined,',
+      '  clearCurrentForm: typeof clearCurrentForm === "function" ? clearCurrentForm : undefined,',
+      '  removeAllA4Storage: typeof removeAllA4Storage === "function" ? removeAllA4Storage : undefined,',
+      '  hardResetCalculator: typeof hardResetCalculator === "function" ? hardResetCalculator : undefined,',
+      '  setDraftWorkspace: function (nextWorkspace) { draftWorkspace = nextWorkspace; },',
+      '  getDraftWorkspace: function () { return draftWorkspace; },',
+      '  localStorageStore: localStorageStore,',
       '  renderExpenses: renderExpenses,',
       '  renderExactDeals: renderExactDeals,',
       '  renderMotivationControls: renderMotivationControls,',
@@ -307,6 +338,160 @@ test('A4 draft counter sync keeps new ids unique after restoring a large draft',
   assert.equal(appHelpers.createBlankExpense().id, 'expense-131');
 });
 
+test('A4 draft V1 migrates into the selected month with exact-deal metadata defaults', () => {
+  assert.equal(typeof appHelpers.migrateLegacyDraft, 'function');
+
+  const workspace = appHelpers.migrateLegacyDraft({
+    version: 1,
+    savedAt: '2026-06-25T00:00:00.000Z',
+    state: {
+      selectedMonth: '2026-01',
+      ownerSales: 250000,
+      expenses: [{ id: 'expense-101', name: 'Аренда', amount: 35000 }],
+      agents: [{
+        id: 'agent-1',
+        name: 'Анна',
+        commissionMode: 'exact',
+        dealsInput: [100000, '', 200000],
+        paymentType: 'standard',
+        status: 'partner',
+        motivation: { mode: 'off' }
+      }],
+      schemeCheck: { commission: 300000, dealCount: 3, manualRate: 80 }
+    }
+  });
+
+  assert.equal(workspace.version, 2);
+  assert.equal(workspace.selectedMonth, '2026-01');
+  assert.equal(workspace.scratch, null);
+  assert.equal(workspace.months['2026-01'].ownerSales, 250000);
+  assert.deepEqual(Array.from(workspace.months['2026-01'].agents[0].dealsInput), [100000, '', 200000]);
+  assert.deepEqual(Array.from(workspace.months['2026-01'].agents[0].dealDepositOrders), ['', '', '']);
+  assert.deepEqual(Array.from(workspace.months['2026-01'].agents[0].dealNewbuildSoloFlags), [false, false, false]);
+});
+
+test('A4 draft V1 without selected month migrates into scratch', () => {
+  const workspace = appHelpers.migrateLegacyDraft({
+    version: 1,
+    state: {
+      selectedMonth: '',
+      ownerSales: 123000,
+      expenses: [],
+      agents: [],
+      schemeCheck: {}
+    }
+  });
+
+  assert.equal(workspace.selectedMonth, '');
+  assert.equal(workspace.scratch.ownerSales, 123000);
+  assert.deepEqual(Object.keys(workspace.months), []);
+});
+
+test('A4 month activation isolates January and February and restores prior values', () => {
+  assert.equal(typeof appHelpers.createDraftWorkspace, 'function');
+  assert.equal(typeof appHelpers.activateMonth, 'function');
+
+  const scratch = appHelpers.createBlankState();
+  scratch.ownerSales = 111000;
+  scratch.agents[0].dealsInput = [100000];
+  appHelpers.setState(scratch);
+  appHelpers.setDraftWorkspace(appHelpers.createDraftWorkspace());
+
+  let january = appHelpers.activateMonth('2026-01');
+  assert.equal(january.selectedMonth, '2026-01');
+  assert.equal(january.ownerSales, 111000);
+  january.ownerSales = 222000;
+  january.agents[0].dealsInput = [200000];
+
+  let february = appHelpers.activateMonth('2026-02');
+  assert.equal(february.selectedMonth, '2026-02');
+  assert.equal(february.ownerSales, 0);
+  february.ownerSales = 333000;
+  february.agents[0].dealsInput = [300000];
+
+  january = appHelpers.activateMonth('2026-01');
+  assert.equal(january.ownerSales, 222000);
+  assert.deepEqual(Array.from(january.agents[0].dealsInput), [200000]);
+
+  february = appHelpers.activateMonth('2026-02');
+  assert.equal(february.ownerSales, 333000);
+  assert.deepEqual(Array.from(february.agents[0].dealsInput), [300000]);
+});
+
+test('A4 V2 save and load restore the last selected month', () => {
+  assert.equal(typeof appHelpers.saveDraft, 'function');
+  assert.equal(typeof appHelpers.loadDraftState, 'function');
+
+  const january = appHelpers.createBlankState();
+  january.selectedMonth = '2026-01';
+  january.ownerSales = 777000;
+  appHelpers.setState(january);
+  appHelpers.setDraftWorkspace(appHelpers.createDraftWorkspace());
+
+  assert.equal(appHelpers.saveDraft('manual'), true);
+  assert.ok(appHelpers.localStorageStore.domianA4DraftV2);
+
+  appHelpers.setState(null);
+  appHelpers.setDraftWorkspace(null);
+  const restored = appHelpers.loadDraftState();
+
+  assert.equal(restored.selectedMonth, '2026-01');
+  assert.equal(restored.ownerSales, 777000);
+});
+
+test('soft clear resets only the active month and keeps other saved months', () => {
+  assert.equal(typeof appHelpers.clearCurrentForm, 'function');
+
+  const workspace = appHelpers.createDraftWorkspace();
+  const january = appHelpers.createBlankState();
+  const february = appHelpers.createBlankState();
+  january.selectedMonth = '2026-01';
+  january.ownerSales = 111000;
+  february.selectedMonth = '2026-02';
+  february.ownerSales = 222000;
+  workspace.selectedMonth = '2026-01';
+  workspace.months['2026-01'] = january;
+  workspace.months['2026-02'] = february;
+  appHelpers.setDraftWorkspace(workspace);
+  appHelpers.setState(january);
+
+  const cleared = appHelpers.clearCurrentForm();
+
+  assert.equal(cleared.selectedMonth, '2026-01');
+  assert.equal(cleared.ownerSales, 0);
+  assert.equal(appHelpers.getDraftWorkspace().months['2026-02'].ownerSales, 222000);
+});
+
+test('hard reset removes only A4 storage and prevents draft restoration', () => {
+  assert.equal(typeof appHelpers.hardResetCalculator, 'function');
+
+  Object.assign(appHelpers.localStorageStore, {
+    domianA4DraftV1: '{"version":1}',
+    domianA4DraftV2: '{"version":2}',
+    domianA4TableSnapshot: '{"version":3}',
+    'domianA4MonthDraftV1:2026-01': '{"ownerSales":1}',
+    domianA4SelectedMonth: '2026-01',
+    unrelatedKey: 'keep-me'
+  });
+
+  const dirty = appHelpers.createBlankState();
+  dirty.selectedMonth = '2026-01';
+  dirty.ownerSales = 999000;
+  appHelpers.setState(dirty);
+  appHelpers.setDraftWorkspace(appHelpers.createDraftWorkspace());
+
+  assert.equal(appHelpers.hardResetCalculator(), true);
+  assert.equal(appHelpers.localStorageStore.domianA4DraftV1, undefined);
+  assert.equal(appHelpers.localStorageStore.domianA4DraftV2, undefined);
+  assert.equal(appHelpers.localStorageStore.domianA4TableSnapshot, undefined);
+  assert.equal(appHelpers.localStorageStore['domianA4MonthDraftV1:2026-01'], undefined);
+  assert.equal(appHelpers.localStorageStore.domianA4SelectedMonth, undefined);
+  assert.equal(appHelpers.localStorageStore.unrelatedKey, 'keep-me');
+  assert.equal(appHelpers.getState().selectedMonth, '');
+  assert.equal(appHelpers.getState().ownerSales, 0);
+  assert.equal(appHelpers.loadDraftState(), null);
+});
+
 test('adding a new agent always collapses the previous card even if it is blank', () => {
   const state = appHelpers.createBlankState();
 
@@ -480,8 +665,8 @@ test('boosted starting rate is a floor over the standard partner scale', () => {
     status: 'partner',
     startingRate: 55
   });
-  assert.deepEqual(Array.from(starting55WithLowDeal.deals.map((deal) => deal.rate)), [0.55, 0.55, 0.55, 0.55, 0.60]);
-  closeTo(starting55WithLowDeal.payout, 244250);
+  assert.deepEqual(Array.from(starting55WithLowDeal.deals.map((deal) => deal.rate)), [0.45, 0.55, 0.55, 0.55, 0.60]);
+  closeTo(starting55WithLowDeal.payout, 240750);
 });
 
 test('legacy boostedRates migrates to startingRate from the first value', () => {
@@ -543,8 +728,8 @@ test('exact deals mode pays boosted scale by real deal amounts', () => {
 
   assert.equal(agent.commission, 400000);
   assert.equal(agent.dealCount, 4);
-  assert.deepEqual(Array.from(agent.deals.map((deal) => deal.rate)), [0.55, 0.55, 0.55, 0.55]);
-  closeTo(agent.payout, 220000);
+  assert.deepEqual(Array.from(agent.deals.map((deal) => deal.rate)), [0.45, 0.45, 0.45, 0.55]);
+  closeTo(agent.payout, 217000);
 });
 
 test('exact deals mode pays fixed percent and referral from total commission', () => {
@@ -1391,6 +1576,90 @@ test('new agents default to exact deals mode in app state', () => {
   assert.match(appSource, /commissionMode:\s*'exact'/);
 });
 
+test('new agents initialize linked exact-deal metadata arrays', () => {
+  const agent = appHelpers.createAgent();
+
+  assert.deepEqual(Array.from(agent.dealsInput), ['']);
+  assert.deepEqual(Array.from(agent.dealDepositOrders), ['']);
+  assert.deepEqual(Array.from(agent.dealNewbuildSoloFlags), [false]);
+});
+
+test('exact-deal row helpers keep amounts, deposit orders and newbuild flags aligned', () => {
+  assert.equal(typeof appHelpers.normalizeDealRowMetadata, 'function');
+  assert.equal(typeof appHelpers.addExactDealRow, 'function');
+  assert.equal(typeof appHelpers.removeExactDealRow, 'function');
+
+  const agent = {
+    dealsInput: [100000, '', 200000],
+    dealDepositOrders: [2, '', 7],
+    dealNewbuildSoloFlags: [false, false, true]
+  };
+
+  appHelpers.normalizeDealRowMetadata(agent);
+  appHelpers.addExactDealRow(agent);
+  assert.deepEqual(agent.dealsInput, [100000, '', 200000, '']);
+  assert.deepEqual(agent.dealDepositOrders, [2, '', 7, '']);
+  assert.deepEqual(agent.dealNewbuildSoloFlags, [false, false, true, false]);
+
+  appHelpers.removeExactDealRow(agent, 1);
+  assert.deepEqual(agent.dealsInput, [100000, 200000, '']);
+  assert.deepEqual(agent.dealDepositOrders, [2, 7, '']);
+  assert.deepEqual(agent.dealNewbuildSoloFlags, [false, true, false]);
+});
+
+test('exact-deal UI renders deposit order, newbuild rule and transparent rate source', () => {
+  const agent = {
+    id: 'exact-row-ui',
+    commissionMode: 'exact',
+    dealsInput: [30000, 100000],
+    dealDepositOrders: [2, ''],
+    dealNewbuildSoloFlags: [true, false],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  };
+  const html = appHelpers.renderExactDeals(agent, calculator.calculateAgent(agent));
+
+  assert.match(html, /Расчётный задаток/);
+  assert.match(html, /placeholder="авто"/);
+  assert.match(html, /data-deal-deposit-order="0"/);
+  assert.match(html, /Новостройка, один агент/);
+  assert.match(html, /data-deal-newbuild-solo="0"/);
+  assert.match(html, /Введите комиссию, которая приходится именно на этого агента/);
+  assert.match(html, /ручной номер/i);
+});
+
+test('exact-deal UI warns when trainee exceeds three deposits', () => {
+  const agent = {
+    id: 'trainee-warning-ui',
+    commissionMode: 'exact',
+    dealsInput: [100000, 100000, 100000, 100000],
+    paymentType: 'standard',
+    status: 'trainee',
+    introduced: false
+  };
+  const html = appHelpers.renderExactDeals(agent, calculator.calculateAgent(agent));
+
+  assert.match(html, /У стажёра указано больше 3 задатков за месяц/);
+  assert.match(html, /Расчёт применён как для агента, фактически перешедшего на партнёрскую шкалу после 3-го задатка/);
+});
+
+test('trainee warning node exists before the fourth deposit and updates without a full rerender', () => {
+  const agent = {
+    id: 'trainee-warning-live',
+    commissionMode: 'exact',
+    dealsInput: [100000, 100000, 100000, ''],
+    paymentType: 'standard',
+    status: 'trainee',
+    introduced: false
+  };
+  const html = appHelpers.renderExactDeals(agent, calculator.calculateAgent(agent));
+
+  assert.match(html, /data-trainee-scale-warning/);
+  assert.match(html, /data-trainee-scale-warning[^>]*hidden/);
+  assert.match(appSource, /warningNode\.hidden\s*=\s*!agent\.traineeScaleExceeded/);
+});
+
 test('expense placeholders stay visual only and never seed state', () => {
   const state = appHelpers.createState();
   const elements = {
@@ -1471,7 +1740,135 @@ test('standard partner exact deals use qualifying deal count for the rate scale'
   closeTo(lowThenQualified.payout, 225750);
 });
 
-test('standard trainee fourth exact deal gets 45 percent', () => {
+test('standard partner scale reaches 65, 70 and 80 percent and caps at 80', () => {
+  const partner = calculator.calculateAgent({
+    id: 'partner-full-scale',
+    commissionMode: 'exact',
+    dealsInput: [100000, 100000, 100000, 100000, 100000, 100000, 100000, 100000],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  });
+
+  assert.deepEqual(Array.from(partner.deals.map((deal) => deal.rate)), [0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.80, 0.80]);
+  closeTo(partner.payout, 505000);
+});
+
+test('standard partner user example applies 65 percent to the fifth deposit', () => {
+  const partner = calculator.calculateAgent({
+    id: 'partner-user-example',
+    commissionMode: 'exact',
+    dealsInput: [88200, 111750, 125000, 210000, 255404],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  });
+
+  assert.deepEqual(Array.from(partner.deals.map((deal) => deal.rate)), [0.45, 0.50, 0.55, 0.60, 0.65]);
+  closeTo(partner.deals[4].payout, 166012.6);
+  closeTo(partner.payout, 456327.6);
+});
+
+test('small ordinary deals stay at 45 percent and do not advance the deposit scale', () => {
+  const partner = calculator.calculateAgent({
+    id: 'partner-small-deal',
+    commissionMode: 'exact',
+    dealsInput: [49999, 100000],
+    dealDepositOrders: ['', ''],
+    dealNewbuildSoloFlags: [false, false],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  });
+
+  assert.deepEqual(Array.from(partner.deals.map((deal) => deal.rate)), [0.45, 0.45]);
+  assert.deepEqual(Array.from(partner.deals.map((deal) => deal.isQualifiedDeposit)), [false, true]);
+  assert.deepEqual(Array.from(partner.deals.map((deal) => deal.rateSource)), ['baseSmallDeal', 'auto']);
+  assert.equal(partner.deals[1].depositOrderApplied, 1);
+});
+
+test('small ordinary trainee deal stays at 45 percent and does not consume the first trainee tier', () => {
+  const trainee = calculator.calculateAgent({
+    id: 'trainee-small-deal',
+    commissionMode: 'exact',
+    dealsInput: [30000, 100000],
+    dealDepositOrders: ['', ''],
+    dealNewbuildSoloFlags: [false, false],
+    paymentType: 'standard',
+    status: 'trainee',
+    introduced: false
+  });
+
+  assert.deepEqual(Array.from(trainee.deals.map((deal) => deal.rate)), [0.45, 0.30]);
+  assert.deepEqual(Array.from(trainee.deals.map((deal) => deal.isQualifiedDeposit)), [false, true]);
+  assert.equal(trainee.deals[1].depositOrderApplied, 1);
+});
+
+test('newbuild with one agent qualifies below 50000 and advances the deposit scale', () => {
+  const partner = calculator.calculateAgent({
+    id: 'partner-newbuild',
+    commissionMode: 'exact',
+    dealsInput: [30000, 100000],
+    dealDepositOrders: ['', ''],
+    dealNewbuildSoloFlags: [true, false],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  });
+
+  assert.deepEqual(Array.from(partner.deals.map((deal) => deal.rate)), [0.45, 0.50]);
+  assert.deepEqual(Array.from(partner.deals.map((deal) => deal.isQualifiedDeposit)), [true, true]);
+  assert.deepEqual(Array.from(partner.deals.map((deal) => deal.depositOrderApplied)), [1, 2]);
+});
+
+test('manual deposit order applies to its source row without blank-row index drift', () => {
+  const partner = calculator.calculateAgent({
+    id: 'partner-manual-order',
+    commissionMode: 'exact',
+    dealsInput: [200000, '', 100000],
+    dealDepositOrders: [2, '', 7],
+    dealNewbuildSoloFlags: [false, false, false],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  });
+  const capped = calculator.calculateAgent({
+    id: 'partner-manual-order-cap',
+    commissionMode: 'exact',
+    dealsInput: [100000],
+    dealDepositOrders: [10],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  });
+
+  assert.deepEqual(Array.from(partner.deals.map((deal) => deal.sourceIndex)), [0, 2]);
+  assert.deepEqual(Array.from(partner.deals.map((deal) => deal.rate)), [0.50, 0.80]);
+  assert.deepEqual(Array.from(partner.deals.map((deal) => deal.rateSource)), ['manualDepositOrder', 'manualDepositOrder']);
+  assert.deepEqual(Array.from(partner.deals.map((deal) => deal.depositOrderApplied)), [2, 7]);
+  assert.equal(capped.deals[0].rate, 0.80);
+  assert.equal(capped.deals[0].depositOrderApplied, 10);
+});
+
+test('small ordinary deal ignores manual deposit order', () => {
+  const partner = calculator.calculateAgent({
+    id: 'partner-small-manual-order',
+    commissionMode: 'exact',
+    dealsInput: [30000, 100000],
+    dealDepositOrders: [7, ''],
+    dealNewbuildSoloFlags: [false, false],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  });
+
+  assert.deepEqual(Array.from(partner.deals.map((deal) => deal.rate)), [0.45, 0.45]);
+  assert.deepEqual(Array.from(partner.deals.map((deal) => deal.rateSource)), ['baseSmallDeal', 'auto']);
+  assert.equal(partner.deals[0].depositOrderApplied, null);
+  assert.equal(partner.deals[1].depositOrderApplied, 1);
+});
+
+test('standard trainee fourth exact deal switches to partner fourth tier with warning', () => {
   const trainee = calculator.calculateAgent({
     id: 'trainee-fourth',
     commissionMode: 'exact',
@@ -1481,11 +1878,13 @@ test('standard trainee fourth exact deal gets 45 percent', () => {
     introduced: false
   });
 
-  assert.deepEqual(Array.from(trainee.deals.map((deal) => deal.rate)), [0.30, 0.35, 0.40, 0.45]);
-  closeTo(trainee.payout, 150000);
+  assert.deepEqual(Array.from(trainee.deals.map((deal) => deal.rate)), [0.30, 0.35, 0.40, 0.60]);
+  assert.equal(trainee.traineeScaleExceeded, true);
+  assert.match(trainee.traineeScaleWarning, /стажёрская шкала заканчивается на 3-м задатке/i);
+  closeTo(trainee.payout, 165000);
 });
 
-test('standard trainee fifth exact deal switches to partner scale', () => {
+test('standard trainee fifth exact deal uses partner fifth tier', () => {
   const trainee = calculator.calculateAgent({
     id: 'trainee-fifth',
     commissionMode: 'exact',
@@ -1495,11 +1894,11 @@ test('standard trainee fifth exact deal switches to partner scale', () => {
     introduced: false
   });
 
-  assert.deepEqual(Array.from(trainee.deals.map((deal) => deal.rate)), [0.30, 0.35, 0.40, 0.45, 0.50]);
-  closeTo(trainee.payout, 100000);
+  assert.deepEqual(Array.from(trainee.deals.map((deal) => deal.rate)), [0.30, 0.35, 0.40, 0.60, 0.65]);
+  closeTo(trainee.payout, 115000);
 });
 
-test('standard trainee sixth exact deal reaches 55 percent', () => {
+test('standard trainee sixth exact deal uses partner sixth tier', () => {
   const trainee = calculator.calculateAgent({
     id: 'trainee-sixth',
     commissionMode: 'exact',
@@ -1509,8 +1908,8 @@ test('standard trainee sixth exact deal reaches 55 percent', () => {
     introduced: false
   });
 
-  assert.deepEqual(Array.from(trainee.deals.map((deal) => deal.rate)), [0.30, 0.35, 0.40, 0.45, 0.50, 0.55]);
-  closeTo(trainee.payout, 127500);
+  assert.deepEqual(Array.from(trainee.deals.map((deal) => deal.rate)), [0.30, 0.35, 0.40, 0.60, 0.65, 0.70]);
+  closeTo(trainee.payout, 150000);
 });
 
 test('motivation block source uses status-card entry copy', () => {
@@ -1936,7 +2335,8 @@ test('A4 draft save controls are visible in toolbar and fixed panel', () => {
 });
 
 test('A4 draft save handlers cover shortcut, unload, clear, restore and destructive confirms', () => {
-  assert.match(appSource, /A4_DRAFT_KEY = 'domianA4DraftV1'/);
+  assert.match(appSource, /A4_DRAFT_KEY = 'domianA4DraftV2'/);
+  assert.match(appSource, /LEGACY_A4_DRAFT_KEYS = \['domianA4DraftV1'\]/);
   assert.match(appSource, /TABLE_SNAPSHOT_KEY = 'domianA4TableSnapshot'/);
   assert.match(appSource, /localStorage\.setItem\(A4_DRAFT_KEY/);
   assert.match(appSource, /function openTableModePage\(\)[\s\S]*localStorage\.setItem\(TABLE_SNAPSHOT_KEY/);
@@ -1953,6 +2353,18 @@ test('A4 draft save handlers cover shortcut, unload, clear, restore and destruct
   assert.match(appSource, /Удалить агента и все его сделки/);
   assert.match(appSource, /Удалить расход\?/);
   assert.match(appSource, /Удалить сделку\?/);
+  assert.match(indexSource, /data-action="hard-reset"/);
+  assert.match(indexSource, /Удалить все сохранённые данные/);
+  assert.match(appSource, /function removeAllA4Storage/);
+  assert.doesNotMatch(appSource, /localStorage\.clear\(/);
+});
+
+test('A4 entry page cache-busts the current calculator assets', () => {
+  assert.match(indexSource, /a4-calculator\.css\?v=a4-deposits-20260701/);
+  assert.match(indexSource, /constants\.js\?v=a4-deposits-20260701/);
+  assert.match(indexSource, /calculations\.js\?v=a4-deposits-20260701/);
+  assert.match(indexSource, /calendar-policy\.js\?v=a4-deposits-20260701/);
+  assert.match(indexSource, /app\.js\?v=a4-deposits-20260701/);
 });
 
 test('collapsed motivation summary shows status, reserve and explicit CTA', () => {

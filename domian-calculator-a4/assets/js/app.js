@@ -7,16 +7,18 @@
   var expenseCounter = 100;
   var elements = {};
   var STATE_VERSION = 1;
-  var A4_DRAFT_VERSION = 1;
-  var A4_DRAFT_KEY = 'domianA4DraftV1';
+  var A4_DRAFT_VERSION = 2;
+  var A4_DRAFT_KEY = 'domianA4DraftV2';
+  var LEGACY_A4_DRAFT_KEYS = ['domianA4DraftV1'];
   var AUTOSAVE_DELAY_MS = 800;
-  var TABLE_SNAPSHOT_VERSION = 2;
+  var TABLE_SNAPSHOT_VERSION = 3;
   var TABLE_SNAPSHOT_KEY = 'domianA4TableSnapshot';
   var DEFAULT_AGENT_NAME = 'Новый агент';
   var DEAL_PLACEHOLDER = '100 000';
   var hasUnsavedChanges = false;
   var autosaveTimer = null;
   var lastDraftStatusType = '';
+  var draftWorkspace = null;
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -44,6 +46,8 @@
       dealCount: 1,
       commissionMode: 'exact',
       dealsInput: [''],
+      dealDepositOrders: [''],
+      dealNewbuildSoloFlags: [false],
       paymentType: 'standard',
       status: 'partner',
       boostedRates: clone(PAY_SCALES.boostedDefault),
@@ -113,6 +117,7 @@
         : 'auto';
     }
     normalized.motivation.mode = inferInitialMotivationMode(normalized, normalized.motivation);
+    normalizeDealRowMetadata(normalized);
     return normalized;
   }
 
@@ -136,6 +141,47 @@
 
   function normalizeExactDealsInput(deals) {
     return Array.isArray(deals) && deals.length ? deals : [''];
+  }
+
+  function normalizeDealRowMetadata(agent) {
+    if (!agent) {
+      return agent;
+    }
+    var deals = normalizeExactDealsInput(agent.dealsInput);
+    var sourceOrders = Array.isArray(agent.dealDepositOrders) ? agent.dealDepositOrders : [];
+    var sourceNewbuildFlags = Array.isArray(agent.dealNewbuildSoloFlags) ? agent.dealNewbuildSoloFlags : [];
+
+    agent.dealsInput = deals;
+    agent.dealDepositOrders = deals.map(function (_, index) {
+      var value = sourceOrders[index];
+      if (value === undefined || value === null || value === '') {
+        return '';
+      }
+      var numeric = Math.floor(inputNumber(value));
+      return numeric >= 1 ? numeric : '';
+    });
+    agent.dealNewbuildSoloFlags = deals.map(function (_, index) {
+      return Boolean(sourceNewbuildFlags[index]);
+    });
+    return agent;
+  }
+
+  function addExactDealRow(agent) {
+    normalizeDealRowMetadata(agent);
+    agent.dealsInput.push('');
+    agent.dealDepositOrders.push('');
+    agent.dealNewbuildSoloFlags.push(false);
+    return agent;
+  }
+
+  function removeExactDealRow(agent, dealIndex) {
+    normalizeDealRowMetadata(agent);
+    if (agent.dealsInput.length > 1) {
+      agent.dealsInput.splice(dealIndex, 1);
+      agent.dealDepositOrders.splice(dealIndex, 1);
+      agent.dealNewbuildSoloFlags.splice(dealIndex, 1);
+    }
+    return agent;
   }
 
   function getDealDisplayValue(deal) {
@@ -344,17 +390,221 @@
     };
   }
 
-  function serializeDraftState() {
-    var currentState = state || createState();
-
+  function serializeMonthState(currentState) {
+    var sourceState = currentState || createState();
     return {
       version: STATE_VERSION,
-      selectedMonth: normalizeSelectedMonth(currentState.selectedMonth),
-      expenses: clone(currentState.expenses || []),
-      agents: clone(currentState.agents || []),
-      ownerSales: inputNumber(currentState.ownerSales),
-      schemeCheck: clone(Object.assign(createDefaultSchemeCheck(), currentState.schemeCheck || {}))
+      selectedMonth: normalizeSelectedMonth(sourceState.selectedMonth),
+      expenses: clone(sourceState.expenses || []),
+      agents: clone(sourceState.agents || []),
+      ownerSales: inputNumber(sourceState.ownerSales),
+      schemeCheck: clone(Object.assign(createDefaultSchemeCheck(), sourceState.schemeCheck || {}))
     };
+  }
+
+  function serializeDraftState() {
+    return serializeMonthState(state || createState());
+  }
+
+  function createDraftWorkspace() {
+    return {
+      version: A4_DRAFT_VERSION,
+      selectedMonth: '',
+      scratch: null,
+      months: {}
+    };
+  }
+
+  function normalizeWorkspaceMonth(source, selectedMonth) {
+    var normalized = normalizeDraftState(source);
+    if (!normalized) {
+      return null;
+    }
+    normalized.selectedMonth = normalizeSelectedMonth(selectedMonth);
+    return normalized;
+  }
+
+  function migrateLegacyDraft(payload) {
+    var source = payload && payload.state ? payload.state : payload;
+    var normalized = normalizeDraftState(source);
+    var workspace = createDraftWorkspace();
+    var selectedMonth;
+
+    if (!normalized) {
+      return null;
+    }
+
+    selectedMonth = normalizeSelectedMonth(normalized.selectedMonth);
+    normalized.selectedMonth = selectedMonth;
+    workspace.selectedMonth = selectedMonth;
+    if (selectedMonth) {
+      workspace.months[selectedMonth] = serializeMonthState(normalized);
+    } else {
+      workspace.scratch = serializeMonthState(normalized);
+    }
+    return workspace;
+  }
+
+  function normalizeDraftWorkspace(payload) {
+    var workspace;
+    var sourceMonths;
+
+    if (!payload || payload.version !== A4_DRAFT_VERSION) {
+      return null;
+    }
+
+    workspace = createDraftWorkspace();
+    workspace.selectedMonth = normalizeSelectedMonth(payload.selectedMonth);
+    workspace.scratch = payload.scratch ? normalizeWorkspaceMonth(payload.scratch, '') : null;
+    sourceMonths = payload.months && typeof payload.months === 'object' ? payload.months : {};
+
+    Object.keys(sourceMonths).forEach(function (monthKey) {
+      var normalizedMonth = normalizeSelectedMonth(monthKey);
+      var monthState;
+      if (!normalizedMonth) {
+        return;
+      }
+      monthState = normalizeWorkspaceMonth(sourceMonths[monthKey], normalizedMonth);
+      if (monthState) {
+        workspace.months[normalizedMonth] = monthState;
+      }
+    });
+
+    if (workspace.selectedMonth && !workspace.months[workspace.selectedMonth]) {
+      workspace.selectedMonth = '';
+    }
+    return workspace;
+  }
+
+  function storeActiveStateInWorkspace() {
+    var currentState = state || createState();
+    var selectedMonth = normalizeSelectedMonth(currentState.selectedMonth);
+    var snapshot = serializeMonthState(currentState);
+
+    if (!draftWorkspace) {
+      draftWorkspace = createDraftWorkspace();
+    }
+
+    snapshot.selectedMonth = selectedMonth;
+    draftWorkspace.selectedMonth = selectedMonth;
+    if (selectedMonth) {
+      draftWorkspace.months[selectedMonth] = snapshot;
+    } else {
+      draftWorkspace.scratch = snapshot;
+    }
+    return snapshot;
+  }
+
+  function activateMonth(nextMonth) {
+    var normalizedMonth = normalizeSelectedMonth(nextMonth);
+    var previousMonth = normalizeSelectedMonth(state && state.selectedMonth);
+    var nextState;
+
+    if (!draftWorkspace) {
+      draftWorkspace = createDraftWorkspace();
+    }
+    storeActiveStateInWorkspace();
+
+    if (normalizedMonth) {
+      if (draftWorkspace.months[normalizedMonth]) {
+        nextState = normalizeWorkspaceMonth(draftWorkspace.months[normalizedMonth], normalizedMonth);
+      } else if (!previousMonth && draftWorkspace.scratch) {
+        nextState = normalizeWorkspaceMonth(draftWorkspace.scratch, normalizedMonth);
+        draftWorkspace.scratch = null;
+      } else {
+        nextState = createBlankState();
+        nextState.selectedMonth = normalizedMonth;
+      }
+      draftWorkspace.months[normalizedMonth] = serializeMonthState(nextState);
+    } else {
+      nextState = draftWorkspace.scratch
+        ? normalizeWorkspaceMonth(draftWorkspace.scratch, '')
+        : createBlankState();
+      nextState.selectedMonth = '';
+      draftWorkspace.scratch = serializeMonthState(nextState);
+    }
+
+    draftWorkspace.selectedMonth = normalizedMonth;
+    state = nextState;
+    syncCountersFromState(state);
+    if (typeof window !== 'undefined') {
+      window.domianA4State = state;
+    }
+    return state;
+  }
+
+  function clearCurrentForm() {
+    var selectedMonth = normalizeSelectedMonth(state && state.selectedMonth);
+
+    state = createBlankState();
+    state.selectedMonth = selectedMonth;
+    uiState = createUiState();
+    syncCountersFromState(state);
+    storeActiveStateInWorkspace();
+    if (typeof window !== 'undefined') {
+      window.domianA4State = state;
+    }
+    return state;
+  }
+
+  function getA4StorageKeys() {
+    var keys = [];
+    var index;
+    var key;
+
+    if (typeof localStorage === 'undefined') {
+      return keys;
+    }
+
+    for (index = 0; index < localStorage.length; index += 1) {
+      key = localStorage.key(index);
+      if (key) {
+        keys.push(key);
+      }
+    }
+
+    return keys.filter(function (storageKey) {
+      return storageKey === A4_DRAFT_KEY
+        || LEGACY_A4_DRAFT_KEYS.indexOf(storageKey) !== -1
+        || storageKey === TABLE_SNAPSHOT_KEY
+        || storageKey === 'domianA4SelectedMonth'
+        || storageKey.indexOf('domianA4MonthDraftV1:') === 0;
+    });
+  }
+
+  function removeAllA4Storage() {
+    try {
+      getA4StorageKeys().forEach(function (storageKey) {
+        localStorage.removeItem(storageKey);
+      });
+      return true;
+    } catch (error) {
+      console.warn('Не удалось удалить все сохранённые данные A4.', error);
+      return false;
+    }
+  }
+
+  function hardResetCalculator() {
+    clearAutosaveTimer();
+    if (!removeAllA4Storage()) {
+      hasUnsavedChanges = true;
+      setDraftStatus('error', 'Не удалось удалить все сохранённые данные');
+      return false;
+    }
+
+    draftWorkspace = createDraftWorkspace();
+    state = createBlankState();
+    uiState = createUiState();
+    syncCountersFromState(state);
+    hasUnsavedChanges = false;
+    if (typeof window !== 'undefined') {
+      window.domianA4State = state;
+    }
+    if (elements.expensesList && elements.agentsList) {
+      render();
+    }
+    setDraftStatus('clean', 'Все сохранённые данные удалены. Можно обновить страницу и начать заново.');
+    return true;
   }
 
   function syncCountersFromState(nextState) {
@@ -442,10 +692,13 @@
     }
 
     try {
+      storeActiveStateInWorkspace();
       payload = {
         version: A4_DRAFT_VERSION,
         savedAt: savedAt.toISOString(),
-        state: serializeDraftState()
+        selectedMonth: draftWorkspace.selectedMonth,
+        scratch: draftWorkspace.scratch ? clone(draftWorkspace.scratch) : null,
+        months: clone(draftWorkspace.months)
       };
       localStorage.setItem(A4_DRAFT_KEY, JSON.stringify(payload));
       hasUnsavedChanges = false;
@@ -477,7 +730,10 @@
   function loadDraftState() {
     var raw;
     var payload;
+    var workspace;
     var nextState;
+    var legacyRaw;
+    var legacyPayload;
 
     if (typeof localStorage === 'undefined' || typeof localStorage.getItem !== 'function') {
       return null;
@@ -485,15 +741,33 @@
 
     try {
       raw = localStorage.getItem(A4_DRAFT_KEY);
-      if (!raw) {
+      if (raw) {
+        payload = JSON.parse(raw);
+        workspace = normalizeDraftWorkspace(payload);
+        if (!workspace) {
+          setDraftStatus('error', 'Черновик не удалось восстановить');
+          return null;
+        }
+      } else {
+        LEGACY_A4_DRAFT_KEYS.some(function (legacyKey) {
+          legacyRaw = localStorage.getItem(legacyKey);
+          if (!legacyRaw) {
+            return false;
+          }
+          legacyPayload = JSON.parse(legacyRaw);
+          workspace = migrateLegacyDraft(legacyPayload);
+          return Boolean(workspace);
+        });
+      }
+
+      if (!workspace) {
         return null;
       }
-      payload = JSON.parse(raw);
-      if (!payload || payload.version !== A4_DRAFT_VERSION || !payload.state) {
-        setDraftStatus('error', 'Черновик не удалось восстановить');
-        return null;
-      }
-      nextState = normalizeDraftState(payload.state);
+
+      draftWorkspace = workspace;
+      nextState = workspace.selectedMonth
+        ? normalizeWorkspaceMonth(workspace.months[workspace.selectedMonth], workspace.selectedMonth)
+        : (workspace.scratch ? normalizeWorkspaceMonth(workspace.scratch, '') : null);
       if (!nextState) {
         setDraftStatus('error', 'Черновик не удалось восстановить');
         return null;
@@ -879,26 +1153,43 @@
   }
 
   function renderExactDeals(agent, result) {
-    var deals = normalizeExactDealsInput(agent.dealsInput);
+    normalizeDealRowMetadata(agent);
+    var deals = agent.dealsInput;
     var dealMetrics = result.deals || [];
-    var meaningfulDealIndex = 0;
+    var traineeWarningText = result.traineeScaleWarning
+      || 'У стажёра указано больше 3 задатков за месяц. По правилам стажёрская шкала заканчивается на 3-м задатке. Переведите агента в статус партнёра или проверьте условия вручную.';
+    var traineeWarning = agent.status === 'trainee' && agent.paymentType === 'standard'
+      ? '<div class="notice warning trainee-scale-warning" data-trainee-scale-warning data-agent-id="' + agent.id + '"' + (result.traineeScaleExceeded ? '' : ' hidden') + '><strong>' + escapeHtml(traineeWarningText) + '</strong>'
+        + '<span>Расчёт применён как для агента, фактически перешедшего на партнёрскую шкалу после 3-го задатка.</span></div>'
+      : '';
     return '<div class="exact-deals-panel wide-field">'
-      + '<p class="hint">Для точной зарплаты лучше ввести сделки отдельно. Особенно если одна сделка сильно больше других.</p>'
+      + '<p class="hint">Введите комиссию, которая приходится именно на этого агента. Для точной зарплаты введите сделки отдельно.</p>'
+      + '<p class="hint compact">Обычная сделка меньше 50 000 ₽ не считается задатком, оплачивается по 45% и не двигает шкалу. Для новостройки с одним агентом любая сумма может считаться задатком.</p>'
+      + '<p class="hint compact">Расчётный задаток — ручной номер ступени. Используйте его, если сделка закрылась не в порядке задатков или следующий задаток заменяет развалившийся.</p>'
+      + traineeWarning
       + '<div class="exact-deals-list">'
       + deals.map(function (deal, index) {
-        var amount = inputNumber(deal);
-        var metric = amount > 0 ? dealMetrics[meaningfulDealIndex] : null;
-        if (amount > 0) {
-          meaningfulDealIndex += 1;
-        }
+        var metric = dealMetrics.find(function (item) {
+          return item.sourceIndex === index;
+        }) || null;
+        var rateSourceText = metric
+          ? (metric.rateSource === 'manualDepositOrder'
+            ? 'Ручной номер задатка'
+            : (metric.rateSource === 'baseSmallDeal' ? 'Базовые 45%' : 'Автоматическая шкала'))
+          : '—';
         return '<div class="exact-deal-row">'
           + '<label class="field">'
           + '<span>Сделка ' + (index + 1) + ' — комиссия, ₽</span>'
           + moneyInput('data-agent-id="' + agent.id + '" data-deal-index="' + index + '"', getDealDisplayValue(deal), DEAL_PLACEHOLDER)
           + '</label>'
+          + '<label class="field exact-deal-order-field"><span>Расчётный задаток</span>'
+          + '<input type="number" min="1" step="1" placeholder="авто" data-agent-id="' + agent.id + '" data-deal-deposit-order="' + index + '" value="' + escapeHtml(agent.dealDepositOrders[index]) + '">'
+          + '<small>Пусто — автоматический порядок.</small></label>'
+          + '<label class="check-field exact-deal-newbuild-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-deal-newbuild-solo="' + index + '"' + checked(agent.dealNewbuildSoloFlags[index]) + '><span>Новостройка, один агент</span></label>'
           + '<div class="deal-calculation" aria-live="polite" data-agent-id="' + agent.id + '" data-agent-deal-index="' + index + '">'
           + '<span><strong data-agent-deal-rate>' + (metric ? Math.round(metric.rate * 100) + '%' : '—') + '</strong><small>Применённый процент</small></span>'
           + '<span><strong data-agent-deal-payout>' + (metric ? money(metric.payout) : '—') + '</strong><small>Агенту</small></span>'
+          + '<span><strong data-agent-deal-source>' + escapeHtml(rateSourceText) + '</strong><small>Источник ставки</small></span>'
           + '</div>'
           + '<button class="button ghost" type="button" data-action="remove-deal" data-agent-id="' + agent.id + '" data-deal-index="' + index + '"' + (deals.length === 1 ? ' disabled' : '') + '>Удалить</button>'
           + '</div>';
@@ -1285,10 +1576,10 @@
 
   function renderStandardScaleNote(agent) {
     var isTrainee = agent.status === 'trainee';
-    var scale = isTrainee ? '30 / 35 / 40%' : '45 / 50 / 55 / 60%';
+    var scale = isTrainee ? '30 / 35 / 40%' : '45 / 50 / 55 / 60 / 65 / 70 / 80%';
     var text = isTrainee
-      ? 'Стажёр — новичок, считается по стажёрской шкале.'
-      : 'Партнёр — опытный агент, может работать по стандартной системе или на особых условиях.';
+      ? 'Стажёр — первые три задатка считаются по стажёрской шкале. С 4-го задатка применяется соответствующая партнёрская ступень и показывается предупреждение.'
+      : 'Партнёр — с 7-го задатка применяется максимум 80%.';
 
     return '<div class="agent-inline-note">'
       + '<strong>Стандартная шкала: ' + scale + '.</strong> '
@@ -1913,28 +2204,35 @@
         }
         if (sourceAgent && sourceAgent.commissionMode === 'exact') {
           var sourceDeals = normalizeExactDealsInput(sourceAgent.dealsInput);
-          var meaningfulDealIndex = 0;
           sourceDeals.forEach(function (deal, index) {
             var rowNode = document.querySelector('[data-agent-deal-index="' + index + '"][data-agent-id="' + agent.id + '"]');
             if (!rowNode) {
-              if (positiveNumber(deal) > 0) {
-                meaningfulDealIndex += 1;
-              }
               return;
             }
-            var metric = positiveNumber(deal) > 0 ? agent.deals[meaningfulDealIndex] : null;
-            if (positiveNumber(deal) > 0) {
-              meaningfulDealIndex += 1;
-            }
+            var metric = positiveNumber(deal) > 0
+              ? agent.deals.find(function (item) { return item.sourceIndex === index; })
+              : null;
             var rateNode = rowNode.querySelector('[data-agent-deal-rate]');
             var payoutNode = rowNode.querySelector('[data-agent-deal-payout]');
+            var sourceNode = rowNode.querySelector('[data-agent-deal-source]');
             if (rateNode) {
               rateNode.textContent = metric ? Math.round(metric.rate * 100) + '%' : '—';
             }
             if (payoutNode) {
               payoutNode.textContent = metric ? money(metric.payout) : '—';
             }
+            if (sourceNode) {
+              sourceNode.textContent = metric
+                ? (metric.rateSource === 'manualDepositOrder'
+                  ? 'Ручной номер задатка'
+                  : (metric.rateSource === 'baseSmallDeal' ? 'Базовые 45%' : 'Автоматическая шкала'))
+                : '—';
+            }
           });
+        }
+        var warningNode = document.querySelector('[data-trainee-scale-warning][data-agent-id="' + agent.id + '"]');
+        if (warningNode) {
+          warningNode.hidden = !agent.traineeScaleExceeded;
         }
       }
       syncAgentCardChrome(agent.id);
@@ -2228,7 +2526,7 @@
     if (!agent) {
       return;
     }
-    agent.dealsInput = normalizeExactDealsInput(agent.dealsInput);
+    normalizeDealRowMetadata(agent);
     var calculated = calculateAgent(Object.assign({}, agent, { commissionMode: 'exact' }));
     agent.commission = calculated.commission;
     agent.dealCount = calculated.dealCount;
@@ -2264,9 +2562,17 @@
     }
 
     if (target.id === 'selectedMonthInput') {
-      state.selectedMonth = normalizeSelectedMonth(target.value);
-      renderCalendarStatus();
-      window.domianA4State = state;
+      var nextMonth = normalizeSelectedMonth(target.value);
+      var monthExisted = Boolean(draftWorkspace && draftWorkspace.months && draftWorkspace.months[nextMonth]);
+      var calendarContext;
+      activateMonth(nextMonth);
+      uiState = createUiState();
+      render();
+      saveDraft('month');
+      calendarContext = window.buildCalendarContext ? window.buildCalendarContext(nextMonth) : null;
+      setDraftStatus('saved', nextMonth
+        ? (monthExisted ? 'Загружен ' : 'Создан месяц: ') + (calendarContext ? calendarContext.selectedMonthLabel : nextMonth)
+        : 'Открыт черновик без выбранного месяца');
       return;
     }
 
@@ -2291,10 +2597,35 @@
       return;
     }
 
+    if (target.dataset.dealDepositOrder !== undefined) {
+      var orderAgent = findAgent(target.dataset.agentId);
+      if (orderAgent) {
+        normalizeDealRowMetadata(orderAgent);
+        var orderIndex = Number(target.dataset.dealDepositOrder);
+        orderAgent.dealDepositOrders[orderIndex] = target.value === ''
+          ? ''
+          : Math.max(1, Math.floor(inputNumber(target.value)));
+        syncAgentTotalsFromDeals(orderAgent);
+        updateTotalsOnly();
+      }
+      return;
+    }
+
+    if (target.dataset.dealNewbuildSolo !== undefined) {
+      var newbuildAgent = findAgent(target.dataset.agentId);
+      if (newbuildAgent) {
+        normalizeDealRowMetadata(newbuildAgent);
+        newbuildAgent.dealNewbuildSoloFlags[Number(target.dataset.dealNewbuildSolo)] = Boolean(target.checked);
+        syncAgentTotalsFromDeals(newbuildAgent);
+        updateTotalsOnly();
+      }
+      return;
+    }
+
     if (target.dataset.dealIndex !== undefined) {
       var dealAgent = findAgent(target.dataset.agentId);
       if (dealAgent) {
-        dealAgent.dealsInput = normalizeExactDealsInput(dealAgent.dealsInput);
+        normalizeDealRowMetadata(dealAgent);
         dealAgent.dealsInput[Number(target.dataset.dealIndex)] = normalizeInputNumber(target.value) === '' ? '' : inputNumber(target.value);
         syncAgentTotalsFromDeals(dealAgent);
         updateTotalsOnly();
@@ -2334,9 +2665,12 @@
       }
       agent[field] = target.value;
       if (target.value === 'exact') {
-        agent.dealsInput = hasMeaningfulDeals(agent.dealsInput)
-          ? agent.dealsInput
-          : splitCommissionIntoDeals(agent.commission, agent.dealCount);
+        if (!hasMeaningfulDeals(agent.dealsInput)) {
+          agent.dealsInput = splitCommissionIntoDeals(agent.commission, agent.dealCount);
+          agent.dealDepositOrders = [];
+          agent.dealNewbuildSoloFlags = [];
+        }
+        normalizeDealRowMetadata(agent);
         syncAgentTotalsFromDeals(agent);
       }
     } else if (field === 'status') {
@@ -2353,6 +2687,9 @@
 
     if ((field === 'commission' || field === 'dealCount') && (agent.commissionMode || 'quick') === 'quick') {
       agent.dealsInput = splitCommissionIntoDeals(agent.commission, agent.dealCount);
+      agent.dealDepositOrders = [];
+      agent.dealNewbuildSoloFlags = [];
+      normalizeDealRowMetadata(agent);
     }
 
     if ((eventType === 'input' && field === 'halfYearCommission') || field === 'travelQuarterPartnershipConfirmed') {
@@ -2526,8 +2863,7 @@
       var addDealAgent = findAgent(target.dataset.agentId);
       if (addDealAgent) {
         markStateDirty();
-        addDealAgent.dealsInput = normalizeExactDealsInput(addDealAgent.dealsInput);
-        addDealAgent.dealsInput.push('');
+        addExactDealRow(addDealAgent);
         syncAgentTotalsFromDeals(addDealAgent);
         renderPreservingUiState('[data-deal-index="' + (addDealAgent.dealsInput.length - 1) + '"][data-agent-id="' + addDealAgent.id + '"]');
       }
@@ -2542,23 +2878,18 @@
           return;
         }
         markStateDirty();
-        removeDealAgent.dealsInput = normalizeExactDealsInput(removeDealAgent.dealsInput);
-        if (removeDealAgent.dealsInput.length > 1) {
-          removeDealAgent.dealsInput.splice(dealIndex, 1);
-        }
+        removeExactDealRow(removeDealAgent, dealIndex);
         syncAgentTotalsFromDeals(removeDealAgent);
         renderPreservingUiState('[data-deal-index="' + Math.max(0, dealIndex - 1) + '"][data-agent-id="' + removeDealAgent.id + '"]');
       }
     }
 
     if (target.dataset.action === 'clear-all') {
-      if (!window.confirm('Очистить все текущие данные на странице? Это действие заменит текущий ввод пустым шаблоном.')) {
+      if (!window.confirm('Очистить текущую форму активного месяца? Другие сохранённые месяцы останутся без изменений.')) {
         return;
       }
       markStateDirty();
-      state = createBlankState();
-      uiState = createUiState();
-      syncCountersFromState(state);
+      clearCurrentForm();
       try {
         localStorage.removeItem(TABLE_SNAPSHOT_KEY);
       } catch (error) {
@@ -2567,6 +2898,18 @@
       window.domianA4State = state;
       render();
       saveDraft('clear');
+    }
+
+    if (target.dataset.action === 'hard-reset') {
+      if (!window.confirm('Удалить все сохранённые данные A4 из этого браузера? Будут удалены все месяцы, текущий черновик и snapshot ведомости. Это действие нельзя отменить.')) {
+        return;
+      }
+      if (window.prompt('Для подтверждения полного сброса введите слово УДАЛИТЬ') !== 'УДАЛИТЬ') {
+        setDraftStatus('dirty', 'Полный сброс отменён');
+        return;
+      }
+      hardResetCalculator();
+      return;
     }
 
     if (target.dataset.action === 'restore-example') {
@@ -2749,6 +3092,10 @@
     updateForecastNotice();
     restoredState = loadDraftState();
     state = restoredState || createState();
+    if (!draftWorkspace) {
+      draftWorkspace = createDraftWorkspace();
+      storeActiveStateInWorkspace();
+    }
     syncCountersFromState(state);
     uiState = createUiState();
     if (!lastDraftStatusType) {

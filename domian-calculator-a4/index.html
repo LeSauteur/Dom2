@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Домиан — калькулятор экономики офиса</title>
-  <link rel="stylesheet" href="assets/css/a4-calculator.css?v=a4-save-20260625">
+  <link rel="stylesheet" href="assets/css/a4-calculator.css?v=a4-deposits-20260701">
   <link rel="stylesheet" href="assets/css/navigation.css">
 </head>
 <body>
@@ -46,7 +46,7 @@
       <button class="button ghost" type="button" data-action="open-table-mode" title="Дополнительный формат просмотра. Основной расчёт можно пройти и без него.">Табличный режим</button>
       <button class="button primary" type="button" data-action="save-draft" title="Сохранить текущий ввод локально в этом браузере.">💾 Сохранить</button>
       <span id="draftSaveStatus" class="draft-save-status draft-save-status--clean" data-draft-save-status aria-live="polite">Черновик не сохранён</span>
-      <button class="button ghost" type="button" data-action="clear-all" title="Удалит текущие введённые данные из этой страницы после подтверждения.">Очистить всё</button>
+      <button class="button ghost" type="button" data-action="clear-all" title="Сбросит только текущую форму активного месяца. Другие месяцы останутся сохранены.">Очистить текущую форму</button>
       <button class="button primary" type="button" data-action="restore-example" title="Заменит текущие данные демонстрационным примером после подтверждения.">Вернуть пример</button>
     </section>
 
@@ -60,14 +60,14 @@
         <div>
           <span class="small-label">Календарная политика</span>
           <h2 id="calendarTitle">Месяц расчёта</h2>
-          <p>Выберите месяц, чтобы увидеть, какие обязательства относятся к этому периоду.</p>
+          <p>Каждый месяц хранится отдельно. Переключение месяца не удаляет заполненные данные.</p>
         </div>
         <label class="field calendar-month-field">
           <span>Месяц</span>
           <input id="selectedMonthInput" type="month" autocomplete="off">
         </label>
       </div>
-      <div class="notice info calendar-phase-note">Календарные статусы подготовлены для будущего расчёта. Текущие итоги пока считаются по прежней логике.</div>
+      <div class="notice info calendar-phase-note">Итог считается по активному месяцу. Календарные статусы показывают обязательства выбранного периода.</div>
       <div id="calendarStatusList" class="calendar-status-list" aria-live="polite"></div>
     </section>
 
@@ -99,7 +99,7 @@
         <p><strong>Роялти</strong> — автоматическая выплата по сетке Домиан, её не нужно добавлять в расходы вручную.</p>
         <p><strong>Мотивационный резерв</strong> — будущая нагрузка: стипендии, поездки, корпоративы и конгресс.</p>
         <p><strong>Офис держится на собственнике</strong> — без личных сделок офис в минусе, а с ними выходит в плюс.</p>
-        <p><strong>Повышенная шкала</strong> — не фикс 80%, а более щедрая шкала по номеру сделки.</p>
+        <p><strong>Повышенная шкала</strong> — стартовый процент-floor поверх стандартной шкалы 45 / 50 / 55 / 60 / 65 / 70 / 80%.</p>
       </div>
     </details>
 
@@ -247,7 +247,7 @@
               <span class="step-label">Прогноз</span>
               <h2 id="forecastTitle">Прогноз при текущих показателях</h2>
             </div>
-            <p class="hint">Прогноз показывает сценарий, если офис несколько месяцев подряд будет работать с такими же цифрами. Это не фактический отчёт и не новый ввод.</p>
+            <p class="hint">Прогноз умножает показатели активного месяца. Это управленческий сценарий, а не фактическая агрегация сохранённых месяцев.</p>
           </div>
           <div class="notice info">В прогнозе роялти считается как сумма одинаковых месяцев. Если в реальности оборот по месяцам будет отличаться, ставка роялти может измениться.</div>
           <div class="table-wrap forecast-wrap">
@@ -340,6 +340,15 @@
         </section>
       </div>
     </section>
+    <section class="danger-service-panel" aria-labelledby="dangerServiceTitle">
+      <div>
+        <span class="small-label">Сервисная операция</span>
+        <h2 id="dangerServiceTitle">Полный сброс калькулятора</h2>
+        <p>Удалит все сохранённые месяцы, текущий черновик и данные для ведомости из этого браузера. После обновления страница откроется чистой.</p>
+      </div>
+      <button class="button danger" type="button" data-action="hard-reset">Удалить все сохранённые данные</button>
+    </section>
+
     <footer class="mode-footer">
       <p>Расчёт является управленческой моделью и помогает оценить экономику офиса.</p>
       <nav class="mode-footer__links" aria-label="Нижняя навигация">
@@ -352,9 +361,9 @@
     </footer>
   </main>
 
-  <script src="assets/js/constants.js"></script>
-  <script src="assets/js/calculations.js"></script>
-  <script src="assets/js/calendar-policy.js"></script>
-  <script src="assets/js/app.js?v=a4-save-20260625"></script>
+  <script src="assets/js/constants.js?v=a4-deposits-20260701"></script>
+  <script src="assets/js/calculations.js?v=a4-deposits-20260701"></script>
+  <script src="assets/js/calendar-policy.js?v=a4-deposits-20260701"></script>
+  <script src="assets/js/app.js?v=a4-deposits-20260701"></script>
 </body>
 </html>

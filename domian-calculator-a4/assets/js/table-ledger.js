@@ -2,7 +2,7 @@
   'use strict';
 
   var SNAPSHOT_KEY = 'domianA4TableSnapshot';
-  var SNAPSHOT_VERSION = 2;
+  var SNAPSHOT_VERSION = 3;
   var DEFAULT_AGENT_NAME = 'Агент';
   var motivationPanelState = Object.create(null);
   var agentCounter = 0;
@@ -77,10 +77,20 @@
     return getAgentCommission(agent) > 0;
   }
 
-  function createDeal(amount) {
+  function normalizeDepositOrder(value) {
+    if (value === '' || value === null || value === undefined) {
+      return '';
+    }
+    var numeric = Math.floor(readMoney(value));
+    return numeric > 0 ? numeric : '';
+  }
+
+  function createDeal(amount, depositOrder, isNewbuildSolo) {
     return {
       id: nextDealId(),
       amount: amount || 0,
+      depositOrder: normalizeDepositOrder(depositOrder),
+      isNewbuildSolo: Boolean(isNewbuildSolo),
       comment: ''
     };
   }
@@ -189,6 +199,24 @@
     });
   }
 
+  function getAgentDealDepositOrders(agent) {
+    if (agent.commissionMode === 'quick') {
+      return [];
+    }
+    return (agent.deals || []).map(function (deal) {
+      return normalizeDepositOrder(deal.depositOrder);
+    });
+  }
+
+  function getAgentDealNewbuildSoloFlags(agent) {
+    if (agent.commissionMode === 'quick') {
+      return [];
+    }
+    return (agent.deals || []).map(function (deal) {
+      return Boolean(deal.isNewbuildSolo);
+    });
+  }
+
   function buildCalculationAgent(agent) {
     var active = isAgentActive(agent);
     var commission = getAgentCommission(agent);
@@ -200,6 +228,8 @@
       dealCount: getAgentDealCount(agent),
       commissionMode: agent.commissionMode,
       dealsInput: dealsInput,
+      dealDepositOrders: getAgentDealDepositOrders(agent),
+      dealNewbuildSoloFlags: getAgentDealNewbuildSoloFlags(agent),
       paymentType: agent.paymentType,
       status: agent.status,
       fixedRate: agent.fixedRate === undefined || agent.fixedRate === null || agent.fixedRate === ''
@@ -446,14 +476,22 @@
   }
 
   function renderExactDealRow(agent, deal, index, officeResult) {
-    var rate = getDealRate(buildCalculationAgent(agent), index);
+    var calculated = calculateAgent(buildCalculationAgent(agent));
+    var metric = (calculated.deals || []).find(function (item) {
+      return item.sourceIndex === index;
+    });
     var amount = readMoney(deal.amount);
-    var payout = amount * rate;
+    var rate = metric ? metric.rate : getDealRate(buildCalculationAgent(agent), index);
+    var payout = metric ? metric.payout : amount * rate;
     var royalty = getDistributedRoyalty(amount, officeResult);
     return '<tr class="deal-row" data-agent-id="' + agent.id + '" data-deal-id="' + deal.id + '">'
       + '<td class="empty-note">' + escapeHtml(agent.name || DEFAULT_AGENT_NAME) + '</td>'
       + '<td class="number-cell">' + (index + 1) + '</td>'
-      + '<td><input class="money-cell" inputmode="numeric" autocomplete="off" data-focus-key="deal-' + deal.id + '" data-deal-field="amount" data-agent-id="' + agent.id + '" data-deal-id="' + deal.id + '" value="' + escapeHtml(formatInputMoney(deal.amount)) + '"></td>'
+      + '<td><input class="money-cell" inputmode="numeric" autocomplete="off" data-focus-key="deal-' + deal.id + '" data-deal-field="amount" data-agent-id="' + agent.id + '" data-deal-id="' + deal.id + '" value="' + escapeHtml(formatInputMoney(deal.amount)) + '">'
+      + '<div class="ledger-deal-meta">'
+      + '<label>Расчётный задаток<input class="small-cell" inputmode="numeric" autocomplete="off" data-focus-key="deposit-order-' + deal.id + '" data-deal-field="depositOrder" data-agent-id="' + agent.id + '" data-deal-id="' + deal.id + '" value="' + escapeHtml(deal.depositOrder) + '" placeholder="авто"></label>'
+      + '<label class="ledger-deal-flag"><input type="checkbox" data-deal-field="isNewbuildSolo" data-agent-id="' + agent.id + '" data-deal-id="' + deal.id + '"' + (deal.isNewbuildSolo ? ' checked' : '') + '> Новостройка, один агент</label>'
+      + '</div></td>'
       + '<td><span class="percent-pill">' + percentValue(rate) + '</span></td>'
       + '<td class="calc-cell">' + moneyValue(payout) + '</td>'
       + '<td class="calc-cell">' + moneyValue(agent.introduced ? amount * REFERRAL_RATE : 0) + '</td>'
@@ -472,15 +510,18 @@
     var count = getAgentDealCount(agent);
     var total = getAgentCommission(agent);
     var split = count ? total / count : 0;
+    var calculated = calculateAgent(buildCalculationAgent(agent));
     var rows = '';
     for (var i = 0; i < count; i += 1) {
-      var rate = getDealRate(buildCalculationAgent(agent), i);
+      var metric = (calculated.deals || [])[i];
+      var rate = metric ? metric.rate : getDealRate(buildCalculationAgent(agent), i);
+      var payout = metric ? metric.payout : split * rate;
       rows += '<tr class="deal-row quick-row" data-agent-id="' + agent.id + '">'
         + '<td class="empty-note">' + escapeHtml(agent.name || DEFAULT_AGENT_NAME) + '</td>'
         + '<td class="number-cell">' + (i + 1) + '</td>'
         + '<td>' + (i === 0 ? '<input class="money-cell" inputmode="numeric" data-focus-key="quick-commission-' + agent.id + '" data-agent-field="quickCommission" data-agent-id="' + agent.id + '" value="' + escapeHtml(formatInputMoney(agent.quickCommission)) + '" placeholder="общая сумма">' : moneyValue(split)) + '</td>'
         + '<td><span class="percent-pill">' + percentValue(rate) + '</span></td>'
-        + '<td class="calc-cell">' + moneyValue(split * rate) + '</td>'
+        + '<td class="calc-cell">' + moneyValue(payout) + '</td>'
         + '<td class="calc-cell">' + moneyValue(agent.introduced ? split * REFERRAL_RATE : 0) + '</td>'
         + '<td class="calc-cell">' + moneyValue(getDistributedRoyalty(split, officeResult)) + '</td>'
         + '<td class="empty-note">—</td>'
@@ -734,7 +775,7 @@
       var parsed = JSON.parse(raw);
       var source = parsed;
       if (parsed && parsed.version !== undefined) {
-        if ((parsed.version !== 1 && parsed.version !== SNAPSHOT_VERSION) || !parsed.state) {
+        if ((parsed.version !== 1 && parsed.version !== 2 && parsed.version !== SNAPSHOT_VERSION) || !parsed.state) {
           showNotice('Snapshot A4 не подходит для загрузки.');
           return;
         }
@@ -760,8 +801,10 @@
         created.commissionMode = agent.commissionMode === 'quick' ? 'quick' : 'exact';
         created.quickCommission = readMoney(agent.commission);
         created.quickDealCount = Math.max(1, Math.floor(readMoney(agent.dealCount)) || 1);
-        created.deals = (Array.isArray(agent.dealsInput) && agent.dealsInput.length ? agent.dealsInput : [agent.commission || 0]).map(function (amount) {
-          return createDeal(readMoney(amount));
+        var depositOrders = Array.isArray(agent.dealDepositOrders) ? agent.dealDepositOrders : [];
+        var newbuildSoloFlags = Array.isArray(agent.dealNewbuildSoloFlags) ? agent.dealNewbuildSoloFlags : [];
+        created.deals = (Array.isArray(agent.dealsInput) && agent.dealsInput.length ? agent.dealsInput : [agent.commission || 0]).map(function (amount, index) {
+          return createDeal(readMoney(amount), depositOrders[index], newbuildSoloFlags[index]);
         });
         var motivation = agent.motivation || {};
         created.partnerConfirmed = Boolean(agent.partnerConfirmed || motivation.partnerConfirmed);
@@ -836,6 +879,10 @@
       if (deal) {
         if (target.dataset.dealField === 'amount') {
           deal.amount = readMoney(target.value);
+        } else if (target.dataset.dealField === 'depositOrder') {
+          deal.depositOrder = normalizeDepositOrder(target.value);
+        } else if (target.dataset.dealField === 'isNewbuildSolo') {
+          deal.isNewbuildSolo = Boolean(target.checked);
         } else {
           deal[target.dataset.dealField] = target.value;
         }

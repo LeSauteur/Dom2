@@ -2,7 +2,7 @@
   'use strict';
 
   var SNAPSHOT_KEY = 'domianA4TableSnapshot';
-  var SNAPSHOT_VERSION = 2;
+  var SNAPSHOT_VERSION = 3;
   var DEFAULT_AGENT_ROWS = 10;
   var DEFAULT_TABLE_EXPENSE_CATEGORIES = [
     { id: 'rent', label: 'Аренда', amount: 0 },
@@ -125,6 +125,8 @@
       dealCount: 1,
       commissionMode: 'quick',
       dealsInput: [],
+      dealDepositOrders: [],
+      dealNewbuildSoloFlags: [],
       paymentType: 'standard',
       status: 'partner',
       boostedRates: boostedRates,
@@ -311,6 +313,33 @@
     return Array.isArray(deals) && deals.length ? deals.slice() : [''];
   }
 
+  function normalizeDealDepositOrders(values, length) {
+    var source = Array.isArray(values) ? values : [];
+    var result = [];
+    for (var i = 0; i < length; i += 1) {
+      var value = source[i];
+      var numeric = value === '' || value === null || value === undefined ? 0 : Math.floor(positiveNumber(value));
+      result.push(numeric > 0 ? numeric : '');
+    }
+    return result;
+  }
+
+  function normalizeDealNewbuildSoloFlags(values, length) {
+    var source = Array.isArray(values) ? values : [];
+    var result = [];
+    for (var i = 0; i < length; i += 1) {
+      result.push(Boolean(source[i]));
+    }
+    return result;
+  }
+
+  function syncExactDealMetadata(agent) {
+    var deals = normalizeDealsInput(agent.dealsInput);
+    agent.dealsInput = deals;
+    agent.dealDepositOrders = normalizeDealDepositOrders(agent.dealDepositOrders, deals.length);
+    agent.dealNewbuildSoloFlags = normalizeDealNewbuildSoloFlags(agent.dealNewbuildSoloFlags, deals.length);
+  }
+
   function hasMeaningfulDeals(deals) {
     return Array.isArray(deals) && deals.some(function (deal) {
       return positiveNumber(deal) > 0;
@@ -378,7 +407,7 @@
     if (!agent || agent.commissionMode !== 'exact') {
       return;
     }
-    agent.dealsInput = normalizeDealsInput(agent.dealsInput);
+    syncExactDealMetadata(agent);
     var calculated = calculateAgent(getCalculationAgent(agent));
     agent.commission = calculated.commission;
     agent.dealCount = calculated.dealCount;
@@ -412,6 +441,8 @@
   function toTableAgent(source) {
     var commissionMode = source.commissionMode === 'exact' ? 'exact' : 'quick';
     var dealsInput = normalizeDealsInput(source.dealsInput);
+    var dealDepositOrders = normalizeDealDepositOrders(source.dealDepositOrders, dealsInput.length);
+    var dealNewbuildSoloFlags = normalizeDealNewbuildSoloFlags(source.dealNewbuildSoloFlags, dealsInput.length);
     var boostedRates = normalizeBoostedRates(source.boostedRates);
     var startingRate = source.startingRate;
     if (startingRate === undefined || startingRate === null || startingRate === '') {
@@ -423,6 +454,8 @@
     var calculated = calculateAgent(Object.assign({}, source, {
       commissionMode: commissionMode,
       dealsInput: dealsInput,
+      dealDepositOrders: dealDepositOrders,
+      dealNewbuildSoloFlags: dealNewbuildSoloFlags,
       boostedRates: boostedRates,
       startingRate: startingRate,
       motivation: motivation
@@ -440,6 +473,8 @@
       dealCount: calculated.dealCount,
       commissionMode: commissionMode,
       dealsInput: dealsInput,
+      dealDepositOrders: dealDepositOrders,
+      dealNewbuildSoloFlags: dealNewbuildSoloFlags,
       paymentType: source.paymentType || calculated.paymentType || 'standard',
       status: source.status || calculated.status || 'partner',
       boostedRates: boostedRates,
@@ -478,7 +513,7 @@
     try {
       var snapshot = JSON.parse(raw);
       if (snapshot && snapshot.version !== undefined) {
-        if ((snapshot.version !== 1 && snapshot.version !== SNAPSHOT_VERSION) || !snapshot.state) {
+        if ((snapshot.version !== 1 && snapshot.version !== 2 && snapshot.version !== SNAPSHOT_VERSION) || !snapshot.state) {
           return null;
         }
         snapshot = snapshot.state;
@@ -519,6 +554,8 @@
       dealCount: Math.max(1, Math.floor(positiveNumber(agent.dealCount))),
       commissionMode: agent.commissionMode === 'exact' ? 'exact' : 'quick',
       dealsInput: normalizeDealsInput(agent.dealsInput),
+      dealDepositOrders: normalizeDealDepositOrders(agent.dealDepositOrders, normalizeDealsInput(agent.dealsInput).length),
+      dealNewbuildSoloFlags: normalizeDealNewbuildSoloFlags(agent.dealNewbuildSoloFlags, normalizeDealsInput(agent.dealsInput).length),
       paymentType: agent.paymentType || 'standard',
       status: agent.status || 'partner',
       fixedRate: positiveNumber(fixedRate),
@@ -1048,9 +1085,12 @@
           agent.dealsInput = hasMeaningfulDeals(agent.dealsInput)
             ? normalizeDealsInput(agent.dealsInput)
             : splitCommissionIntoDeals(agent.commission, agent.dealCount);
+          syncExactDealMetadata(agent);
           syncExactAgentTotals(agent);
         } else {
           agent.dealsInput = [];
+          agent.dealDepositOrders = [];
+          agent.dealNewbuildSoloFlags = [];
         }
       } else if (field === 'dealCount') {
         agent.dealCount = Math.max(1, Math.floor(inputNumber(target.value)));
@@ -1125,8 +1165,10 @@
       var addDealAgent = findAgent(action.dataset.agentId);
       if (addDealAgent) {
         addDealAgent.commissionMode = 'exact';
-        addDealAgent.dealsInput = normalizeDealsInput(addDealAgent.dealsInput);
+        syncExactDealMetadata(addDealAgent);
         addDealAgent.dealsInput.push('');
+        addDealAgent.dealDepositOrders.push('');
+        addDealAgent.dealNewbuildSoloFlags.push(false);
         syncExactAgentTotals(addDealAgent);
         render();
       }
@@ -1134,9 +1176,12 @@
     if (action.dataset.action === 'remove-deal') {
       var removeDealAgent = findAgent(action.dataset.agentId);
       if (removeDealAgent) {
-        removeDealAgent.dealsInput = normalizeDealsInput(removeDealAgent.dealsInput);
+        syncExactDealMetadata(removeDealAgent);
         if (removeDealAgent.dealsInput.length > 1) {
-          removeDealAgent.dealsInput.splice(Number(action.dataset.dealIndex), 1);
+          var dealIndex = Number(action.dataset.dealIndex);
+          removeDealAgent.dealsInput.splice(dealIndex, 1);
+          removeDealAgent.dealDepositOrders.splice(dealIndex, 1);
+          removeDealAgent.dealNewbuildSoloFlags.splice(dealIndex, 1);
         }
         syncExactAgentTotals(removeDealAgent);
         render();

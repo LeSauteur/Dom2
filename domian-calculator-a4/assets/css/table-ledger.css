@@ -193,6 +193,22 @@ button:disabled, input:disabled { opacity: .55; cursor: not-allowed; }
 .agent-money-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
 .agent-money-grid label { display: grid; gap: 3px; font-size: 11px; color: var(--muted); font-weight: 800; }
 .number-cell { text-align: center; font-weight: 900; color: var(--blue); }
+.ledger-deal-meta {
+  display: grid;
+  gap: 5px;
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.ledger-deal-meta label { display: grid; gap: 3px; font-weight: 800; }
+.ledger-deal-meta .small-cell { min-height: 32px; max-width: none; }
+.ledger-deal-flag {
+  display: flex !important;
+  align-items: center;
+  grid-template-columns: auto 1fr;
+  gap: 5px !important;
+}
+.ledger-deal-flag input { margin: 0; }
 .percent-pill { display: inline-block; min-width: 44px; text-align: center; padding: 4px 7px; border-radius: 999px; background: #e8f2ff; color: var(--blue); font-weight: 900; }
 .calc-cell { font-weight: 900; white-space: nowrap; }
 .positive { color: var(--green); }

@@ -158,15 +158,16 @@ test('table input stores formatted money fields as normalized numbers', () => {
 
 test('table loadSnapshotState accepts current versioned A4 snapshot and rejects incompatible versions', () => {
   const currentSnapshot = {
-    version: 2,
+    version: 3,
     state: makeA4State([
       {
         id: 'snapshot-agent',
         name: 'Snapshot agent',
         commissionMode: 'exact',
-        dealsInput: [100000, 200000],
-        paymentType: 'fixed',
-        fixedRate: 80,
+        dealsInput: [30000, 200000],
+        dealDepositOrders: [7, ''],
+        dealNewbuildSoloFlags: [true, false],
+        paymentType: 'standard',
         motivation: Object.assign({}, tableWindow.DEFAULT_MOTIVATION, {
           mode: 'rules',
           congressEnabled: true,
@@ -182,12 +183,37 @@ test('table loadSnapshotState accepts current versioned A4 snapshot and rejects 
   assert.equal(loaded.ownerSales, 456000);
   assert.equal(loaded.selectedMonth, '2026-07');
   assert.equal(loaded.agents[0].commissionMode, 'exact');
-  assert.deepEqual(Array.from(loaded.agents[0].dealsInput), [100000, 200000]);
+  assert.deepEqual(Array.from(loaded.agents[0].dealsInput), [30000, 200000]);
+  assert.deepEqual(Array.from(loaded.agents[0].dealDepositOrders), [7, '']);
+  assert.deepEqual(Array.from(loaded.agents[0].dealNewbuildSoloFlags), [true, false]);
+  assert.deepEqual(
+    Array.from(tableWindow.calculateAgent(table.getCalculationAgent(loaded.agents[0])).deals.map((deal) => deal.rate)),
+    [0.80, 0.50]
+  );
   assert.equal(loaded.agents[0].motivation.congressEnabled, true);
   assert.equal(loaded.agents[0].motivation.starEnabled, true);
 
   tableWindow.__localStorageStore.domianA4TableSnapshot = JSON.stringify({ version: 999, state: currentSnapshot.state });
   assert.equal(table.loadSnapshotState(), null);
+});
+
+test('table loadSnapshotState keeps backward compatibility with v2 snapshots', () => {
+  tableWindow.__localStorageStore.domianA4TableSnapshot = JSON.stringify({
+    version: 2,
+    state: makeA4State([{
+      id: 'v2-agent',
+      name: 'V2 agent',
+      commissionMode: 'exact',
+      dealsInput: [100000],
+      paymentType: 'standard',
+      status: 'partner'
+    }])
+  });
+
+  const loaded = table.loadSnapshotState();
+  assert.equal(loaded.agents[0].name, 'V2 agent');
+  assert.deepEqual(Array.from(loaded.agents[0].dealDepositOrders), ['']);
+  assert.deepEqual(Array.from(loaded.agents[0].dealNewbuildSoloFlags), [false]);
 });
 
 test('table loadSnapshotState keeps backward compatibility with v1 snapshots without selectedMonth', () => {
@@ -277,7 +303,7 @@ test('table-mode preserves imported exact deals and pays by real deal amounts', 
   assert.equal(agent.dealCount, 5);
   assert.equal(calculated.commission, 900000);
   assert.equal(calculated.dealCount, 5);
-  closeTo(calculated.payout, 510000);
+  closeTo(calculated.payout, 535000);
 });
 
 test('table-mode preserves uneven exact deals instead of recalculating as quick mode', () => {

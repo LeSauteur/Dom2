@@ -22,8 +22,8 @@
 
   window.PAY_SCALES = {
     standard: {
-      trainee: [0.30, 0.35, 0.40, 0.45],
-      partner: [0.45, 0.50, 0.55, 0.60]
+      trainee: [0.30, 0.35, 0.40],
+      partner: [0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.80]
     },
     boostedDefault: [55, 55, 55, 60],
     boostedStartingDefault: 55,
@@ -85,6 +85,8 @@
       dealCount: 1,
       commissionMode: 'exact',
       dealsInput: [''],
+      dealDepositOrders: [''],
+      dealNewbuildSoloFlags: [false],
       paymentType: 'standard',
       status: 'partner',
       boostedRates: [55, 55, 55, 60],
