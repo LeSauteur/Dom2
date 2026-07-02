@@ -125,7 +125,7 @@
       dealCount: 1,
       commissionMode: 'quick',
       dealsInput: [],
-      dealDepositOrders: [],
+      dealManualRates: [],
       dealNewbuildSoloFlags: [],
       paymentType: 'standard',
       status: 'partner',
@@ -313,13 +313,33 @@
     return Array.isArray(deals) && deals.length ? deals.slice() : [''];
   }
 
-  function normalizeDealDepositOrders(values, length) {
-    var source = Array.isArray(values) ? values : [];
+  function depositOrderToManualRate(value) {
+    if (value === '' || value === null || value === undefined) {
+      return '';
+    }
+    var order = Math.floor(positiveNumber(value));
+    var legacyRates = [45, 50, 55, 60, 65, 70, 80];
+    return order > 0 ? legacyRates[Math.min(order - 1, legacyRates.length - 1)] : '';
+  }
+
+  function normalizeDealManualRates(values, legacyOrders, length) {
+    var hasManualRates = Array.isArray(values);
+    var source = hasManualRates ? values : [];
+    var legacySource = Array.isArray(legacyOrders) ? legacyOrders : [];
     var result = [];
     for (var i = 0; i < length; i += 1) {
       var value = source[i];
-      var numeric = value === '' || value === null || value === undefined ? 0 : Math.floor(positiveNumber(value));
-      result.push(numeric > 0 ? numeric : '');
+      var numeric;
+      if (!hasManualRates) {
+        result.push(depositOrderToManualRate(legacySource[i]));
+        continue;
+      }
+      if (value === '' || value === null || value === undefined || String(value).trim() === '') {
+        result.push('');
+        continue;
+      }
+      numeric = Number(value);
+      result.push(Number.isFinite(numeric) ? Math.min(100, Math.max(0, numeric)) : '');
     }
     return result;
   }
@@ -336,7 +356,8 @@
   function syncExactDealMetadata(agent) {
     var deals = normalizeDealsInput(agent.dealsInput);
     agent.dealsInput = deals;
-    agent.dealDepositOrders = normalizeDealDepositOrders(agent.dealDepositOrders, deals.length);
+    agent.dealManualRates = normalizeDealManualRates(agent.dealManualRates, agent.dealDepositOrders, deals.length);
+    delete agent.dealDepositOrders;
     agent.dealNewbuildSoloFlags = normalizeDealNewbuildSoloFlags(agent.dealNewbuildSoloFlags, deals.length);
   }
 
@@ -441,7 +462,7 @@
   function toTableAgent(source) {
     var commissionMode = source.commissionMode === 'exact' ? 'exact' : 'quick';
     var dealsInput = normalizeDealsInput(source.dealsInput);
-    var dealDepositOrders = normalizeDealDepositOrders(source.dealDepositOrders, dealsInput.length);
+    var dealManualRates = normalizeDealManualRates(source.dealManualRates, source.dealDepositOrders, dealsInput.length);
     var dealNewbuildSoloFlags = normalizeDealNewbuildSoloFlags(source.dealNewbuildSoloFlags, dealsInput.length);
     var boostedRates = normalizeBoostedRates(source.boostedRates);
     var startingRate = source.startingRate;
@@ -454,7 +475,7 @@
     var calculated = calculateAgent(Object.assign({}, source, {
       commissionMode: commissionMode,
       dealsInput: dealsInput,
-      dealDepositOrders: dealDepositOrders,
+      dealManualRates: dealManualRates,
       dealNewbuildSoloFlags: dealNewbuildSoloFlags,
       boostedRates: boostedRates,
       startingRate: startingRate,
@@ -473,7 +494,7 @@
       dealCount: calculated.dealCount,
       commissionMode: commissionMode,
       dealsInput: dealsInput,
-      dealDepositOrders: dealDepositOrders,
+      dealManualRates: dealManualRates,
       dealNewbuildSoloFlags: dealNewbuildSoloFlags,
       paymentType: source.paymentType || calculated.paymentType || 'standard',
       status: source.status || calculated.status || 'partner',
@@ -554,7 +575,7 @@
       dealCount: Math.max(1, Math.floor(positiveNumber(agent.dealCount))),
       commissionMode: agent.commissionMode === 'exact' ? 'exact' : 'quick',
       dealsInput: normalizeDealsInput(agent.dealsInput),
-      dealDepositOrders: normalizeDealDepositOrders(agent.dealDepositOrders, normalizeDealsInput(agent.dealsInput).length),
+      dealManualRates: normalizeDealManualRates(agent.dealManualRates, agent.dealDepositOrders, normalizeDealsInput(agent.dealsInput).length),
       dealNewbuildSoloFlags: normalizeDealNewbuildSoloFlags(agent.dealNewbuildSoloFlags, normalizeDealsInput(agent.dealsInput).length),
       paymentType: agent.paymentType || 'standard',
       status: agent.status || 'partner',
@@ -1089,7 +1110,7 @@
           syncExactAgentTotals(agent);
         } else {
           agent.dealsInput = [];
-          agent.dealDepositOrders = [];
+          agent.dealManualRates = [];
           agent.dealNewbuildSoloFlags = [];
         }
       } else if (field === 'dealCount') {
@@ -1167,7 +1188,7 @@
         addDealAgent.commissionMode = 'exact';
         syncExactDealMetadata(addDealAgent);
         addDealAgent.dealsInput.push('');
-        addDealAgent.dealDepositOrders.push('');
+        addDealAgent.dealManualRates.push('');
         addDealAgent.dealNewbuildSoloFlags.push(false);
         syncExactAgentTotals(addDealAgent);
         render();
@@ -1180,7 +1201,7 @@
         if (removeDealAgent.dealsInput.length > 1) {
           var dealIndex = Number(action.dataset.dealIndex);
           removeDealAgent.dealsInput.splice(dealIndex, 1);
-          removeDealAgent.dealDepositOrders.splice(dealIndex, 1);
+          removeDealAgent.dealManualRates.splice(dealIndex, 1);
           removeDealAgent.dealNewbuildSoloFlags.splice(dealIndex, 1);
         }
         syncExactAgentTotals(removeDealAgent);

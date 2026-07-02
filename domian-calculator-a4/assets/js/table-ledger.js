@@ -77,19 +77,28 @@
     return getAgentCommission(agent) > 0;
   }
 
-  function normalizeDepositOrder(value) {
+  function normalizeManualRate(value) {
+    if (value === '' || value === null || value === undefined || String(value).trim() === '') {
+      return '';
+    }
+    var numeric = Number(value);
+    return Number.isFinite(numeric) ? Math.min(100, Math.max(0, numeric)) : '';
+  }
+
+  function depositOrderToManualRate(value) {
     if (value === '' || value === null || value === undefined) {
       return '';
     }
-    var numeric = Math.floor(readMoney(value));
-    return numeric > 0 ? numeric : '';
+    var order = Math.floor(readMoney(value));
+    var legacyRates = [45, 50, 55, 60, 65, 70, 80];
+    return order > 0 ? legacyRates[Math.min(order - 1, legacyRates.length - 1)] : '';
   }
 
-  function createDeal(amount, depositOrder, isNewbuildSolo) {
+  function createDeal(amount, manualRate, isNewbuildSolo) {
     return {
       id: nextDealId(),
       amount: amount || 0,
-      depositOrder: normalizeDepositOrder(depositOrder),
+      manualRate: normalizeManualRate(manualRate),
       isNewbuildSolo: Boolean(isNewbuildSolo),
       comment: ''
     };
@@ -199,12 +208,12 @@
     });
   }
 
-  function getAgentDealDepositOrders(agent) {
+  function getAgentDealManualRates(agent) {
     if (agent.commissionMode === 'quick') {
       return [];
     }
     return (agent.deals || []).map(function (deal) {
-      return normalizeDepositOrder(deal.depositOrder);
+      return normalizeManualRate(deal.manualRate);
     });
   }
 
@@ -228,7 +237,7 @@
       dealCount: getAgentDealCount(agent),
       commissionMode: agent.commissionMode,
       dealsInput: dealsInput,
-      dealDepositOrders: getAgentDealDepositOrders(agent),
+      dealManualRates: getAgentDealManualRates(agent),
       dealNewbuildSoloFlags: getAgentDealNewbuildSoloFlags(agent),
       paymentType: agent.paymentType,
       status: agent.status,
@@ -484,12 +493,19 @@
     var rate = metric ? metric.rate : getDealRate(buildCalculationAgent(agent), index);
     var payout = metric ? metric.payout : amount * rate;
     var royalty = getDistributedRoyalty(amount, officeResult);
+    var isSmallOrdinaryDeal = amount > 0
+      && amount < readMoney(window.QUALIFYING_DEAL_COMMISSION_THRESHOLD || 50000)
+      && !deal.isNewbuildSolo;
+    var manualRateControl = agent.paymentType === 'fixed'
+      ? ''
+      : '<label>Процент для этой сделки, %<input class="small-cell" type="number" min="0" max="100" step="1" autocomplete="off" data-focus-key="manual-rate-' + deal.id + '" data-deal-field="manualRate" data-agent-id="' + agent.id + '" data-deal-id="' + deal.id + '" value="' + escapeHtml(deal.manualRate) + '" placeholder="авто"' + (isSmallOrdinaryDeal ? ' disabled' : '') + '>'
+        + '<small>' + (isSmallOrdinaryDeal ? 'Для обычной сделки меньше 50 000 ₽ применяется 45%.' : 'Пусто — автоматическая шкала.') + '</small></label>';
     return '<tr class="deal-row" data-agent-id="' + agent.id + '" data-deal-id="' + deal.id + '">'
       + '<td class="empty-note">' + escapeHtml(agent.name || DEFAULT_AGENT_NAME) + '</td>'
       + '<td class="number-cell">' + (index + 1) + '</td>'
       + '<td><input class="money-cell" inputmode="numeric" autocomplete="off" data-focus-key="deal-' + deal.id + '" data-deal-field="amount" data-agent-id="' + agent.id + '" data-deal-id="' + deal.id + '" value="' + escapeHtml(formatInputMoney(deal.amount)) + '">'
       + '<div class="ledger-deal-meta">'
-      + '<label>Расчётный задаток<input class="small-cell" inputmode="numeric" autocomplete="off" data-focus-key="deposit-order-' + deal.id + '" data-deal-field="depositOrder" data-agent-id="' + agent.id + '" data-deal-id="' + deal.id + '" value="' + escapeHtml(deal.depositOrder) + '" placeholder="авто"></label>'
+      + manualRateControl
       + '<label class="ledger-deal-flag"><input type="checkbox" data-deal-field="isNewbuildSolo" data-agent-id="' + agent.id + '" data-deal-id="' + deal.id + '"' + (deal.isNewbuildSolo ? ' checked' : '') + '> Новостройка, один агент</label>'
       + '</div></td>'
       + '<td><span class="percent-pill">' + percentValue(rate) + '</span></td>'
@@ -801,10 +817,16 @@
         created.commissionMode = agent.commissionMode === 'quick' ? 'quick' : 'exact';
         created.quickCommission = readMoney(agent.commission);
         created.quickDealCount = Math.max(1, Math.floor(readMoney(agent.dealCount)) || 1);
+        var hasManualRates = Array.isArray(agent.dealManualRates);
+        var manualRates = hasManualRates ? agent.dealManualRates : [];
         var depositOrders = Array.isArray(agent.dealDepositOrders) ? agent.dealDepositOrders : [];
         var newbuildSoloFlags = Array.isArray(agent.dealNewbuildSoloFlags) ? agent.dealNewbuildSoloFlags : [];
         created.deals = (Array.isArray(agent.dealsInput) && agent.dealsInput.length ? agent.dealsInput : [agent.commission || 0]).map(function (amount, index) {
-          return createDeal(readMoney(amount), depositOrders[index], newbuildSoloFlags[index]);
+          return createDeal(
+            readMoney(amount),
+            hasManualRates ? manualRates[index] : depositOrderToManualRate(depositOrders[index]),
+            newbuildSoloFlags[index]
+          );
         });
         var motivation = agent.motivation || {};
         created.partnerConfirmed = Boolean(agent.partnerConfirmed || motivation.partnerConfirmed);
@@ -879,8 +901,8 @@
       if (deal) {
         if (target.dataset.dealField === 'amount') {
           deal.amount = readMoney(target.value);
-        } else if (target.dataset.dealField === 'depositOrder') {
-          deal.depositOrder = normalizeDepositOrder(target.value);
+        } else if (target.dataset.dealField === 'manualRate') {
+          deal.manualRate = normalizeManualRate(target.value);
         } else if (target.dataset.dealField === 'isNewbuildSolo') {
           deal.isNewbuildSolo = Boolean(target.checked);
         } else {

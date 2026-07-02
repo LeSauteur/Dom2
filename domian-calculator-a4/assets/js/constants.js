@@ -85,7 +85,7 @@
       dealCount: 1,
       commissionMode: 'exact',
       dealsInput: [''],
-      dealDepositOrders: [''],
+      dealManualRates: [''],
       dealNewbuildSoloFlags: [false],
       paymentType: 'standard',
       status: 'partner',

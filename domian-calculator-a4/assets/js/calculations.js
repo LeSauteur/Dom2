@@ -23,6 +23,17 @@
     return numeric > 0 ? numeric : null;
   }
 
+  function percentageOrNull(value) {
+    if (value === undefined || value === null || String(value).trim() === '') {
+      return null;
+    }
+    var numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+      return null;
+    }
+    return Math.min(100, Math.max(0, numeric));
+  }
+
   function readNumberOrFallback(agent, source, field, fallback) {
     var value = readAgentValue(agent, source, field, undefined);
     if (value === undefined || value === null || value === '') {
@@ -660,6 +671,7 @@
           amount: positiveNumber(amount),
           sourceIndex: sourceIndex,
           depositOrderOverride: positiveIntegerOrNull(agent.dealDepositOrders && agent.dealDepositOrders[sourceIndex]),
+          manualRateOverride: percentageOrNull(agent.dealManualRates && agent.dealManualRates[sourceIndex]),
           isNewbuildSolo: Boolean(agent.dealNewbuildSoloFlags && agent.dealNewbuildSoloFlags[sourceIndex])
         };
       }).filter(function (row) {
@@ -678,18 +690,19 @@
 
     for (var i = 0; i < dealCount; i += 1) {
       var row = exactMode
-        ? (sourceDealRows[i] || { amount: 0, sourceIndex: i, depositOrderOverride: null, isNewbuildSolo: false })
-        : { amount: dealCommission, sourceIndex: i, depositOrderOverride: null, isNewbuildSolo: false };
+        ? (sourceDealRows[i] || { amount: 0, sourceIndex: i, depositOrderOverride: null, manualRateOverride: null, isNewbuildSolo: false })
+        : { amount: dealCommission, sourceIndex: i, depositOrderOverride: null, manualRateOverride: null, isNewbuildSolo: false };
       var currentDealCommission = row.amount;
       var isTraineeStandard = agent.status === 'trainee' && agent.paymentType === 'standard';
       var isQualifiedDeposit = currentDealCommission >= qualifyingThreshold || row.isNewbuildSolo;
       var automaticScaleIndex = getRateScaleIndexForDeal(currentDealCommission, qualifiedDealCount);
-      var scaleIndex = row.depositOrderOverride !== null
+      var hasLegacyDepositOrder = row.manualRateOverride === null && row.depositOrderOverride !== null;
+      var scaleIndex = hasLegacyDepositOrder
         ? row.depositOrderOverride - 1
         : automaticScaleIndex;
-      var rateSource = row.depositOrderOverride !== null ? 'manualDepositOrder' : 'auto';
+      var rateSource = hasLegacyDepositOrder ? 'manualDepositOrder' : 'auto';
       var depositOrderApplied = isQualifiedDeposit
-        ? (row.depositOrderOverride !== null ? row.depositOrderOverride : qualifiedDealCount + 1)
+        ? (hasLegacyDepositOrder ? row.depositOrderOverride : qualifiedDealCount + 1)
         : null;
       var rate;
 
@@ -697,6 +710,9 @@
         rate = PAY_SCALES.standard.partner[0];
         rateSource = 'baseSmallDeal';
         scaleIndex = 0;
+      } else if (agent.paymentType !== 'fixed' && row.manualRateOverride !== null) {
+        rate = row.manualRateOverride / 100;
+        rateSource = 'manualRate';
       } else if (isTraineeStandard) {
         rate = getTraineeStandardDealRate(scaleIndex);
       } else {

@@ -91,7 +91,7 @@ test('live table-ledger loads active month and exact-deal metadata from snapshot
         name: 'Анна',
         commissionMode: 'exact',
         dealsInput: [30000, 100000],
-        dealDepositOrders: [7, ''],
+        dealManualRates: [50, ''],
         dealNewbuildSoloFlags: [true, false],
         paymentType: 'standard',
         status: 'partner',
@@ -107,11 +107,11 @@ test('live table-ledger loads active month and exact-deal metadata from snapshot
   const calculated = ledgerWindow.calculateAgent(ledger.buildCalculationAgent(agent));
 
   assert.equal(state.selectedMonth, '2026-02');
-  assert.equal(agent.deals[0].depositOrder, 7);
+  assert.equal(agent.deals[0].manualRate, 50);
   assert.equal(agent.deals[0].isNewbuildSolo, true);
-  assert.equal(agent.deals[1].depositOrder, '');
+  assert.equal(agent.deals[1].manualRate, '');
   assert.equal(agent.deals[1].isNewbuildSolo, false);
-  assert.deepEqual(Array.from(calculated.deals.map((deal) => deal.rate)), [0.80, 0.50]);
+  assert.deepEqual(Array.from(calculated.deals.map((deal) => deal.rate)), [0.50, 0.50]);
   assert.deepEqual(Array.from(calculated.deals.map((deal) => deal.sourceIndex)), [0, 1]);
 });
 
@@ -137,18 +137,48 @@ test('live table-ledger accepts legacy snapshot without exact-deal metadata', ()
   const deal = ledger.getState().agents[0].deals[0];
 
   assert.equal(deal.amount, 100000);
-  assert.equal(deal.depositOrder, '');
+  assert.equal(deal.manualRate, '');
   assert.equal(deal.isNewbuildSolo, false);
 });
 
-test('live table-ledger renders deposit order and newbuild controls', () => {
-  assert.match(ledgerSource, /data-deal-field="depositOrder"/);
+test('live table-ledger migrates legacy deposit order to manual percent', () => {
+  ledger.localStorageStore.domianA4TableSnapshot = JSON.stringify({
+    version: 3,
+    state: {
+      selectedMonth: '2026-03',
+      expenses: [],
+      ownerSales: 0,
+      agents: [{
+        id: 'legacy-order-agent',
+        name: 'Legacy order',
+        commissionMode: 'exact',
+        dealsInput: [100000],
+        dealDepositOrders: [5],
+        dealNewbuildSoloFlags: [false],
+        paymentType: 'standard',
+        status: 'partner'
+      }]
+    }
+  });
+
+  ledger.loadA4Snapshot();
+  const agent = ledger.getState().agents[0];
+  const calculated = ledgerWindow.calculateAgent(ledger.buildCalculationAgent(agent));
+
+  assert.equal(agent.deals[0].manualRate, 65);
+  assert.equal(calculated.deals[0].rate, 0.65);
+});
+
+test('live table-ledger renders manual percent and newbuild controls', () => {
+  assert.match(ledgerSource, /data-deal-field="manualRate"/);
   assert.match(ledgerSource, /data-deal-field="isNewbuildSolo"/);
-  assert.match(ledgerSource, /Расчётный задаток/);
+  assert.match(ledgerSource, /Процент для этой сделки, %/);
   assert.match(ledgerSource, /Новостройка, один агент/);
+  assert.doesNotMatch(ledgerSource, /data-deal-field="depositOrder"/);
+  assert.doesNotMatch(ledgerSource, /Расчётный задаток/);
   assert.match(ledgerHtml, /активного месяца/i);
-  assert.match(ledgerHtml, /table-ledger\.css\?v=a4-deposits-20260701/);
-  assert.match(ledgerHtml, /constants\.js\?v=a4-deposits-20260701/);
-  assert.match(ledgerHtml, /calculations\.js\?v=a4-deposits-20260701/);
-  assert.match(ledgerHtml, /table-ledger\.js\?v=a4-deposits-20260701/);
+  assert.match(ledgerHtml, /table-ledger\.css\?v=a4-manual-rate-20260702/);
+  assert.match(ledgerHtml, /constants\.js\?v=a4-manual-rate-20260702/);
+  assert.match(ledgerHtml, /calculations\.js\?v=a4-manual-rate-20260702/);
+  assert.match(ledgerHtml, /table-ledger\.js\?v=a4-manual-rate-20260702/);
 });

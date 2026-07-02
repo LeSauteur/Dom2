@@ -46,7 +46,7 @@
       dealCount: 1,
       commissionMode: 'exact',
       dealsInput: [''],
-      dealDepositOrders: [''],
+      dealManualRates: [''],
       dealNewbuildSoloFlags: [false],
       paymentType: 'standard',
       status: 'partner',
@@ -143,23 +143,46 @@
     return Array.isArray(deals) && deals.length ? deals : [''];
   }
 
+  function depositOrderToManualRate(value) {
+    if (value === undefined || value === null || value === '') {
+      return '';
+    }
+    var order = Math.floor(inputNumber(value));
+    var legacyRates = [45, 50, 55, 60, 65, 70, 80];
+    if (order < 1) {
+      return '';
+    }
+    return legacyRates[Math.min(order - 1, legacyRates.length - 1)];
+  }
+
+  function normalizeManualRate(value) {
+    if (value === undefined || value === null || String(value).trim() === '') {
+      return '';
+    }
+    var numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+      return '';
+    }
+    return Math.min(100, Math.max(0, numeric));
+  }
+
   function normalizeDealRowMetadata(agent) {
     if (!agent) {
       return agent;
     }
     var deals = normalizeExactDealsInput(agent.dealsInput);
+    var hasManualRates = Array.isArray(agent.dealManualRates);
+    var sourceManualRates = hasManualRates ? agent.dealManualRates : [];
     var sourceOrders = Array.isArray(agent.dealDepositOrders) ? agent.dealDepositOrders : [];
     var sourceNewbuildFlags = Array.isArray(agent.dealNewbuildSoloFlags) ? agent.dealNewbuildSoloFlags : [];
 
     agent.dealsInput = deals;
-    agent.dealDepositOrders = deals.map(function (_, index) {
-      var value = sourceOrders[index];
-      if (value === undefined || value === null || value === '') {
-        return '';
-      }
-      var numeric = Math.floor(inputNumber(value));
-      return numeric >= 1 ? numeric : '';
+    agent.dealManualRates = deals.map(function (_, index) {
+      return hasManualRates
+        ? normalizeManualRate(sourceManualRates[index])
+        : depositOrderToManualRate(sourceOrders[index]);
     });
+    delete agent.dealDepositOrders;
     agent.dealNewbuildSoloFlags = deals.map(function (_, index) {
       return Boolean(sourceNewbuildFlags[index]);
     });
@@ -169,7 +192,7 @@
   function addExactDealRow(agent) {
     normalizeDealRowMetadata(agent);
     agent.dealsInput.push('');
-    agent.dealDepositOrders.push('');
+    agent.dealManualRates.push('');
     agent.dealNewbuildSoloFlags.push(false);
     return agent;
   }
@@ -178,7 +201,7 @@
     normalizeDealRowMetadata(agent);
     if (agent.dealsInput.length > 1) {
       agent.dealsInput.splice(dealIndex, 1);
-      agent.dealDepositOrders.splice(dealIndex, 1);
+      agent.dealManualRates.splice(dealIndex, 1);
       agent.dealNewbuildSoloFlags.splice(dealIndex, 1);
     }
     return agent;
@@ -333,9 +356,13 @@
   function normalizeDraftAgent(agent, index) {
     var source = agent && typeof agent === 'object' ? agent : {};
     var fallback = createAgent();
+    var hasManualRates = Array.isArray(source.dealManualRates);
     var normalized;
 
     normalized = Object.assign(fallback, source);
+    if (!hasManualRates) {
+      delete normalized.dealManualRates;
+    }
     normalized.id = String(normalized.id || '').trim() || ('agent-' + (idCounter + index + 1));
     normalized.dealsInput = Array.isArray(normalized.dealsInput) && normalized.dealsInput.length
       ? normalized.dealsInput.slice()
@@ -1165,27 +1192,41 @@
     return '<div class="exact-deals-panel wide-field">'
       + '<p class="hint">Введите комиссию, которая приходится именно на этого агента. Для точной зарплаты введите сделки отдельно.</p>'
       + '<p class="hint compact">Обычная сделка меньше 50 000 ₽ не считается задатком, оплачивается по 45% и не двигает шкалу. Для новостройки с одним агентом любая сумма может считаться задатком.</p>'
-      + '<p class="hint compact">Расчётный задаток — ручной номер ступени. Используйте его, если сделка закрылась не в порядке задатков или следующий задаток заменяет развалившийся.</p>'
+      + '<p class="hint compact">Процент для этой сделки меняет ставку только в выбранной строке. Оставьте поле пустым, чтобы применить автоматическую шкалу.</p>'
       + traineeWarning
       + '<div class="exact-deals-list">'
       + deals.map(function (deal, index) {
         var metric = dealMetrics.find(function (item) {
           return item.sourceIndex === index;
         }) || null;
+        var isSmallOrdinaryDeal = positiveNumber(deal) > 0
+          && positiveNumber(deal) < positiveNumber(window.QUALIFYING_DEAL_COMMISSION_THRESHOLD || 50000)
+          && !agent.dealNewbuildSoloFlags[index];
+        var manualRateField = agent.paymentType === 'fixed'
+          ? ''
+          : '<label class="field exact-deal-rate-field"><span>Процент для этой сделки, %</span>'
+            + '<input type="number" min="0" max="100" step="1" placeholder="авто" data-agent-id="' + agent.id + '" data-deal-manual-rate="' + index + '" value="' + escapeHtml(agent.dealManualRates[index]) + '"' + disabled(isSmallOrdinaryDeal) + '>'
+            + '<small data-deal-manual-rate-help>' + (isSmallOrdinaryDeal
+              ? 'Для обычной сделки меньше 50 000 ₽ применяется 45%.'
+              : 'Пусто — автоматическая шкала. Меняет только эту сделку.') + '</small></label>';
         var rateSourceText = metric
-          ? (metric.rateSource === 'manualDepositOrder'
-            ? 'Ручной номер задатка'
+          ? (metric.rateSource === 'manualRate'
+            ? 'Ручной процент'
+            : (metric.rateSource === 'manualDepositOrder'
+              ? 'Мигрированный номер задатка'
             : (metric.rateSource === 'baseSmallDeal' ? 'Базовые 45%' : 'Автоматическая шкала'))
+            )
           : '—';
-        return '<div class="exact-deal-row">'
+        return '<div class="exact-deal-row' + (agent.paymentType === 'fixed' ? ' exact-deal-row--fixed' : '') + '">'
           + '<label class="field">'
           + '<span>Сделка ' + (index + 1) + ' — комиссия, ₽</span>'
           + moneyInput('data-agent-id="' + agent.id + '" data-deal-index="' + index + '"', getDealDisplayValue(deal), DEAL_PLACEHOLDER)
+          + '<small>Комиссия, приходящаяся на этого агента.</small>'
           + '</label>'
-          + '<label class="field exact-deal-order-field"><span>Расчётный задаток</span>'
-          + '<input type="number" min="1" step="1" placeholder="авто" data-agent-id="' + agent.id + '" data-deal-deposit-order="' + index + '" value="' + escapeHtml(agent.dealDepositOrders[index]) + '">'
-          + '<small>Пусто — автоматический порядок.</small></label>'
-          + '<label class="check-field exact-deal-newbuild-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-deal-newbuild-solo="' + index + '"' + checked(agent.dealNewbuildSoloFlags[index]) + '><span>Новостройка, один агент</span></label>'
+          + manualRateField
+          + '<div class="field exact-deal-newbuild-field"><span>Особое условие</span>'
+          + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-deal-newbuild-solo="' + index + '"' + checked(agent.dealNewbuildSoloFlags[index]) + '><span>Новостройка, один агент</span></label>'
+          + '<small>Квалифицируется при любой сумме.</small></div>'
           + '<div class="deal-calculation" aria-live="polite" data-agent-id="' + agent.id + '" data-agent-deal-index="' + index + '">'
           + '<span><strong data-agent-deal-rate>' + (metric ? Math.round(metric.rate * 100) + '%' : '—') + '</strong><small>Применённый процент</small></span>'
           + '<span><strong data-agent-deal-payout>' + (metric ? money(metric.payout) : '—') + '</strong><small>Агенту</small></span>'
@@ -2223,10 +2264,28 @@
             }
             if (sourceNode) {
               sourceNode.textContent = metric
-                ? (metric.rateSource === 'manualDepositOrder'
-                  ? 'Ручной номер задатка'
+                ? (metric.rateSource === 'manualRate'
+                  ? 'Ручной процент'
+                  : (metric.rateSource === 'manualDepositOrder'
+                    ? 'Мигрированный номер задатка'
                   : (metric.rateSource === 'baseSmallDeal' ? 'Базовые 45%' : 'Автоматическая шкала'))
+                  )
                 : '—';
+            }
+            var manualRateInput = document.querySelector('[data-deal-manual-rate="' + index + '"][data-agent-id="' + agent.id + '"]');
+            if (manualRateInput) {
+              var isSmallOrdinaryDeal = positiveNumber(deal) > 0
+                && positiveNumber(deal) < positiveNumber(window.QUALIFYING_DEAL_COMMISSION_THRESHOLD || 50000)
+                && !sourceAgent.dealNewbuildSoloFlags[index];
+              var manualRateHelp = manualRateInput.parentNode
+                ? manualRateInput.parentNode.querySelector('[data-deal-manual-rate-help]')
+                : null;
+              manualRateInput.disabled = isSmallOrdinaryDeal;
+              if (manualRateHelp) {
+                manualRateHelp.textContent = isSmallOrdinaryDeal
+                  ? 'Для обычной сделки меньше 50 000 ₽ применяется 45%.'
+                  : 'Пусто — автоматическая шкала. Меняет только эту сделку.';
+              }
             }
           });
         }
@@ -2597,15 +2656,12 @@
       return;
     }
 
-    if (target.dataset.dealDepositOrder !== undefined) {
-      var orderAgent = findAgent(target.dataset.agentId);
-      if (orderAgent) {
-        normalizeDealRowMetadata(orderAgent);
-        var orderIndex = Number(target.dataset.dealDepositOrder);
-        orderAgent.dealDepositOrders[orderIndex] = target.value === ''
-          ? ''
-          : Math.max(1, Math.floor(inputNumber(target.value)));
-        syncAgentTotalsFromDeals(orderAgent);
+    if (target.dataset.dealManualRate !== undefined) {
+      var manualRateAgent = findAgent(target.dataset.agentId);
+      if (manualRateAgent) {
+        normalizeDealRowMetadata(manualRateAgent);
+        manualRateAgent.dealManualRates[Number(target.dataset.dealManualRate)] = normalizeManualRate(target.value);
+        syncAgentTotalsFromDeals(manualRateAgent);
         updateTotalsOnly();
       }
       return;
@@ -2667,7 +2723,7 @@
       if (target.value === 'exact') {
         if (!hasMeaningfulDeals(agent.dealsInput)) {
           agent.dealsInput = splitCommissionIntoDeals(agent.commission, agent.dealCount);
-          agent.dealDepositOrders = [];
+          agent.dealManualRates = [];
           agent.dealNewbuildSoloFlags = [];
         }
         normalizeDealRowMetadata(agent);
@@ -2687,7 +2743,7 @@
 
     if ((field === 'commission' || field === 'dealCount') && (agent.commissionMode || 'quick') === 'quick') {
       agent.dealsInput = splitCommissionIntoDeals(agent.commission, agent.dealCount);
-      agent.dealDepositOrders = [];
+      agent.dealManualRates = [];
       agent.dealNewbuildSoloFlags = [];
       normalizeDealRowMetadata(agent);
     }

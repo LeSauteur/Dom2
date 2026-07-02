@@ -685,6 +685,13 @@ h3 {
   align-content: start;
 }
 
+.field,
+.check-field,
+.exact-deals-panel,
+.exact-deal-row > * {
+  min-width: 0;
+}
+
 .field span {
   min-height: 18px;
   font-size: 13px;
@@ -694,6 +701,7 @@ h3 {
 input,
 select {
   width: 100%;
+  max-width: 100%;
   min-height: 46px;
   padding: 11px 12px;
   border: 1px solid #c8cfda;
@@ -906,9 +914,23 @@ select:focus {
 
 .exact-deal-row {
   display: grid;
-  grid-template-columns: minmax(190px, 1fr) minmax(150px, .55fr) minmax(190px, .7fr);
+  grid-template-columns: minmax(0, 1.35fr) minmax(160px, .7fr) minmax(210px, .85fr);
   gap: 10px;
-  align-items: end;
+  align-items: start;
+}
+
+.exact-deal-row--fixed {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, .75fr);
+}
+
+.exact-deal-row > .field {
+  grid-template-rows: minmax(38px, auto) 46px minmax(0, 1fr);
+  align-self: stretch;
+}
+
+.exact-deal-row > .field > span {
+  display: flex;
+  align-items: flex-end;
 }
 
 .deal-calculation {
@@ -919,12 +941,17 @@ select:focus {
 }
 
 .exact-deal-row > .button {
-  grid-column: 3;
+  grid-column: -2 / -1;
   justify-self: end;
 }
 
 .exact-deal-newbuild-field {
-  align-self: stretch;
+  align-self: start;
+}
+
+.exact-deal-newbuild-field .check-field {
+  align-items: center;
+  min-height: 46px;
 }
 
 .trainee-scale-warning {
@@ -2662,7 +2689,7 @@ select:disabled {
     .management-agents,
     .result-card .totals,
     .economics-row dl {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .button {
@@ -2718,16 +2745,16 @@ select:disabled {
     right: 8px;
     bottom: 8px;
     left: 8px;
-    flex-direction: column;
     align-items: stretch;
     max-width: none;
   }
 
   .draft-save-panel .draft-save-status {
-    justify-content: center;
-    min-height: 0;
-    white-space: normal;
-    text-align: center;
+    display: none;
+  }
+
+  .exact-deal-row > .field {
+    grid-template-rows: auto auto auto;
   }
 
   .agent-head,

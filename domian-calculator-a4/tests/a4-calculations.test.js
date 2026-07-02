@@ -80,6 +80,7 @@ function loadAppHelpers() {
       '  createAgent: createAgent,',
       '  createBlankExpense: createBlankExpense,',
       '  normalizeAgent: normalizeAgent,',
+      '  depositOrderToManualRate: typeof depositOrderToManualRate === "function" ? depositOrderToManualRate : undefined,',
       '  normalizeDealRowMetadata: typeof normalizeDealRowMetadata === "function" ? normalizeDealRowMetadata : undefined,',
       '  addExactDealRow: typeof addExactDealRow === "function" ? addExactDealRow : undefined,',
       '  removeExactDealRow: typeof removeExactDealRow === "function" ? removeExactDealRow : undefined,',
@@ -353,6 +354,7 @@ test('A4 draft V1 migrates into the selected month with exact-deal metadata defa
         name: 'Анна',
         commissionMode: 'exact',
         dealsInput: [100000, '', 200000],
+        dealDepositOrders: [2, '', 7],
         paymentType: 'standard',
         status: 'partner',
         motivation: { mode: 'off' }
@@ -366,7 +368,7 @@ test('A4 draft V1 migrates into the selected month with exact-deal metadata defa
   assert.equal(workspace.scratch, null);
   assert.equal(workspace.months['2026-01'].ownerSales, 250000);
   assert.deepEqual(Array.from(workspace.months['2026-01'].agents[0].dealsInput), [100000, '', 200000]);
-  assert.deepEqual(Array.from(workspace.months['2026-01'].agents[0].dealDepositOrders), ['', '', '']);
+  assert.deepEqual(Array.from(workspace.months['2026-01'].agents[0].dealManualRates), [50, '', 80]);
   assert.deepEqual(Array.from(workspace.months['2026-01'].agents[0].dealNewbuildSoloFlags), [false, false, false]);
 });
 
@@ -1580,39 +1582,57 @@ test('new agents initialize linked exact-deal metadata arrays', () => {
   const agent = appHelpers.createAgent();
 
   assert.deepEqual(Array.from(agent.dealsInput), ['']);
-  assert.deepEqual(Array.from(agent.dealDepositOrders), ['']);
+  assert.deepEqual(Array.from(agent.dealManualRates), ['']);
   assert.deepEqual(Array.from(agent.dealNewbuildSoloFlags), [false]);
 });
 
-test('exact-deal row helpers keep amounts, deposit orders and newbuild flags aligned', () => {
+test('legacy deposit orders migrate to direct manual percentages', () => {
+  assert.equal(typeof appHelpers.depositOrderToManualRate, 'function');
+  assert.deepEqual(
+    [1, 2, 3, 4, 5, 6, 7, 20].map(appHelpers.depositOrderToManualRate),
+    [45, 50, 55, 60, 65, 70, 80, 80]
+  );
+
+  const agent = {
+    dealsInput: [100000, 100000, 100000, 100000],
+    dealDepositOrders: [1, 2, 7, 20],
+    dealNewbuildSoloFlags: [false, false, false, false]
+  };
+  appHelpers.normalizeDealRowMetadata(agent);
+
+  assert.deepEqual(Array.from(agent.dealManualRates), [45, 50, 80, 80]);
+  assert.equal(agent.dealDepositOrders, undefined);
+});
+
+test('exact-deal row helpers keep amounts, manual rates and newbuild flags aligned', () => {
   assert.equal(typeof appHelpers.normalizeDealRowMetadata, 'function');
   assert.equal(typeof appHelpers.addExactDealRow, 'function');
   assert.equal(typeof appHelpers.removeExactDealRow, 'function');
 
   const agent = {
     dealsInput: [100000, '', 200000],
-    dealDepositOrders: [2, '', 7],
+    dealManualRates: [50, '', 80],
     dealNewbuildSoloFlags: [false, false, true]
   };
 
   appHelpers.normalizeDealRowMetadata(agent);
   appHelpers.addExactDealRow(agent);
   assert.deepEqual(agent.dealsInput, [100000, '', 200000, '']);
-  assert.deepEqual(agent.dealDepositOrders, [2, '', 7, '']);
+  assert.deepEqual(agent.dealManualRates, [50, '', 80, '']);
   assert.deepEqual(agent.dealNewbuildSoloFlags, [false, false, true, false]);
 
   appHelpers.removeExactDealRow(agent, 1);
   assert.deepEqual(agent.dealsInput, [100000, 200000, '']);
-  assert.deepEqual(agent.dealDepositOrders, [2, 7, '']);
+  assert.deepEqual(agent.dealManualRates, [50, 80, '']);
   assert.deepEqual(agent.dealNewbuildSoloFlags, [false, true, false]);
 });
 
-test('exact-deal UI renders deposit order, newbuild rule and transparent rate source', () => {
+test('exact-deal UI renders direct manual percent, newbuild rule and transparent rate source', () => {
   const agent = {
     id: 'exact-row-ui',
     commissionMode: 'exact',
     dealsInput: [30000, 100000],
-    dealDepositOrders: [2, ''],
+    dealManualRates: ['', 50],
     dealNewbuildSoloFlags: [true, false],
     paymentType: 'standard',
     status: 'partner',
@@ -1620,13 +1640,51 @@ test('exact-deal UI renders deposit order, newbuild rule and transparent rate so
   };
   const html = appHelpers.renderExactDeals(agent, calculator.calculateAgent(agent));
 
-  assert.match(html, /Расчётный задаток/);
+  assert.match(html, /Процент для этой сделки, %/);
   assert.match(html, /placeholder="авто"/);
-  assert.match(html, /data-deal-deposit-order="0"/);
+  assert.match(html, /data-deal-manual-rate="0"/);
+  assert.match(html, /Пусто — автоматическая шкала\. Меняет только эту сделку\./);
+  assert.match(html, /Ручной процент/);
   assert.match(html, /Новостройка, один агент/);
   assert.match(html, /data-deal-newbuild-solo="0"/);
   assert.match(html, /Введите комиссию, которая приходится именно на этого агента/);
-  assert.match(html, /ручной номер/i);
+  assert.doesNotMatch(html, /Расчётный задаток/);
+  assert.doesNotMatch(html, /data-deal-deposit-order/);
+});
+
+test('small ordinary exact deal disables manual percent with a 45 percent explanation', () => {
+  const agent = {
+    id: 'small-rate-ui',
+    commissionMode: 'exact',
+    dealsInput: [30000],
+    dealManualRates: [80],
+    dealNewbuildSoloFlags: [false],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  };
+  const html = appHelpers.renderExactDeals(agent, calculator.calculateAgent(agent));
+
+  assert.match(html, /data-deal-manual-rate="0"[^>]*disabled/);
+  assert.match(html, /Для обычной сделки меньше 50 000 ₽ применяется 45%/);
+});
+
+test('fixed exact-deal UI hides per-deal manual percent', () => {
+  const agent = {
+    id: 'fixed-rate-ui',
+    commissionMode: 'exact',
+    dealsInput: [100000],
+    dealManualRates: [50],
+    dealNewbuildSoloFlags: [false],
+    paymentType: 'fixed',
+    fixedRate: 80,
+    status: 'partner',
+    introduced: false
+  };
+  const html = appHelpers.renderExactDeals(agent, calculator.calculateAgent(agent));
+
+  assert.doesNotMatch(html, /data-deal-manual-rate/);
+  assert.doesNotMatch(html, /Процент для этой сделки, %/);
 });
 
 test('exact-deal UI warns when trainee exceeds three deposits', () => {
@@ -1848,6 +1906,107 @@ test('manual deposit order applies to its source row without blank-row index dri
   assert.deepEqual(Array.from(partner.deals.map((deal) => deal.depositOrderApplied)), [2, 7]);
   assert.equal(capped.deals[0].rate, 0.80);
   assert.equal(capped.deals[0].depositOrderApplied, 10);
+});
+
+test('manualRate 50 means exactly 50 percent instead of the fiftieth deposit tier', () => {
+  const partner = calculator.calculateAgent({
+    id: 'partner-manual-rate-50',
+    commissionMode: 'exact',
+    dealsInput: [100000],
+    dealManualRates: [50],
+    dealNewbuildSoloFlags: [false],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  });
+
+  assert.equal(partner.deals[0].rate, 0.50);
+  assert.equal(partner.deals[0].payout, 50000);
+  assert.equal(partner.deals[0].rateSource, 'manualRate');
+});
+
+test('manual rate changes only its row and leaves the next automatic tier unchanged', () => {
+  const partner = calculator.calculateAgent({
+    id: 'partner-manual-rate-one-row',
+    commissionMode: 'exact',
+    dealsInput: [100000, 100000],
+    dealManualRates: [80, ''],
+    dealNewbuildSoloFlags: [false, false],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  });
+
+  assert.deepEqual(Array.from(partner.deals.map((deal) => deal.rate)), [0.80, 0.50]);
+  assert.deepEqual(Array.from(partner.deals.map((deal) => deal.rateSource)), ['manualRate', 'auto']);
+  assert.equal(partner.deals[1].depositOrderApplied, 2);
+});
+
+test('small ordinary deal ignores manual rate and does not advance the scale', () => {
+  const partner = calculator.calculateAgent({
+    id: 'partner-small-manual-rate',
+    commissionMode: 'exact',
+    dealsInput: [30000, 100000],
+    dealManualRates: [80, ''],
+    dealNewbuildSoloFlags: [false, false],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  });
+
+  assert.deepEqual(Array.from(partner.deals.map((deal) => deal.rate)), [0.45, 0.45]);
+  assert.deepEqual(Array.from(partner.deals.map((deal) => deal.rateSource)), ['baseSmallDeal', 'auto']);
+  assert.equal(partner.deals[1].depositOrderApplied, 1);
+});
+
+test('solo newbuild below threshold accepts a manual rate', () => {
+  const partner = calculator.calculateAgent({
+    id: 'partner-newbuild-manual-rate',
+    commissionMode: 'exact',
+    dealsInput: [30000, 100000],
+    dealManualRates: [50, ''],
+    dealNewbuildSoloFlags: [true, false],
+    paymentType: 'standard',
+    status: 'partner',
+    introduced: false
+  });
+
+  assert.deepEqual(Array.from(partner.deals.map((deal) => deal.rate)), [0.50, 0.50]);
+  assert.deepEqual(Array.from(partner.deals.map((deal) => deal.rateSource)), ['manualRate', 'auto']);
+});
+
+test('boosted scheme accepts a direct manual rate below its automatic floor', () => {
+  const partner = calculator.calculateAgent({
+    id: 'partner-boosted-manual-rate',
+    commissionMode: 'exact',
+    dealsInput: [100000],
+    dealManualRates: [50],
+    dealNewbuildSoloFlags: [false],
+    paymentType: 'boosted',
+    startingRate: 70,
+    status: 'partner',
+    introduced: false
+  });
+
+  assert.equal(partner.deals[0].rate, 0.50);
+  assert.equal(partner.deals[0].rateSource, 'manualRate');
+});
+
+test('fixed scheme ignores per-deal manual rate', () => {
+  const partner = calculator.calculateAgent({
+    id: 'partner-fixed-manual-rate',
+    commissionMode: 'exact',
+    dealsInput: [100000],
+    dealManualRates: [50],
+    dealNewbuildSoloFlags: [false],
+    paymentType: 'fixed',
+    fixedRate: 80,
+    status: 'partner',
+    introduced: false
+  });
+
+  assert.equal(partner.deals[0].rate, 0.80);
+  assert.equal(partner.deals[0].rateSource, 'auto');
 });
 
 test('small ordinary deal ignores manual deposit order', () => {
@@ -2360,11 +2519,21 @@ test('A4 draft save handlers cover shortcut, unload, clear, restore and destruct
 });
 
 test('A4 entry page cache-busts the current calculator assets', () => {
-  assert.match(indexSource, /a4-calculator\.css\?v=a4-deposits-20260701/);
-  assert.match(indexSource, /constants\.js\?v=a4-deposits-20260701/);
-  assert.match(indexSource, /calculations\.js\?v=a4-deposits-20260701/);
-  assert.match(indexSource, /calendar-policy\.js\?v=a4-deposits-20260701/);
-  assert.match(indexSource, /app\.js\?v=a4-deposits-20260701/);
+  assert.match(indexSource, /a4-calculator\.css\?v=a4-manual-rate-20260702/);
+  assert.match(indexSource, /constants\.js\?v=a4-manual-rate-20260702/);
+  assert.match(indexSource, /calculations\.js\?v=a4-manual-rate-20260702/);
+  assert.match(indexSource, /calendar-policy\.js\?v=a4-manual-rate-20260702/);
+  assert.match(indexSource, /app\.js\?v=a4-manual-rate-20260702/);
+});
+
+test('exact-deal layout keeps controls aligned and shrinkable on desktop and mobile', () => {
+  assert.match(calculatorCssSource, /\.exact-deal-row\s*\{[\s\S]*align-items:\s*start/);
+  assert.match(calculatorCssSource, /\.field,[\s\S]*\.check-field,[\s\S]*\.exact-deals-panel[\s\S]*min-width:\s*0/);
+  assert.match(calculatorCssSource, /input,[\s\S]*select\s*\{[\s\S]*max-width:\s*100%/);
+  assert.match(calculatorCssSource, /\.exact-deal-row > \.field\s*\{[\s\S]*grid-template-rows:\s*minmax\(38px,\s*auto\)\s+46px\s+minmax\(0,\s*1fr\)/);
+  assert.match(calculatorCssSource, /\.exact-deal-row--fixed\s*\{[\s\S]*grid-template-columns:/);
+  assert.match(calculatorCssSource, /@media \(max-width:\s*680px\)[\s\S]*\.exact-deal-row[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+  assert.match(calculatorCssSource, /@media \(max-width:\s*680px\)[\s\S]*\.draft-save-panel \.draft-save-status\s*\{[\s\S]*display:\s*none/);
 });
 
 test('collapsed motivation summary shows status, reserve and explicit CTA', () => {
