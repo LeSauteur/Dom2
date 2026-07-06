@@ -40,7 +40,7 @@ button, input, select, textarea {
 button { cursor: pointer; }
 
 .ledger-page {
-  width: min(1260px, calc(100% - 28px));
+  width: calc(100% - 28px);
   margin: 22px auto;
   padding: 32px;
   border: 1px solid rgba(23, 32, 51, .1);
@@ -108,6 +108,33 @@ button:disabled, input:disabled { opacity: .55; cursor: not-allowed; }
   font-weight: 800;
 }
 
+.notice.warning {
+  background: #fff4d8;
+  color: #7a4a00;
+  border: 1px solid #efcf7a;
+}
+
+.trainee-ledger-warning {
+  margin: 10px 0 0;
+}
+
+.ledger-lifecycle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: -4px 0 14px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ledger-lifecycle span {
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .72);
+}
+
 .top-grid {
   display: grid;
   grid-template-columns: 1.6fr .8fr .7fr;
@@ -157,7 +184,12 @@ button:disabled, input:disabled { opacity: .55; cursor: not-allowed; }
 .table-toolbar p { margin: 0; color: var(--muted); }
 .badge { display: inline-block; padding: 5px 8px; border-radius: 999px; background: var(--yellow); font-weight: 800; font-size: 12px; }
 .badge-office { background: var(--green-soft); color: var(--green); }
-.table-scroll { overflow: auto; border: 1px solid var(--line); border-radius: 10px; max-height: 70vh; }
+.table-scroll {
+  overflow-x: auto;
+  max-height: none;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
 
 .ledger-table {
   width: 100%;

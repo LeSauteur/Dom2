@@ -470,6 +470,7 @@ test('hard reset removes only A4 storage and prevents draft restoration', () => 
   Object.assign(appHelpers.localStorageStore, {
     domianA4DraftV1: '{"version":1}',
     domianA4DraftV2: '{"version":2}',
+    domianA4LedgerDraftV1: '{"version":1}',
     domianA4TableSnapshot: '{"version":3}',
     'domianA4MonthDraftV1:2026-01': '{"ownerSales":1}',
     domianA4SelectedMonth: '2026-01',
@@ -485,6 +486,7 @@ test('hard reset removes only A4 storage and prevents draft restoration', () => 
   assert.equal(appHelpers.hardResetCalculator(), true);
   assert.equal(appHelpers.localStorageStore.domianA4DraftV1, undefined);
   assert.equal(appHelpers.localStorageStore.domianA4DraftV2, undefined);
+  assert.equal(appHelpers.localStorageStore.domianA4LedgerDraftV1, undefined);
   assert.equal(appHelpers.localStorageStore.domianA4TableSnapshot, undefined);
   assert.equal(appHelpers.localStorageStore['domianA4MonthDraftV1:2026-01'], undefined);
   assert.equal(appHelpers.localStorageStore.domianA4SelectedMonth, undefined);
@@ -2499,6 +2501,7 @@ test('A4 draft save handlers cover shortcut, unload, clear, restore and destruct
   assert.match(appSource, /TABLE_SNAPSHOT_KEY = 'domianA4TableSnapshot'/);
   assert.match(appSource, /localStorage\.setItem\(A4_DRAFT_KEY/);
   assert.match(appSource, /function openTableModePage\(\)[\s\S]*localStorage\.setItem\(TABLE_SNAPSHOT_KEY/);
+  assert.match(appSource, /function openTableModePage\(\)[\s\S]*savedAt:\s*new Date\(\)\.toISOString\(\)/);
   assert.match(appSource, /target\.dataset\.action === 'save-draft'[\s\S]*saveDraft\('manual'\)/);
   assert.match(appSource, /event\.ctrlKey \|\| event\.metaKey/);
   assert.match(appSource, /saveDraft\('shortcut'\)/);
@@ -2519,11 +2522,11 @@ test('A4 draft save handlers cover shortcut, unload, clear, restore and destruct
 });
 
 test('A4 entry page cache-busts the current calculator assets', () => {
-  assert.match(indexSource, /a4-calculator\.css\?v=a4-manual-rate-20260702/);
-  assert.match(indexSource, /constants\.js\?v=a4-manual-rate-20260702/);
-  assert.match(indexSource, /calculations\.js\?v=a4-manual-rate-20260702/);
-  assert.match(indexSource, /calendar-policy\.js\?v=a4-manual-rate-20260702/);
-  assert.match(indexSource, /app\.js\?v=a4-manual-rate-20260702/);
+  assert.match(indexSource, /a4-calculator\.css\?v=a4-ledger-draft-20260706/);
+  assert.match(indexSource, /constants\.js\?v=a4-ledger-draft-20260706/);
+  assert.match(indexSource, /calculations\.js\?v=a4-ledger-draft-20260706/);
+  assert.match(indexSource, /calendar-policy\.js\?v=a4-ledger-draft-20260706/);
+  assert.match(indexSource, /app\.js\?v=a4-ledger-draft-20260706/);
 });
 
 test('exact-deal layout keeps controls aligned and shrinkable on desktop and mobile', () => {

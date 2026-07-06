@@ -13,6 +13,7 @@
   var AUTOSAVE_DELAY_MS = 800;
   var TABLE_SNAPSHOT_VERSION = 3;
   var TABLE_SNAPSHOT_KEY = 'domianA4TableSnapshot';
+  var LEDGER_DRAFT_KEY = 'domianA4LedgerDraftV1';
   var DEFAULT_AGENT_NAME = 'Новый агент';
   var DEAL_PLACEHOLDER = '100 000';
   var hasUnsavedChanges = false;
@@ -593,6 +594,7 @@
     return keys.filter(function (storageKey) {
       return storageKey === A4_DRAFT_KEY
         || LEGACY_A4_DRAFT_KEYS.indexOf(storageKey) !== -1
+        || storageKey === LEDGER_DRAFT_KEY
         || storageKey === TABLE_SNAPSHOT_KEY
         || storageKey === 'domianA4SelectedMonth'
         || storageKey.indexOf('domianA4MonthDraftV1:') === 0;
@@ -2835,6 +2837,7 @@
     try {
       localStorage.setItem(TABLE_SNAPSHOT_KEY, JSON.stringify({
         version: TABLE_SNAPSHOT_VERSION,
+        savedAt: new Date().toISOString(),
         state: clone(Object.assign({}, state, { version: STATE_VERSION }))
       }));
     } catch (error) {
