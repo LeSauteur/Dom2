@@ -7,19 +7,11 @@
   var expenseCounter = 100;
   var elements = {};
   var STATE_VERSION = 1;
-  var A4_DRAFT_VERSION = 2;
-  var A4_DRAFT_KEY = 'domianA4DraftV2';
-  var LEGACY_A4_DRAFT_KEYS = ['domianA4DraftV1'];
-  var AUTOSAVE_DELAY_MS = 800;
-  var TABLE_SNAPSHOT_VERSION = 3;
+  var TABLE_SNAPSHOT_VERSION = 1;
   var TABLE_SNAPSHOT_KEY = 'domianA4TableSnapshot';
-  var LEDGER_DRAFT_KEY = 'domianA4LedgerDraftV1';
   var DEFAULT_AGENT_NAME = 'Новый агент';
   var DEAL_PLACEHOLDER = '100 000';
   var hasUnsavedChanges = false;
-  var autosaveTimer = null;
-  var lastDraftStatusType = '';
-  var draftWorkspace = null;
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -47,8 +39,6 @@
       dealCount: 1,
       commissionMode: 'exact',
       dealsInput: [''],
-      dealManualRates: [''],
-      dealNewbuildSoloFlags: [false],
       paymentType: 'standard',
       status: 'partner',
       boostedRates: clone(PAY_SCALES.boostedDefault),
@@ -118,7 +108,6 @@
         : 'auto';
     }
     normalized.motivation.mode = inferInitialMotivationMode(normalized, normalized.motivation);
-    normalizeDealRowMetadata(normalized);
     return normalized;
   }
 
@@ -144,70 +133,6 @@
     return Array.isArray(deals) && deals.length ? deals : [''];
   }
 
-  function depositOrderToManualRate(value) {
-    if (value === undefined || value === null || value === '') {
-      return '';
-    }
-    var order = Math.floor(inputNumber(value));
-    var legacyRates = [45, 50, 55, 60, 65, 70, 80];
-    if (order < 1) {
-      return '';
-    }
-    return legacyRates[Math.min(order - 1, legacyRates.length - 1)];
-  }
-
-  function normalizeManualRate(value) {
-    if (value === undefined || value === null || String(value).trim() === '') {
-      return '';
-    }
-    var numeric = Number(value);
-    if (!Number.isFinite(numeric)) {
-      return '';
-    }
-    return Math.min(100, Math.max(0, numeric));
-  }
-
-  function normalizeDealRowMetadata(agent) {
-    if (!agent) {
-      return agent;
-    }
-    var deals = normalizeExactDealsInput(agent.dealsInput);
-    var hasManualRates = Array.isArray(agent.dealManualRates);
-    var sourceManualRates = hasManualRates ? agent.dealManualRates : [];
-    var sourceOrders = Array.isArray(agent.dealDepositOrders) ? agent.dealDepositOrders : [];
-    var sourceNewbuildFlags = Array.isArray(agent.dealNewbuildSoloFlags) ? agent.dealNewbuildSoloFlags : [];
-
-    agent.dealsInput = deals;
-    agent.dealManualRates = deals.map(function (_, index) {
-      return hasManualRates
-        ? normalizeManualRate(sourceManualRates[index])
-        : depositOrderToManualRate(sourceOrders[index]);
-    });
-    delete agent.dealDepositOrders;
-    agent.dealNewbuildSoloFlags = deals.map(function (_, index) {
-      return Boolean(sourceNewbuildFlags[index]);
-    });
-    return agent;
-  }
-
-  function addExactDealRow(agent) {
-    normalizeDealRowMetadata(agent);
-    agent.dealsInput.push('');
-    agent.dealManualRates.push('');
-    agent.dealNewbuildSoloFlags.push(false);
-    return agent;
-  }
-
-  function removeExactDealRow(agent, dealIndex) {
-    normalizeDealRowMetadata(agent);
-    if (agent.dealsInput.length > 1) {
-      agent.dealsInput.splice(dealIndex, 1);
-      agent.dealManualRates.splice(dealIndex, 1);
-      agent.dealNewbuildSoloFlags.splice(dealIndex, 1);
-    }
-    return agent;
-  }
-
   function getDealDisplayValue(deal) {
     return deal === '' || deal === null || deal === undefined ? '' : formatMoneyInputValue(deal);
   }
@@ -228,26 +153,21 @@
     ];
   }
 
-  function createDefaultSchemeCheck() {
-    return {
-      commission: 0,
-      dealCount: 1,
-      introduced: false,
-      expenseShareMode: 'manual',
-      manualExpenseShare: 0,
-      motivationReserve: 0,
-      manualRate: 80
-    };
-  }
-
   function createState() {
     return {
       version: STATE_VERSION,
-      selectedMonth: '',
       expenses: createInitialExpenses(),
       agents: [normalizeAgent(createAgent())],
       ownerSales: 0,
-      schemeCheck: createDefaultSchemeCheck()
+      schemeCheck: {
+        commission: 0,
+        dealCount: 1,
+        introduced: false,
+        expenseShareMode: 'manual',
+        manualExpenseShare: 0,
+        motivationReserve: 0,
+        manualRate: 80
+      }
     };
   }
 
@@ -258,11 +178,10 @@
 
     return {
       version: STATE_VERSION,
-      selectedMonth: '',
       expenses: clone(DEFAULT_EXPENSES),
       agents: agents,
       ownerSales: 150000,
-      schemeCheck: Object.assign(createDefaultSchemeCheck(), {
+      schemeCheck: {
         commission: 400000,
         dealCount: 4,
         introduced: false,
@@ -270,18 +189,25 @@
         manualExpenseShare: 20000,
         motivationReserve: 0,
         manualRate: 75
-      })
+      }
     };
   }
 
   function createBlankState() {
     return {
       version: STATE_VERSION,
-      selectedMonth: '',
       expenses: createInitialExpenses(),
       agents: [normalizeAgent(createAgent())],
       ownerSales: 0,
-      schemeCheck: createDefaultSchemeCheck()
+      schemeCheck: {
+        commission: 0,
+        dealCount: 1,
+        introduced: false,
+        expenseShareMode: 'manual',
+        manualExpenseShare: 0,
+        motivationReserve: 0,
+        manualRate: 80
+      }
     };
   }
 
@@ -339,479 +265,6 @@
     return amount > 0 ? formatMoneyInputValue(amount) : '0';
   }
 
-  function parseBoolean(value) {
-    return value === true || value === 'true';
-  }
-
-  function normalizeDraftExpense(expense, index) {
-    var source = expense && typeof expense === 'object' ? expense : {};
-    var id = String(source.id || '').trim();
-
-    return {
-      id: id || ('expense-' + (expenseCounter + index + 1)),
-      name: String(source.name || ''),
-      amount: inputNumber(source.amount)
-    };
-  }
-
-  function normalizeDraftAgent(agent, index) {
-    var source = agent && typeof agent === 'object' ? agent : {};
-    var fallback = createAgent();
-    var hasManualRates = Array.isArray(source.dealManualRates);
-    var normalized;
-
-    normalized = Object.assign(fallback, source);
-    if (!hasManualRates) {
-      delete normalized.dealManualRates;
-    }
-    normalized.id = String(normalized.id || '').trim() || ('agent-' + (idCounter + index + 1));
-    normalized.dealsInput = Array.isArray(normalized.dealsInput) && normalized.dealsInput.length
-      ? normalized.dealsInput.slice()
-      : [''];
-    normalized.motivation = Object.assign(createMotivation(), normalized.motivation || {});
-
-    return normalizeAgent(normalized);
-  }
-
-  function normalizeDraftSchemeCheck(schemeCheck) {
-    var source = schemeCheck && typeof schemeCheck === 'object' ? schemeCheck : {};
-    var defaults = createDefaultSchemeCheck();
-
-    return {
-      commission: inputNumber(source.commission !== undefined ? source.commission : defaults.commission),
-      dealCount: Math.max(1, Math.floor(inputNumber(source.dealCount !== undefined ? source.dealCount : defaults.dealCount))),
-      introduced: parseBoolean(source.introduced),
-      expenseShareMode: source.expenseShareMode === 'auto' ? 'auto' : 'manual',
-      manualExpenseShare: inputNumber(source.manualExpenseShare !== undefined ? source.manualExpenseShare : defaults.manualExpenseShare),
-      motivationReserve: inputNumber(source.motivationReserve !== undefined ? source.motivationReserve : defaults.motivationReserve),
-      manualRate: inputNumber(source.manualRate !== undefined ? source.manualRate : defaults.manualRate) || defaults.manualRate
-    };
-  }
-
-  function normalizeDraftState(draftState) {
-    var source = draftState && typeof draftState === 'object' ? draftState : null;
-    var expenses;
-    var agents;
-
-    if (!source) {
-      return null;
-    }
-
-    expenses = Array.isArray(source.expenses)
-      ? source.expenses.map(normalizeDraftExpense)
-      : createInitialExpenses();
-    if (!expenses.length) {
-      expenses = createInitialExpenses();
-    }
-
-    agents = Array.isArray(source.agents) && source.agents.length
-      ? source.agents.map(normalizeDraftAgent)
-      : [normalizeAgent(createAgent())];
-
-    return {
-      version: STATE_VERSION,
-      selectedMonth: normalizeSelectedMonth(source.selectedMonth),
-      expenses: expenses,
-      agents: agents,
-      ownerSales: inputNumber(source.ownerSales),
-      schemeCheck: normalizeDraftSchemeCheck(source.schemeCheck)
-    };
-  }
-
-  function serializeMonthState(currentState) {
-    var sourceState = currentState || createState();
-    return {
-      version: STATE_VERSION,
-      selectedMonth: normalizeSelectedMonth(sourceState.selectedMonth),
-      expenses: clone(sourceState.expenses || []),
-      agents: clone(sourceState.agents || []),
-      ownerSales: inputNumber(sourceState.ownerSales),
-      schemeCheck: clone(Object.assign(createDefaultSchemeCheck(), sourceState.schemeCheck || {}))
-    };
-  }
-
-  function serializeDraftState() {
-    return serializeMonthState(state || createState());
-  }
-
-  function createDraftWorkspace() {
-    return {
-      version: A4_DRAFT_VERSION,
-      selectedMonth: '',
-      scratch: null,
-      months: {}
-    };
-  }
-
-  function normalizeWorkspaceMonth(source, selectedMonth) {
-    var normalized = normalizeDraftState(source);
-    if (!normalized) {
-      return null;
-    }
-    normalized.selectedMonth = normalizeSelectedMonth(selectedMonth);
-    return normalized;
-  }
-
-  function migrateLegacyDraft(payload) {
-    var source = payload && payload.state ? payload.state : payload;
-    var normalized = normalizeDraftState(source);
-    var workspace = createDraftWorkspace();
-    var selectedMonth;
-
-    if (!normalized) {
-      return null;
-    }
-
-    selectedMonth = normalizeSelectedMonth(normalized.selectedMonth);
-    normalized.selectedMonth = selectedMonth;
-    workspace.selectedMonth = selectedMonth;
-    if (selectedMonth) {
-      workspace.months[selectedMonth] = serializeMonthState(normalized);
-    } else {
-      workspace.scratch = serializeMonthState(normalized);
-    }
-    return workspace;
-  }
-
-  function normalizeDraftWorkspace(payload) {
-    var workspace;
-    var sourceMonths;
-
-    if (!payload || payload.version !== A4_DRAFT_VERSION) {
-      return null;
-    }
-
-    workspace = createDraftWorkspace();
-    workspace.selectedMonth = normalizeSelectedMonth(payload.selectedMonth);
-    workspace.scratch = payload.scratch ? normalizeWorkspaceMonth(payload.scratch, '') : null;
-    sourceMonths = payload.months && typeof payload.months === 'object' ? payload.months : {};
-
-    Object.keys(sourceMonths).forEach(function (monthKey) {
-      var normalizedMonth = normalizeSelectedMonth(monthKey);
-      var monthState;
-      if (!normalizedMonth) {
-        return;
-      }
-      monthState = normalizeWorkspaceMonth(sourceMonths[monthKey], normalizedMonth);
-      if (monthState) {
-        workspace.months[normalizedMonth] = monthState;
-      }
-    });
-
-    if (workspace.selectedMonth && !workspace.months[workspace.selectedMonth]) {
-      workspace.selectedMonth = '';
-    }
-    return workspace;
-  }
-
-  function storeActiveStateInWorkspace() {
-    var currentState = state || createState();
-    var selectedMonth = normalizeSelectedMonth(currentState.selectedMonth);
-    var snapshot = serializeMonthState(currentState);
-
-    if (!draftWorkspace) {
-      draftWorkspace = createDraftWorkspace();
-    }
-
-    snapshot.selectedMonth = selectedMonth;
-    draftWorkspace.selectedMonth = selectedMonth;
-    if (selectedMonth) {
-      draftWorkspace.months[selectedMonth] = snapshot;
-    } else {
-      draftWorkspace.scratch = snapshot;
-    }
-    return snapshot;
-  }
-
-  function activateMonth(nextMonth) {
-    var normalizedMonth = normalizeSelectedMonth(nextMonth);
-    var previousMonth = normalizeSelectedMonth(state && state.selectedMonth);
-    var nextState;
-
-    if (!draftWorkspace) {
-      draftWorkspace = createDraftWorkspace();
-    }
-    storeActiveStateInWorkspace();
-
-    if (normalizedMonth) {
-      if (draftWorkspace.months[normalizedMonth]) {
-        nextState = normalizeWorkspaceMonth(draftWorkspace.months[normalizedMonth], normalizedMonth);
-      } else if (!previousMonth && draftWorkspace.scratch) {
-        nextState = normalizeWorkspaceMonth(draftWorkspace.scratch, normalizedMonth);
-        draftWorkspace.scratch = null;
-      } else {
-        nextState = createBlankState();
-        nextState.selectedMonth = normalizedMonth;
-      }
-      draftWorkspace.months[normalizedMonth] = serializeMonthState(nextState);
-    } else {
-      nextState = draftWorkspace.scratch
-        ? normalizeWorkspaceMonth(draftWorkspace.scratch, '')
-        : createBlankState();
-      nextState.selectedMonth = '';
-      draftWorkspace.scratch = serializeMonthState(nextState);
-    }
-
-    draftWorkspace.selectedMonth = normalizedMonth;
-    state = nextState;
-    syncCountersFromState(state);
-    if (typeof window !== 'undefined') {
-      window.domianA4State = state;
-    }
-    return state;
-  }
-
-  function clearCurrentForm() {
-    var selectedMonth = normalizeSelectedMonth(state && state.selectedMonth);
-
-    state = createBlankState();
-    state.selectedMonth = selectedMonth;
-    uiState = createUiState();
-    syncCountersFromState(state);
-    storeActiveStateInWorkspace();
-    if (typeof window !== 'undefined') {
-      window.domianA4State = state;
-    }
-    return state;
-  }
-
-  function getA4StorageKeys() {
-    var keys = [];
-    var index;
-    var key;
-
-    if (typeof localStorage === 'undefined') {
-      return keys;
-    }
-
-    for (index = 0; index < localStorage.length; index += 1) {
-      key = localStorage.key(index);
-      if (key) {
-        keys.push(key);
-      }
-    }
-
-    return keys.filter(function (storageKey) {
-      return storageKey === A4_DRAFT_KEY
-        || LEGACY_A4_DRAFT_KEYS.indexOf(storageKey) !== -1
-        || storageKey === LEDGER_DRAFT_KEY
-        || storageKey === TABLE_SNAPSHOT_KEY
-        || storageKey === 'domianA4SelectedMonth'
-        || storageKey.indexOf('domianA4MonthDraftV1:') === 0;
-    });
-  }
-
-  function removeAllA4Storage() {
-    try {
-      getA4StorageKeys().forEach(function (storageKey) {
-        localStorage.removeItem(storageKey);
-      });
-      return true;
-    } catch (error) {
-      console.warn('Не удалось удалить все сохранённые данные A4.', error);
-      return false;
-    }
-  }
-
-  function hardResetCalculator() {
-    clearAutosaveTimer();
-    if (!removeAllA4Storage()) {
-      hasUnsavedChanges = true;
-      setDraftStatus('error', 'Не удалось удалить все сохранённые данные');
-      return false;
-    }
-
-    draftWorkspace = createDraftWorkspace();
-    state = createBlankState();
-    uiState = createUiState();
-    syncCountersFromState(state);
-    hasUnsavedChanges = false;
-    if (typeof window !== 'undefined') {
-      window.domianA4State = state;
-    }
-    if (elements.expensesList && elements.agentsList) {
-      render();
-    }
-    setDraftStatus('clean', 'Все сохранённые данные удалены. Можно обновить страницу и начать заново.');
-    return true;
-  }
-
-  function syncCountersFromState(nextState) {
-    var maxAgentId = 0;
-    var maxExpenseId = 100;
-
-    (nextState && nextState.agents || []).forEach(function (agent) {
-      var match = String(agent && agent.id || '').match(/^agent-(\d+)$/);
-      if (match) {
-        maxAgentId = Math.max(maxAgentId, Number(match[1]));
-      }
-    });
-
-    (nextState && nextState.expenses || []).forEach(function (expense) {
-      var match = String(expense && expense.id || '').match(/^expense-(\d+)$/);
-      if (match) {
-        maxExpenseId = Math.max(maxExpenseId, Number(match[1]));
-      }
-    });
-
-    idCounter = Math.max(1, maxAgentId);
-    expenseCounter = Math.max(100, maxExpenseId);
-  }
-
-  function clearAutosaveTimer() {
-    if (!autosaveTimer) {
-      return;
-    }
-    if (typeof window !== 'undefined' && typeof window.clearTimeout === 'function') {
-      window.clearTimeout(autosaveTimer);
-    } else if (typeof clearTimeout === 'function') {
-      clearTimeout(autosaveTimer);
-    }
-    autosaveTimer = null;
-  }
-
-  function getDraftTimeLabel(date) {
-    var source = date || new Date();
-    return source.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-  }
-
-  function setDraftStatus(type, message) {
-    var statusType = type || 'clean';
-    var statusMessage = message || 'Черновик не сохранён';
-    var nodes;
-
-    lastDraftStatusType = statusType;
-
-    if (typeof document === 'undefined' || typeof document.querySelectorAll !== 'function') {
-      return;
-    }
-
-    nodes = document.querySelectorAll('#draftSaveStatus, [data-draft-save-status]');
-    Array.prototype.forEach.call(nodes, function (node) {
-      node.textContent = statusMessage;
-      node.className = 'draft-save-status draft-save-status--' + statusType;
-    });
-  }
-
-  function getSaveSuccessMessage(reason, savedAt) {
-    var time = getDraftTimeLabel(savedAt);
-
-    if (reason === 'autosave' || reason === 'pagehide' || reason === 'hidden') {
-      return 'Автосохранено ' + time;
-    }
-    if (reason === 'clear') {
-      return 'Черновик очищен';
-    }
-    if (reason === 'restore-example') {
-      return 'Пример сохранён ' + time;
-    }
-    if (reason === 'restored') {
-      return 'Черновик восстановлен';
-    }
-    return 'Сохранено ' + time;
-  }
-
-  function saveDraft(reason) {
-    var savedAt = new Date();
-    var payload;
-
-    if (typeof localStorage === 'undefined' || typeof localStorage.setItem !== 'function') {
-      setDraftStatus('error', 'Ошибка сохранения');
-      return false;
-    }
-
-    try {
-      storeActiveStateInWorkspace();
-      payload = {
-        version: A4_DRAFT_VERSION,
-        savedAt: savedAt.toISOString(),
-        selectedMonth: draftWorkspace.selectedMonth,
-        scratch: draftWorkspace.scratch ? clone(draftWorkspace.scratch) : null,
-        months: clone(draftWorkspace.months)
-      };
-      localStorage.setItem(A4_DRAFT_KEY, JSON.stringify(payload));
-      hasUnsavedChanges = false;
-      clearAutosaveTimer();
-      setDraftStatus(reason === 'autosave' || reason === 'pagehide' || reason === 'hidden' ? 'autosaved' : 'saved', getSaveSuccessMessage(reason, savedAt));
-      return true;
-    } catch (error) {
-      hasUnsavedChanges = true;
-      setDraftStatus('error', 'Ошибка сохранения');
-      console.warn('Не удалось сохранить черновик A4.', error);
-      return false;
-    }
-  }
-
-  function scheduleAutosave() {
-    if (typeof window !== 'undefined' && typeof window.setTimeout === 'function') {
-      clearAutosaveTimer();
-      autosaveTimer = window.setTimeout(function () {
-        saveDraft('autosave');
-      }, AUTOSAVE_DELAY_MS);
-    } else if (typeof setTimeout === 'function') {
-      clearAutosaveTimer();
-      autosaveTimer = setTimeout(function () {
-        saveDraft('autosave');
-      }, AUTOSAVE_DELAY_MS);
-    }
-  }
-
-  function loadDraftState() {
-    var raw;
-    var payload;
-    var workspace;
-    var nextState;
-    var legacyRaw;
-    var legacyPayload;
-
-    if (typeof localStorage === 'undefined' || typeof localStorage.getItem !== 'function') {
-      return null;
-    }
-
-    try {
-      raw = localStorage.getItem(A4_DRAFT_KEY);
-      if (raw) {
-        payload = JSON.parse(raw);
-        workspace = normalizeDraftWorkspace(payload);
-        if (!workspace) {
-          setDraftStatus('error', 'Черновик не удалось восстановить');
-          return null;
-        }
-      } else {
-        LEGACY_A4_DRAFT_KEYS.some(function (legacyKey) {
-          legacyRaw = localStorage.getItem(legacyKey);
-          if (!legacyRaw) {
-            return false;
-          }
-          legacyPayload = JSON.parse(legacyRaw);
-          workspace = migrateLegacyDraft(legacyPayload);
-          return Boolean(workspace);
-        });
-      }
-
-      if (!workspace) {
-        return null;
-      }
-
-      draftWorkspace = workspace;
-      nextState = workspace.selectedMonth
-        ? normalizeWorkspaceMonth(workspace.months[workspace.selectedMonth], workspace.selectedMonth)
-        : (workspace.scratch ? normalizeWorkspaceMonth(workspace.scratch, '') : null);
-      if (!nextState) {
-        setDraftStatus('error', 'Черновик не удалось восстановить');
-        return null;
-      }
-      syncCountersFromState(nextState);
-      hasUnsavedChanges = false;
-      setDraftStatus('restored', getSaveSuccessMessage('restored'));
-      return nextState;
-    } catch (error) {
-      setDraftStatus('error', 'Черновик не удалось восстановить');
-      console.warn('Не удалось восстановить черновик A4.', error);
-      return null;
-    }
-  }
-
   function moneyInput(attributes, value, placeholder) {
     return '<input type="text" inputmode="numeric" autocomplete="off" data-money-input="true" '
       + (placeholder ? 'placeholder="' + escapeHtml(placeholder) + '" ' : '')
@@ -857,8 +310,6 @@
 
   function markStateDirty() {
     hasUnsavedChanges = true;
-    setDraftStatus('dirty', 'Есть несохранённые изменения');
-    scheduleAutosave();
   }
 
   function checked(value) {
@@ -867,19 +318,6 @@
 
   function disabled(value) {
     return value ? ' disabled' : '';
-  }
-
-  function normalizeSelectedMonth(value) {
-    var parsed = window.parseSelectedMonth ? window.parseSelectedMonth(value) : null;
-    var fallbackMatch;
-    if (parsed) {
-      return parsed.value;
-    }
-    fallbackMatch = String(value || '').match(/^(\d{4})-(\d{2})$/);
-    if (fallbackMatch && Number(fallbackMatch[2]) >= 1 && Number(fallbackMatch[2]) <= 12) {
-      return fallbackMatch[1] + '-' + fallbackMatch[2];
-    }
-    return '';
   }
 
   function ensureUiState() {
@@ -1182,57 +620,26 @@
   }
 
   function renderExactDeals(agent, result) {
-    normalizeDealRowMetadata(agent);
-    var deals = agent.dealsInput;
+    var deals = normalizeExactDealsInput(agent.dealsInput);
     var dealMetrics = result.deals || [];
-    var traineeWarningText = result.traineeScaleWarning
-      || 'У стажёра указано больше 3 задатков за месяц. По правилам стажёрская шкала заканчивается на 3-м задатке. Переведите агента в статус партнёра или проверьте условия вручную.';
-    var traineeWarning = agent.status === 'trainee' && agent.paymentType === 'standard'
-      ? '<div class="notice warning trainee-scale-warning" data-trainee-scale-warning data-agent-id="' + agent.id + '"' + (result.traineeScaleExceeded ? '' : ' hidden') + '><strong>' + escapeHtml(traineeWarningText) + '</strong>'
-        + '<span>Расчёт применён как для агента, фактически перешедшего на партнёрскую шкалу после 3-го задатка.</span></div>'
-      : '';
+    var meaningfulDealIndex = 0;
     return '<div class="exact-deals-panel wide-field">'
-      + '<p class="hint">Введите комиссию, которая приходится именно на этого агента. Для точной зарплаты введите сделки отдельно.</p>'
-      + '<p class="hint compact">Обычная сделка меньше 50 000 ₽ не считается задатком, оплачивается по 45% и не двигает шкалу. Для новостройки с одним агентом любая сумма может считаться задатком.</p>'
-      + '<p class="hint compact">Процент для этой сделки меняет ставку только в выбранной строке. Оставьте поле пустым, чтобы применить автоматическую шкалу.</p>'
-      + traineeWarning
+      + '<p class="hint">Для точной зарплаты лучше ввести сделки отдельно. Особенно если одна сделка сильно больше других.</p>'
       + '<div class="exact-deals-list">'
       + deals.map(function (deal, index) {
-        var metric = dealMetrics.find(function (item) {
-          return item.sourceIndex === index;
-        }) || null;
-        var isSmallOrdinaryDeal = positiveNumber(deal) > 0
-          && positiveNumber(deal) < positiveNumber(window.QUALIFYING_DEAL_COMMISSION_THRESHOLD || 50000)
-          && !agent.dealNewbuildSoloFlags[index];
-        var manualRateField = agent.paymentType === 'fixed'
-          ? ''
-          : '<label class="field exact-deal-rate-field"><span>Процент для этой сделки, %</span>'
-            + '<input type="number" min="0" max="100" step="1" placeholder="авто" data-agent-id="' + agent.id + '" data-deal-manual-rate="' + index + '" value="' + escapeHtml(agent.dealManualRates[index]) + '"' + disabled(isSmallOrdinaryDeal) + '>'
-            + '<small data-deal-manual-rate-help>' + (isSmallOrdinaryDeal
-              ? 'Для обычной сделки меньше 50 000 ₽ применяется 45%.'
-              : 'Пусто — автоматическая шкала. Меняет только эту сделку.') + '</small></label>';
-        var rateSourceText = metric
-          ? (metric.rateSource === 'manualRate'
-            ? 'Ручной процент'
-            : (metric.rateSource === 'manualDepositOrder'
-              ? 'Мигрированный номер задатка'
-            : (metric.rateSource === 'baseSmallDeal' ? 'Базовые 45%' : 'Автоматическая шкала'))
-            )
-          : '—';
-        return '<div class="exact-deal-row' + (agent.paymentType === 'fixed' ? ' exact-deal-row--fixed' : '') + '">'
+        var amount = inputNumber(deal);
+        var metric = amount > 0 ? dealMetrics[meaningfulDealIndex] : null;
+        if (amount > 0) {
+          meaningfulDealIndex += 1;
+        }
+        return '<div class="exact-deal-row">'
           + '<label class="field">'
           + '<span>Сделка ' + (index + 1) + ' — комиссия, ₽</span>'
           + moneyInput('data-agent-id="' + agent.id + '" data-deal-index="' + index + '"', getDealDisplayValue(deal), DEAL_PLACEHOLDER)
-          + '<small>Комиссия, приходящаяся на этого агента.</small>'
           + '</label>'
-          + manualRateField
-          + '<div class="field exact-deal-newbuild-field"><span>Особое условие</span>'
-          + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id + '" data-deal-newbuild-solo="' + index + '"' + checked(agent.dealNewbuildSoloFlags[index]) + '><span>Новостройка, один агент</span></label>'
-          + '<small>Квалифицируется при любой сумме.</small></div>'
           + '<div class="deal-calculation" aria-live="polite" data-agent-id="' + agent.id + '" data-agent-deal-index="' + index + '">'
           + '<span><strong data-agent-deal-rate>' + (metric ? Math.round(metric.rate * 100) + '%' : '—') + '</strong><small>Применённый процент</small></span>'
           + '<span><strong data-agent-deal-payout>' + (metric ? money(metric.payout) : '—') + '</strong><small>Агенту</small></span>'
-          + '<span><strong data-agent-deal-source>' + escapeHtml(rateSourceText) + '</strong><small>Источник ставки</small></span>'
           + '</div>'
           + '<button class="button ghost" type="button" data-action="remove-deal" data-agent-id="' + agent.id + '" data-deal-index="' + index + '"' + (deals.length === 1 ? ' disabled' : '') + '>Удалить</button>'
           + '</div>';
@@ -1619,10 +1026,10 @@
 
   function renderStandardScaleNote(agent) {
     var isTrainee = agent.status === 'trainee';
-    var scale = isTrainee ? '30 / 35 / 40%' : '45 / 50 / 55 / 60 / 65 / 70 / 80%';
+    var scale = isTrainee ? '30 / 35 / 40%' : '45 / 50 / 55 / 60%';
     var text = isTrainee
-      ? 'Стажёр — первые три задатка считаются по стажёрской шкале. С 4-го задатка применяется соответствующая партнёрская ступень и показывается предупреждение.'
-      : 'Партнёр — с 7-го задатка применяется максимум 80%.';
+      ? 'Стажёр — новичок, считается по стажёрской шкале.'
+      : 'Партнёр — опытный агент, может работать по стандартной системе или на особых условиях.';
 
     return '<div class="agent-inline-note">'
       + '<strong>Стандартная шкала: ' + scale + '.</strong> '
@@ -2084,79 +1491,6 @@
       + '</div>';
   }
 
-  function getCalendarStatusText(status) {
-    if (status === 'active') {
-      return 'Считается в этом месяце';
-    }
-    if (status === 'warning') {
-      return 'Нужно внимание';
-    }
-    if (status === 'future') {
-      return 'Будущее обязательство';
-    }
-    if (status === 'past') {
-      return 'Уже прошло';
-    }
-    return 'Справочно';
-  }
-
-  function renderCalendarEvent(event) {
-    return '<article class="calendar-status calendar-status--' + escapeHtml(event.uiStatus) + '">'
-      + '<div class="calendar-status-head">'
-      + '<strong>' + escapeHtml(event.title) + '</strong>'
-      + '<span>' + escapeHtml(getCalendarStatusText(event.uiStatus)) + '</span>'
-      + '</div>'
-      + '<p>' + escapeHtml(event.reason) + '</p>'
-      + '<dl>'
-      + '<div><dt>Результат</dt><dd>' + escapeHtml(event.resultPeriodLabel || '—') + '</dd></div>'
-      + '<div><dt>Сбор</dt><dd>' + escapeHtml(event.collectionLabel || '—') + '</dd></div>'
-      + '<div><dt>Событие</dt><dd>' + escapeHtml(event.eventLabel || '—') + '</dd></div>'
-      + '</dl>'
-      + '</article>';
-  }
-
-  function renderCalendarStatus() {
-    var context;
-    var events;
-
-    if (!elements.calendarStatusList) {
-      return;
-    }
-
-    if (elements.selectedMonthInput) {
-      elements.selectedMonthInput.value = normalizeSelectedMonth(state.selectedMonth);
-    }
-
-    if (!window.buildCalendarContext) {
-      elements.calendarStatusList.innerHTML = '<div class="notice warning">Календарная политика не загружена.</div>';
-      return;
-    }
-
-    context = window.buildCalendarContext(state.selectedMonth);
-
-    if (!context.isSelected) {
-      elements.calendarStatusList.innerHTML = '<div class="calendar-empty">Месяц не выбран. Сейчас это условный расчёт, календарные статусы показаны только после выбора месяца.</div>';
-      return;
-    }
-
-    events = [
-      context.events.congress,
-      context.events.star,
-      context.events.mountains,
-      context.events.sea,
-      context.events.autumnTravel,
-      context.events.summerCorporate
-    ];
-
-    elements.calendarStatusList.innerHTML = '<div class="calendar-stipend">'
-      + '<strong>Стипендия</strong>'
-      + '<span>Выплата ' + escapeHtml(context.stipend.paymentMonthIndex) + '-го месяца квартала '
-      + escapeHtml(context.stipend.paymentQuarterLabel) + ', результат: '
-      + escapeHtml(context.stipend.resultPeriodLabel) + '</span>'
-      + '</div>'
-      + events.map(renderCalendarEvent).join('');
-  }
-
   function renderForecast(totals) {
     var periods = [
       { label: 'Месяц ×1', months: 1 },
@@ -2247,53 +1581,28 @@
         }
         if (sourceAgent && sourceAgent.commissionMode === 'exact') {
           var sourceDeals = normalizeExactDealsInput(sourceAgent.dealsInput);
+          var meaningfulDealIndex = 0;
           sourceDeals.forEach(function (deal, index) {
             var rowNode = document.querySelector('[data-agent-deal-index="' + index + '"][data-agent-id="' + agent.id + '"]');
             if (!rowNode) {
+              if (positiveNumber(deal) > 0) {
+                meaningfulDealIndex += 1;
+              }
               return;
             }
-            var metric = positiveNumber(deal) > 0
-              ? agent.deals.find(function (item) { return item.sourceIndex === index; })
-              : null;
+            var metric = positiveNumber(deal) > 0 ? agent.deals[meaningfulDealIndex] : null;
+            if (positiveNumber(deal) > 0) {
+              meaningfulDealIndex += 1;
+            }
             var rateNode = rowNode.querySelector('[data-agent-deal-rate]');
             var payoutNode = rowNode.querySelector('[data-agent-deal-payout]');
-            var sourceNode = rowNode.querySelector('[data-agent-deal-source]');
             if (rateNode) {
               rateNode.textContent = metric ? Math.round(metric.rate * 100) + '%' : '—';
             }
             if (payoutNode) {
               payoutNode.textContent = metric ? money(metric.payout) : '—';
             }
-            if (sourceNode) {
-              sourceNode.textContent = metric
-                ? (metric.rateSource === 'manualRate'
-                  ? 'Ручной процент'
-                  : (metric.rateSource === 'manualDepositOrder'
-                    ? 'Мигрированный номер задатка'
-                  : (metric.rateSource === 'baseSmallDeal' ? 'Базовые 45%' : 'Автоматическая шкала'))
-                  )
-                : '—';
-            }
-            var manualRateInput = document.querySelector('[data-deal-manual-rate="' + index + '"][data-agent-id="' + agent.id + '"]');
-            if (manualRateInput) {
-              var isSmallOrdinaryDeal = positiveNumber(deal) > 0
-                && positiveNumber(deal) < positiveNumber(window.QUALIFYING_DEAL_COMMISSION_THRESHOLD || 50000)
-                && !sourceAgent.dealNewbuildSoloFlags[index];
-              var manualRateHelp = manualRateInput.parentNode
-                ? manualRateInput.parentNode.querySelector('[data-deal-manual-rate-help]')
-                : null;
-              manualRateInput.disabled = isSmallOrdinaryDeal;
-              if (manualRateHelp) {
-                manualRateHelp.textContent = isSmallOrdinaryDeal
-                  ? 'Для обычной сделки меньше 50 000 ₽ применяется 45%.'
-                  : 'Пусто — автоматическая шкала. Меняет только эту сделку.';
-              }
-            }
           });
-        }
-        var warningNode = document.querySelector('[data-trainee-scale-warning][data-agent-id="' + agent.id + '"]');
-        if (warningNode) {
-          warningNode.hidden = !agent.traineeScaleExceeded;
         }
       }
       syncAgentCardChrome(agent.id);
@@ -2489,7 +1798,6 @@
   function render() {
     renderExpenses();
     renderAgents();
-    renderCalendarStatus();
     elements.ownerSalesInput.value = formatMoneyInputValue(state.ownerSales);
     elements.schemeCommission.value = formatMoneyInputValue(state.schemeCheck.commission);
     elements.schemeDealCount.value = state.schemeCheck.dealCount;
@@ -2587,7 +1895,7 @@
     if (!agent) {
       return;
     }
-    normalizeDealRowMetadata(agent);
+    agent.dealsInput = normalizeExactDealsInput(agent.dealsInput);
     var calculated = calculateAgent(Object.assign({}, agent, { commissionMode: 'exact' }));
     agent.commission = calculated.commission;
     agent.dealCount = calculated.dealCount;
@@ -2622,21 +1930,6 @@
       return;
     }
 
-    if (target.id === 'selectedMonthInput') {
-      var nextMonth = normalizeSelectedMonth(target.value);
-      var monthExisted = Boolean(draftWorkspace && draftWorkspace.months && draftWorkspace.months[nextMonth]);
-      var calendarContext;
-      activateMonth(nextMonth);
-      uiState = createUiState();
-      render();
-      saveDraft('month');
-      calendarContext = window.buildCalendarContext ? window.buildCalendarContext(nextMonth) : null;
-      setDraftStatus('saved', nextMonth
-        ? (monthExisted ? 'Загружен ' : 'Создан месяц: ') + (calendarContext ? calendarContext.selectedMonthLabel : nextMonth)
-        : 'Открыт черновик без выбранного месяца');
-      return;
-    }
-
     if (target.dataset.schemeField) {
       updateSchemeField(target);
       renderTotals();
@@ -2658,32 +1951,10 @@
       return;
     }
 
-    if (target.dataset.dealManualRate !== undefined) {
-      var manualRateAgent = findAgent(target.dataset.agentId);
-      if (manualRateAgent) {
-        normalizeDealRowMetadata(manualRateAgent);
-        manualRateAgent.dealManualRates[Number(target.dataset.dealManualRate)] = normalizeManualRate(target.value);
-        syncAgentTotalsFromDeals(manualRateAgent);
-        updateTotalsOnly();
-      }
-      return;
-    }
-
-    if (target.dataset.dealNewbuildSolo !== undefined) {
-      var newbuildAgent = findAgent(target.dataset.agentId);
-      if (newbuildAgent) {
-        normalizeDealRowMetadata(newbuildAgent);
-        newbuildAgent.dealNewbuildSoloFlags[Number(target.dataset.dealNewbuildSolo)] = Boolean(target.checked);
-        syncAgentTotalsFromDeals(newbuildAgent);
-        updateTotalsOnly();
-      }
-      return;
-    }
-
     if (target.dataset.dealIndex !== undefined) {
       var dealAgent = findAgent(target.dataset.agentId);
       if (dealAgent) {
-        normalizeDealRowMetadata(dealAgent);
+        dealAgent.dealsInput = normalizeExactDealsInput(dealAgent.dealsInput);
         dealAgent.dealsInput[Number(target.dataset.dealIndex)] = normalizeInputNumber(target.value) === '' ? '' : inputNumber(target.value);
         syncAgentTotalsFromDeals(dealAgent);
         updateTotalsOnly();
@@ -2723,12 +1994,9 @@
       }
       agent[field] = target.value;
       if (target.value === 'exact') {
-        if (!hasMeaningfulDeals(agent.dealsInput)) {
-          agent.dealsInput = splitCommissionIntoDeals(agent.commission, agent.dealCount);
-          agent.dealManualRates = [];
-          agent.dealNewbuildSoloFlags = [];
-        }
-        normalizeDealRowMetadata(agent);
+        agent.dealsInput = hasMeaningfulDeals(agent.dealsInput)
+          ? agent.dealsInput
+          : splitCommissionIntoDeals(agent.commission, agent.dealCount);
         syncAgentTotalsFromDeals(agent);
       }
     } else if (field === 'status') {
@@ -2745,9 +2013,6 @@
 
     if ((field === 'commission' || field === 'dealCount') && (agent.commissionMode || 'quick') === 'quick') {
       agent.dealsInput = splitCommissionIntoDeals(agent.commission, agent.dealCount);
-      agent.dealManualRates = [];
-      agent.dealNewbuildSoloFlags = [];
-      normalizeDealRowMetadata(agent);
     }
 
     if ((eventType === 'input' && field === 'halfYearCommission') || field === 'travelQuarterPartnershipConfirmed') {
@@ -2837,7 +2102,6 @@
     try {
       localStorage.setItem(TABLE_SNAPSHOT_KEY, JSON.stringify({
         version: TABLE_SNAPSHOT_VERSION,
-        savedAt: new Date().toISOString(),
         state: clone(Object.assign({}, state, { version: STATE_VERSION }))
       }));
     } catch (error) {
@@ -2853,11 +2117,6 @@
   function onClick(event) {
     var target = event.target.closest('[data-action]');
     if (!target) {
-      return;
-    }
-
-    if (target.dataset.action === 'save-draft') {
-      saveDraft('manual');
       return;
     }
 
@@ -2881,9 +2140,6 @@
 
     if (target.dataset.action === 'collapse-section' || target.dataset.action === 'expand-section') {
       var isCollapsingSection = target.dataset.action === 'collapse-section';
-      if (isCollapsingSection) {
-        saveDraft('section');
-      }
       setSectionCollapsed(target.dataset.sectionKey, isCollapsingSection);
       renderTotals();
       if (isCollapsingSection) {
@@ -2893,11 +2149,6 @@
     }
 
     if (target.dataset.action === 'remove-agent') {
-      var removingAgent = findAgent(target.dataset.agentId);
-      if (removingAgent && hasMeaningfulAgentData(removingAgent, calculateAgent(removingAgent))
-        && !window.confirm('Удалить агента и все его сделки? Это действие нельзя отменить.')) {
-        return;
-      }
       markStateDirty();
       state.agents = state.agents.filter(function (agent) {
         return agent.id !== target.dataset.agentId;
@@ -2922,7 +2173,8 @@
       var addDealAgent = findAgent(target.dataset.agentId);
       if (addDealAgent) {
         markStateDirty();
-        addExactDealRow(addDealAgent);
+        addDealAgent.dealsInput = normalizeExactDealsInput(addDealAgent.dealsInput);
+        addDealAgent.dealsInput.push('');
         syncAgentTotalsFromDeals(addDealAgent);
         renderPreservingUiState('[data-deal-index="' + (addDealAgent.dealsInput.length - 1) + '"][data-agent-id="' + addDealAgent.id + '"]');
       }
@@ -2931,24 +2183,23 @@
     if (target.dataset.action === 'remove-deal') {
       var removeDealAgent = findAgent(target.dataset.agentId);
       if (removeDealAgent) {
-        var dealIndex = Number(target.dataset.dealIndex);
-        if (positiveNumber(removeDealAgent.dealsInput && removeDealAgent.dealsInput[dealIndex]) > 0
-          && !window.confirm('Удалить сделку?')) {
-          return;
-        }
         markStateDirty();
-        removeExactDealRow(removeDealAgent, dealIndex);
+        removeDealAgent.dealsInput = normalizeExactDealsInput(removeDealAgent.dealsInput);
+        if (removeDealAgent.dealsInput.length > 1) {
+          removeDealAgent.dealsInput.splice(Number(target.dataset.dealIndex), 1);
+        }
         syncAgentTotalsFromDeals(removeDealAgent);
-        renderPreservingUiState('[data-deal-index="' + Math.max(0, dealIndex - 1) + '"][data-agent-id="' + removeDealAgent.id + '"]');
+        renderPreservingUiState('[data-deal-index="' + Math.max(0, Number(target.dataset.dealIndex) - 1) + '"][data-agent-id="' + removeDealAgent.id + '"]');
       }
     }
 
     if (target.dataset.action === 'clear-all') {
-      if (!window.confirm('Очистить текущую форму активного месяца? Другие сохранённые месяцы останутся без изменений.')) {
+      if (!window.confirm('Очистить все текущие данные на странице? Это действие заменит текущий ввод пустым шаблоном.')) {
         return;
       }
       markStateDirty();
-      clearCurrentForm();
+      state = createBlankState();
+      uiState = createUiState();
       try {
         localStorage.removeItem(TABLE_SNAPSHOT_KEY);
       } catch (error) {
@@ -2956,19 +2207,6 @@
       }
       window.domianA4State = state;
       render();
-      saveDraft('clear');
-    }
-
-    if (target.dataset.action === 'hard-reset') {
-      if (!window.confirm('Удалить все сохранённые данные A4 из этого браузера? Будут удалены все месяцы, текущий черновик и snapshot ведомости. Это действие нельзя отменить.')) {
-        return;
-      }
-      if (window.prompt('Для подтверждения полного сброса введите слово УДАЛИТЬ') !== 'УДАЛИТЬ') {
-        setDraftStatus('dirty', 'Полный сброс отменён');
-        return;
-      }
-      hardResetCalculator();
-      return;
     }
 
     if (target.dataset.action === 'restore-example') {
@@ -2978,10 +2216,8 @@
       markStateDirty();
       state = createExampleState();
       uiState = createUiState();
-      syncCountersFromState(state);
       window.domianA4State = state;
       render();
-      saveDraft('restore-example');
     }
 
     if (target.dataset.action === 'add-expense') {
@@ -2995,13 +2231,6 @@
     }
 
     if (target.dataset.action === 'remove-expense') {
-      var removingExpense = state.expenses.find(function (expense) {
-        return expense.id === target.dataset.expenseId;
-      });
-      if (removingExpense && (String(removingExpense.name || '').trim() || positiveNumber(removingExpense.amount) > 0)
-        && !window.confirm('Удалить расход?')) {
-        return;
-      }
       markStateDirty();
       state.expenses = state.expenses.filter(function (expense) {
         return expense.id !== target.dataset.expenseId;
@@ -3035,8 +2264,6 @@
       'profitabilityList',
       'managementSummary',
       'forecastRows',
-      'selectedMonthInput',
-      'calendarStatusList',
       'schemeCommission',
       'schemeDealCount',
       'schemeIntroduced',
@@ -3046,8 +2273,7 @@
       'schemeManualRate',
       'schemeExpenseShare',
       'schemeResults',
-      'schemeAdvice',
-      'draftSaveStatus'
+      'schemeAdvice'
     ].forEach(function (id) {
       elements[id] = document.getElementById(id);
     });
@@ -3146,45 +2372,16 @@
   }
 
   document.addEventListener('DOMContentLoaded', function () {
-    var restoredState;
     collectElements();
     updateForecastNotice();
-    restoredState = loadDraftState();
-    state = restoredState || createState();
-    if (!draftWorkspace) {
-      draftWorkspace = createDraftWorkspace();
-      storeActiveStateInWorkspace();
-    }
-    syncCountersFromState(state);
+    state = createState();
     uiState = createUiState();
-    if (!lastDraftStatusType) {
-      setDraftStatus('clean', 'Черновик не сохранён');
-    }
     window.addEventListener('beforeunload', function (event) {
       if (!hasUnsavedChanges) {
         return;
       }
-      if (saveDraft('beforeunload')) {
-        return;
-      }
       event.preventDefault();
       event.returnValue = '';
-    });
-    window.addEventListener('pagehide', function () {
-      if (hasUnsavedChanges) {
-        saveDraft('pagehide');
-      }
-    });
-    document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'hidden' && hasUnsavedChanges) {
-        saveDraft('hidden');
-      }
-    });
-    document.addEventListener('keydown', function (event) {
-      if ((event.ctrlKey || event.metaKey) && String(event.key || '').toLowerCase() === 's') {
-        event.preventDefault();
-        saveDraft('shortcut');
-      }
     });
     document.body.addEventListener('compositionstart', function (event) {
       if (event.target && event.target.dataset && event.target.dataset.moneyInput === 'true') {

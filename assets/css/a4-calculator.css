@@ -121,57 +121,6 @@ h3 {
   padding: 14px 0 0;
 }
 
-.draft-save-status {
-  display: inline-flex;
-  align-items: center;
-  min-height: 38px;
-  padding: 8px 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--paper-2);
-  color: var(--muted);
-  font-size: 14px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.draft-save-status--dirty {
-  border-color: rgba(183, 121, 31, .36);
-  background: var(--orange-soft);
-  color: var(--orange);
-}
-
-.draft-save-status--saved,
-.draft-save-status--autosaved,
-.draft-save-status--restored,
-.draft-save-status--clean {
-  border-color: rgba(19, 138, 73, .24);
-  background: var(--green-soft);
-  color: var(--green);
-}
-
-.draft-save-status--error {
-  border-color: rgba(180, 35, 24, .28);
-  background: var(--red-soft);
-  color: var(--red);
-}
-
-.draft-save-panel {
-  position: fixed;
-  right: max(18px, env(safe-area-inset-right));
-  bottom: max(18px, env(safe-area-inset-bottom));
-  z-index: 60;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  max-width: min(520px, calc(100vw - 36px));
-  padding: 10px;
-  border: 1px solid rgba(20, 32, 51, .12);
-  border-radius: 10px;
-  background: rgba(255, 254, 253, .96);
-  box-shadow: 0 14px 42px rgba(15, 23, 42, .18);
-}
-
 .help-panel {
   margin: 18px 0;
   padding: 0;
@@ -309,136 +258,6 @@ h3 {
 
 .route-list strong {
   font-size: 14px;
-}
-
-.calendar-panel {
-  display: grid;
-  gap: 12px;
-  margin: 20px 0;
-  padding: 18px 20px;
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--blue);
-  border-radius: var(--radius);
-  background: #fff;
-}
-
-.calendar-panel-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(180px, 240px);
-  gap: 16px;
-  align-items: end;
-}
-
-.calendar-panel h2 {
-  margin: 2px 0 6px;
-}
-
-.calendar-panel p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 15px;
-}
-
-.calendar-month-field {
-  margin: 0;
-}
-
-.calendar-phase-note {
-  margin: 0;
-}
-
-.calendar-status-list {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.calendar-empty,
-.calendar-stipend,
-.calendar-status {
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #f7f8fb;
-}
-
-.calendar-empty {
-  grid-column: 1 / -1;
-  color: var(--muted);
-  font-weight: 700;
-}
-
-.calendar-stipend {
-  grid-column: 1 / -1;
-  display: grid;
-  gap: 4px;
-  background: #fffdf8;
-}
-
-.calendar-stipend span {
-  color: var(--muted);
-  font-size: 14px;
-}
-
-.calendar-status {
-  display: grid;
-  gap: 8px;
-  border-left-width: 4px;
-}
-
-.calendar-status--active {
-  border-left-color: #7fb48d;
-}
-
-.calendar-status--warning {
-  border-left-color: #d7aa54;
-}
-
-.calendar-status--future,
-.calendar-status--infoOnly {
-  border-left-color: var(--blue);
-}
-
-.calendar-status--past {
-  border-left-color: #98a2b3;
-}
-
-.calendar-status-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: flex-start;
-}
-
-.calendar-status-head span {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 900;
-  text-align: right;
-  text-transform: uppercase;
-}
-
-.calendar-status dl {
-  display: grid;
-  gap: 4px;
-  margin: 0;
-}
-
-.calendar-status dl div {
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
-  gap: 8px;
-}
-
-.calendar-status dt,
-.calendar-status dd {
-  margin: 0;
-  font-size: 13px;
-}
-
-.calendar-status dt {
-  color: var(--muted);
-  font-weight: 800;
 }
 
 .route-list span {
@@ -685,13 +504,6 @@ h3 {
   align-content: start;
 }
 
-.field,
-.check-field,
-.exact-deals-panel,
-.exact-deal-row > * {
-  min-width: 0;
-}
-
 .field span {
   min-height: 18px;
   font-size: 13px;
@@ -701,7 +513,6 @@ h3 {
 input,
 select {
   width: 100%;
-  max-width: 100%;
   min-height: 46px;
   padding: 11px 12px;
   border: 1px solid #c8cfda;
@@ -914,72 +725,15 @@ select:focus {
 
 .exact-deal-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(160px, .7fr) minmax(210px, .85fr);
+  grid-template-columns: minmax(180px, 1fr) minmax(220px, .65fr) auto;
   gap: 10px;
-  align-items: start;
-}
-
-.exact-deal-row--fixed {
-  grid-template-columns: minmax(0, 1fr) minmax(220px, .75fr);
-}
-
-.exact-deal-row > .field {
-  grid-template-rows: minmax(38px, auto) 46px minmax(0, 1fr);
-  align-self: stretch;
-}
-
-.exact-deal-row > .field > span {
-  display: flex;
-  align-items: flex-end;
+  align-items: end;
 }
 
 .deal-calculation {
   display: grid;
-  grid-column: 1 / -1;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
-}
-
-.exact-deal-row > .button {
-  grid-column: -2 / -1;
-  justify-self: end;
-}
-
-.exact-deal-newbuild-field {
-  align-self: start;
-}
-
-.exact-deal-newbuild-field .check-field {
-  align-items: center;
-  min-height: 46px;
-}
-
-.trainee-scale-warning {
-  display: grid;
-  gap: 5px;
-}
-
-.danger-service-panel {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  margin-top: 28px;
-  padding: 20px;
-  border: 1px solid rgba(180, 35, 24, .28);
-  border-radius: var(--radius);
-  background: var(--red-soft);
-}
-
-.danger-service-panel h2,
-.danger-service-panel p {
-  margin: 0;
-}
-
-.danger-service-panel p {
-  max-width: 760px;
-  margin-top: 6px;
-  color: #6f2c25;
 }
 
 .deal-calculation span {
@@ -2682,23 +2436,16 @@ select:disabled {
   .motivation-card-grid,
   .motivation-card-fields,
   .motivation-card-total,
-  .calendar-panel-head,
-  .calendar-status-list,
     .checker-grid,
     .compact-grid,
     .management-agents,
     .result-card .totals,
     .economics-row dl {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: 1fr;
   }
 
   .button {
     width: 100%;
-  }
-
-  .danger-service-panel {
-    align-items: stretch;
-    flex-direction: column;
   }
 
   .motivation-summary {
@@ -2732,29 +2479,6 @@ select:disabled {
   .toolbar,
   .section-actions {
     flex-direction: column;
-  }
-
-  .toolbar .draft-save-status {
-    justify-content: center;
-    width: 100%;
-    white-space: normal;
-    text-align: center;
-  }
-
-  .draft-save-panel {
-    right: 8px;
-    bottom: 8px;
-    left: 8px;
-    align-items: stretch;
-    max-width: none;
-  }
-
-  .draft-save-panel .draft-save-status {
-    display: none;
-  }
-
-  .exact-deal-row > .field {
-    grid-template-rows: auto auto auto;
   }
 
   .agent-head,

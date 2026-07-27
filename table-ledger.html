@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Домиан — ведомость сделок офиса</title>
-  <link rel="stylesheet" href="assets/css/table-ledger.css?v=a4-ledger-draft-20260706">
+  <link rel="stylesheet" href="assets/css/table-ledger.css">
   <link rel="stylesheet" href="assets/css/navigation.css">
 </head>
 <body>
@@ -38,12 +38,7 @@
       </div>
     </header>
 
-    <section class="notice" id="ledgerNotice">Ведомость готова к ручному заполнению или загрузке snapshot из A4.</section>
-    <section class="ledger-lifecycle" aria-label="Состояние ведомости">
-      <span id="ledgerSelectedMonth">Месяц: не указан</span>
-      <span id="ledgerDataSource">Источник: ручная ведомость</span>
-      <span id="ledgerSaveStatus" aria-live="polite">Изменения сохраняются автоматически</span>
-    </section>
+    <section class="notice" id="ledgerNotice">Ведомость открыта с демо-строкой. Можно очистить и заполнить вручную.</section>
 
     <section class="top-grid" aria-label="Быстрые показатели офиса">
       <article class="panel expenses-panel">
@@ -74,7 +69,7 @@
       <div class="table-toolbar">
         <div>
           <h2>Реестр сделок</h2>
-          <p>Каждая строка — сделка активного месяца. Конгресс и звезда считаются один раз на агента, а не на каждую сделку.</p>
+          <p>Каждая строка — сделка. Конгресс и звезда считаются один раз на агента, а не на каждую сделку.</p>
         </div>
         <div class="ledger-toolbar-actions">
           <button class="small primary" type="button" data-action="add-agent">+ Агент</button>
@@ -127,8 +122,8 @@
     </footer>
   </main>
 
-  <script src="assets/js/constants.js?v=a4-ledger-draft-20260706"></script>
-  <script src="assets/js/calculations.js?v=a4-ledger-draft-20260706"></script>
-  <script src="assets/js/table-ledger.js?v=a4-ledger-caret-20260706"></script>
+  <script src="assets/js/constants.js"></script>
+  <script src="assets/js/calculations.js"></script>
+  <script src="assets/js/table-ledger.js"></script>
 </body>
 </html>

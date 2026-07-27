@@ -40,7 +40,7 @@ button, input, select, textarea {
 button { cursor: pointer; }
 
 .ledger-page {
-  width: calc(100% - 28px);
+  width: min(1260px, calc(100% - 28px));
   margin: 22px auto;
   padding: 32px;
   border: 1px solid rgba(23, 32, 51, .1);
@@ -108,33 +108,6 @@ button:disabled, input:disabled { opacity: .55; cursor: not-allowed; }
   font-weight: 800;
 }
 
-.notice.warning {
-  background: #fff4d8;
-  color: #7a4a00;
-  border: 1px solid #efcf7a;
-}
-
-.trainee-ledger-warning {
-  margin: 10px 0 0;
-}
-
-.ledger-lifecycle {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  margin: -4px 0 14px;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.ledger-lifecycle span {
-  padding: 5px 8px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, .72);
-}
-
 .top-grid {
   display: grid;
   grid-template-columns: 1.6fr .8fr .7fr;
@@ -184,12 +157,7 @@ button:disabled, input:disabled { opacity: .55; cursor: not-allowed; }
 .table-toolbar p { margin: 0; color: var(--muted); }
 .badge { display: inline-block; padding: 5px 8px; border-radius: 999px; background: var(--yellow); font-weight: 800; font-size: 12px; }
 .badge-office { background: var(--green-soft); color: var(--green); }
-.table-scroll {
-  overflow-x: auto;
-  max-height: none;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-}
+.table-scroll { overflow: auto; border: 1px solid var(--line); border-radius: 10px; max-height: 70vh; }
 
 .ledger-table {
   width: 100%;
@@ -225,22 +193,6 @@ button:disabled, input:disabled { opacity: .55; cursor: not-allowed; }
 .agent-money-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
 .agent-money-grid label { display: grid; gap: 3px; font-size: 11px; color: var(--muted); font-weight: 800; }
 .number-cell { text-align: center; font-weight: 900; color: var(--blue); }
-.ledger-deal-meta {
-  display: grid;
-  gap: 5px;
-  margin-top: 6px;
-  font-size: 10px;
-  color: var(--muted);
-}
-.ledger-deal-meta label { display: grid; gap: 3px; font-weight: 800; }
-.ledger-deal-meta .small-cell { min-height: 32px; max-width: none; }
-.ledger-deal-flag {
-  display: flex !important;
-  align-items: center;
-  grid-template-columns: auto 1fr;
-  gap: 5px !important;
-}
-.ledger-deal-flag input { margin: 0; }
 .percent-pill { display: inline-block; min-width: 44px; text-align: center; padding: 4px 7px; border-radius: 999px; background: #e8f2ff; color: var(--blue); font-weight: 900; }
 .calc-cell { font-weight: 900; white-space: nowrap; }
 .positive { color: var(--green); }

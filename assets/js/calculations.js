@@ -15,25 +15,6 @@
     return numeric > 0 ? numeric : fallback;
   }
 
-  function positiveIntegerOrNull(value) {
-    if (value === undefined || value === null || value === '') {
-      return null;
-    }
-    var numeric = Math.floor(positiveNumber(value));
-    return numeric > 0 ? numeric : null;
-  }
-
-  function percentageOrNull(value) {
-    if (value === undefined || value === null || String(value).trim() === '') {
-      return null;
-    }
-    var numeric = Number(value);
-    if (!Number.isFinite(numeric)) {
-      return null;
-    }
-    return Math.min(100, Math.max(0, numeric));
-  }
-
   function readNumberOrFallback(agent, source, field, fallback) {
     var value = readAgentValue(agent, source, field, undefined);
     if (value === undefined || value === null || value === '') {
@@ -94,11 +75,11 @@
     var traineeRates = PAY_SCALES.standard.trainee || [];
     var partnerRates = PAY_SCALES.standard.partner || [];
 
-    if (dealIndex < traineeRates.length) {
+    if (dealIndex < 3) {
       return traineeRates[Math.min(dealIndex, traineeRates.length - 1)];
     }
 
-    return partnerRates[Math.min(dealIndex, partnerRates.length - 1)];
+    return partnerRates[Math.min(dealIndex - 3, partnerRates.length - 1)];
   }
 
   function getRateScaleIndexForDeal(dealCommission, qualifiedDealCount) {
@@ -665,77 +646,33 @@
 
   function calculateAgent(agent) {
     var exactMode = agent.commissionMode === 'exact';
-    var sourceDealRows = exactMode && Array.isArray(agent.dealsInput)
-      ? agent.dealsInput.map(function (amount, sourceIndex) {
-        return {
-          amount: positiveNumber(amount),
-          sourceIndex: sourceIndex,
-          depositOrderOverride: positiveIntegerOrNull(agent.dealDepositOrders && agent.dealDepositOrders[sourceIndex]),
-          manualRateOverride: percentageOrNull(agent.dealManualRates && agent.dealManualRates[sourceIndex]),
-          isNewbuildSolo: Boolean(agent.dealNewbuildSoloFlags && agent.dealNewbuildSoloFlags[sourceIndex])
-        };
-      }).filter(function (row) {
-        return row.amount > 0;
-      })
+    var sourceDeals = exactMode && Array.isArray(agent.dealsInput)
+      ? agent.dealsInput.map(positiveNumber).filter(function (amount) { return amount > 0; })
       : [];
     var commission = exactMode
-      ? sourceDealRows.reduce(function (sum, row) { return sum + row.amount; }, 0)
+      ? sourceDeals.reduce(function (sum, amount) { return sum + amount; }, 0)
       : positiveNumber(agent.commission);
-    var dealCount = exactMode ? Math.max(1, sourceDealRows.length) : positiveInteger(agent.dealCount, 1);
+    var dealCount = exactMode ? Math.max(1, sourceDeals.length) : positiveInteger(agent.dealCount, 1);
     var dealCommission = dealCount ? commission / dealCount : 0;
     var qualifiedDealCount = 0;
     var payout = 0;
     var deals = [];
-    var qualifyingThreshold = positiveNumber(window.QUALIFYING_DEAL_COMMISSION_THRESHOLD || 50000);
 
     for (var i = 0; i < dealCount; i += 1) {
-      var row = exactMode
-        ? (sourceDealRows[i] || { amount: 0, sourceIndex: i, depositOrderOverride: null, manualRateOverride: null, isNewbuildSolo: false })
-        : { amount: dealCommission, sourceIndex: i, depositOrderOverride: null, manualRateOverride: null, isNewbuildSolo: false };
-      var currentDealCommission = row.amount;
-      var isTraineeStandard = agent.status === 'trainee' && agent.paymentType === 'standard';
-      var isQualifiedDeposit = currentDealCommission >= qualifyingThreshold || row.isNewbuildSolo;
-      var automaticScaleIndex = getRateScaleIndexForDeal(currentDealCommission, qualifiedDealCount);
-      var hasLegacyDepositOrder = row.manualRateOverride === null && row.depositOrderOverride !== null;
-      var scaleIndex = hasLegacyDepositOrder
-        ? row.depositOrderOverride - 1
-        : automaticScaleIndex;
-      var rateSource = hasLegacyDepositOrder ? 'manualDepositOrder' : 'auto';
-      var depositOrderApplied = isQualifiedDeposit
-        ? (hasLegacyDepositOrder ? row.depositOrderOverride : qualifiedDealCount + 1)
-        : null;
-      var rate;
-
-      if (!isQualifiedDeposit && agent.paymentType !== 'fixed') {
-        rate = PAY_SCALES.standard.partner[0];
-        rateSource = 'baseSmallDeal';
-        scaleIndex = 0;
-      } else if (agent.paymentType !== 'fixed' && row.manualRateOverride !== null) {
-        rate = row.manualRateOverride / 100;
-        rateSource = 'manualRate';
-      } else if (isTraineeStandard) {
-        rate = getTraineeStandardDealRate(scaleIndex);
-      } else {
-        rate = getDealRate(agent, scaleIndex);
-      }
-
+      var currentDealCommission = exactMode ? positiveNumber(sourceDeals[i]) : dealCommission;
+      var rate = agent.status === 'trainee' && agent.paymentType === 'standard'
+        ? getTraineeStandardDealRate(i)
+        : getDealRate(agent, getRateScaleIndexForDeal(currentDealCommission, qualifiedDealCount));
       var dealPayout = currentDealCommission * rate;
-      if (isQualifiedDeposit) {
+      if (currentDealCommission >= positiveNumber(window.QUALIFYING_DEAL_COMMISSION_THRESHOLD || 50000)) {
         qualifiedDealCount += 1;
       }
       payout += dealPayout;
       deals.push({
         index: i + 1,
-        sourceIndex: row.sourceIndex,
         commission: currentDealCommission,
         rate: rate,
-        payout: dealPayout,
-        rateSource: rateSource,
-        depositOrderApplied: depositOrderApplied,
-        scaleTierApplied: isQualifiedDeposit
-          ? Math.min(scaleIndex + 1, PAY_SCALES.standard.partner.length)
-          : null,
-        isQualifiedDeposit: isQualifiedDeposit
+        payout: dealPayout
       });
     }
 
@@ -760,10 +697,6 @@
       fixedRate: positiveNumber(fixedRate),
       introduced: Boolean(agent.introduced),
       deals: deals,
-      traineeScaleExceeded: agent.status === 'trainee' && agent.paymentType === 'standard' && qualifiedDealCount > 3,
-      traineeScaleWarning: agent.status === 'trainee' && agent.paymentType === 'standard' && qualifiedDealCount > 3
-        ? 'У стажёра указано больше 3 задатков за месяц. По правилам стажёрская шкала заканчивается на 3-м задатке. Переведите агента в статус партнёра или проверьте условия вручную.'
-        : '',
       payout: payout,
       referral: referral,
       motivation: motivation,
