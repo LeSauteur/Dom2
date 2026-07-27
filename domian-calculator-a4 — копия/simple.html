@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Домиан — быстрая оценка офиса</title>
+  <link rel="stylesheet" href="assets/css/modes.css">
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <p class="eyebrow">Каркас режима</p>
+      <h1>Домиан — быстрая оценка офиса</h1>
+      <p class="lead">Упрощённый режим задуман для грубой оценки экономики офиса без детального помесячного или поагентского разбора.</p>
+    </header>
+
+    <section class="section notice">
+      Это каркас простого режима. Сейчас поля не выполняют расчёт. Полноценная логика будет добавлена отдельным этапом.
+    </section>
+
+    <section class="section stack">
+      <section class="panel">
+        <h2>Шаг 1. Оборот</h2>
+        <div class="field-grid">
+          <div class="field-row">
+            <label>Общая комиссия агентов за месяц</label>
+            <input type="text" placeholder="Например, 2 400 000">
+          </div>
+          <div class="field-row">
+            <label>Личные сделки собственника за месяц</label>
+            <input type="text" placeholder="Например, 300 000">
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Шаг 2. Агентская модель</h2>
+        <div class="grid-2">
+          <div class="field-grid">
+            <div class="field-row">
+              <label>Количество агентов</label>
+              <input type="number" placeholder="6">
+            </div>
+            <div class="field-row">
+              <label>Среднее количество сделок на агента</label>
+              <input type="number" placeholder="3">
+            </div>
+          </div>
+          <div class="field-row">
+            <label>Основная схема выплат</label>
+            <select>
+              <option>партнёр стандарт</option>
+              <option>стажёр</option>
+              <option>фиксированный процент</option>
+              <option>повышенный стартовый процент</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Шаг 3. Расходы</h2>
+        <div class="grid-2">
+          <div class="field-grid">
+            <div class="field-row">
+              <label>Общие расходы офиса за месяц</label>
+              <input type="text" placeholder="Например, 420 000">
+            </div>
+            <div class="field-row">
+              <label>Аренда</label>
+              <input type="text" placeholder="—">
+            </div>
+            <div class="field-row">
+              <label>Реклама</label>
+              <input type="text" placeholder="—">
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field-row">
+              <label>Администратор / офис</label>
+              <input type="text" placeholder="—">
+            </div>
+            <div class="field-row">
+              <label>Прочее</label>
+              <input type="text" placeholder="—">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Шаг 4. Допущения</h2>
+        <div class="field-grid">
+          <div class="field-row">
+            <label><input type="checkbox"> Учитывать реферальные 2,5%</label>
+          </div>
+          <div class="field-row">
+            <label>Ручной резерв мотиваций в месяц</label>
+            <input type="text" placeholder="Например, 25 000">
+          </div>
+        </div>
+      </section>
+
+      <section class="panel panel-muted">
+        <h2>Шаг 5. Итог</h2>
+        <ul class="summary-list">
+          <li><span>Оборот агентов:</span><strong>—</strong></li>
+          <li><span>Выплаты агентам:</span><strong>—</strong></li>
+          <li><span>Роялти:</span><strong>—</strong></li>
+          <li><span>Расходы:</span><strong>—</strong></li>
+          <li><span>Остаток собственнику:</span><strong>—</strong></li>
+          <li><span>Диагноз:</span><strong>расчёт будет добавлен позже.</strong></li>
+        </ul>
+      </section>
+    </section>
+
+    <nav class="nav-row">
+      <a class="button" href="start.html">Назад к выбору режимов</a>
+      <a class="button primary" href="index.html">Перейти в точный A4</a>
+    </nav>
+  </main>
+</body>
+</html>
