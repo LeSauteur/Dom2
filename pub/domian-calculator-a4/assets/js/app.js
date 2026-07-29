@@ -14,6 +14,8 @@
   var TABLE_SNAPSHOT_VERSION = 3;
   var TABLE_SNAPSHOT_KEY = 'domianA4TableSnapshot';
   var LEDGER_DRAFT_KEY = 'domianA4LedgerDraftV1';
+  var DEMO_SCENARIO_ID = 'office-showcase-2026-v1';
+  var DEMO_SCENARIO_VERSION = 1;
   var DEFAULT_AGENT_NAME = 'Новый агент';
   var DEAL_PLACEHOLDER = '100 000';
   var IS_MOTIVATION_CALCULATOR = Boolean(
@@ -213,9 +215,9 @@
   }
 
   function calculateOfficeForA4(sourceState) {
-    var calculationState = Object.assign({}, sourceState, {
-      agents: (sourceState.agents || []).map(getAgentCalculationInput)
-    });
+    var calculationState = Object.assign({}, sourceState);
+    delete calculationState.demoScenario;
+    calculationState.agents = (sourceState.agents || []).map(getAgentCalculationInput);
     return calculateOffice(calculationState);
   }
 
@@ -348,27 +350,93 @@
     };
   }
 
-  function createExampleState() {
+  function canonicalizeDemoValue(value) {
+    if (Array.isArray(value)) {
+      return value.map(canonicalizeDemoValue);
+    }
+    if (value && typeof value === 'object') {
+      return Object.keys(value).sort().reduce(function (result, key) {
+        result[key] = canonicalizeDemoValue(value[key]);
+        return result;
+      }, {});
+    }
+    return value;
+  }
+
+  function getDemoFinancialState(sourceState) {
+    var currentState = sourceState || createBlankState();
+    return {
+      version: STATE_VERSION,
+      expenses: clone(currentState.expenses || []),
+      agents: clone(currentState.agents || []),
+      ownerSales: inputNumber(currentState.ownerSales),
+      schemeCheck: clone(Object.assign(createDefaultSchemeCheck(), currentState.schemeCheck || {}))
+    };
+  }
+
+  function createDemoSignature(sourceState) {
+    var source = JSON.stringify(canonicalizeDemoValue(getDemoFinancialState(sourceState)));
+    var hash = 2166136261;
+
+    for (var index = 0; index < source.length; index += 1) {
+      hash ^= source.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+
+    return 'demo-' + DEMO_SCENARIO_VERSION + '-' + (hash >>> 0).toString(16);
+  }
+
+  function normalizeDemoScenario(value) {
+    if (!value || typeof value !== 'object'
+      || value.id !== DEMO_SCENARIO_ID
+      || value.version !== DEMO_SCENARIO_VERSION
+      || typeof value.signature !== 'string'
+      || !value.signature) {
+      return null;
+    }
+    return {
+      id: DEMO_SCENARIO_ID,
+      version: DEMO_SCENARIO_VERSION,
+      signature: value.signature
+    };
+  }
+
+  function hasDemoScenario(sourceState) {
+    return Boolean(normalizeDemoScenario(sourceState && sourceState.demoScenario));
+  }
+
+  function isDemoScenarioModified(sourceState) {
+    var marker = normalizeDemoScenario(sourceState && sourceState.demoScenario);
+    return Boolean(marker && marker.signature !== createDemoSignature(sourceState));
+  }
+
+  function createExampleState(selectedMonth) {
     var agents = clone(DEFAULT_AGENTS).map(function (agent) {
       return normalizeAgent(agent);
     });
-
-    return {
+    var exampleState = {
       version: STATE_VERSION,
-      selectedMonth: '',
+      selectedMonth: normalizeSelectedMonth(selectedMonth),
       expenses: clone(DEFAULT_EXPENSES),
       agents: agents,
-      ownerSales: 150000,
+      ownerSales: 220000,
       schemeCheck: Object.assign(createDefaultSchemeCheck(), {
         commission: 400000,
         dealCount: 4,
         introduced: false,
         expenseShareMode: 'manual',
-        manualExpenseShare: 20000,
-        motivationReserve: 0,
+        manualExpenseShare: 50000,
+        motivationReserve: 20000,
         manualRate: 75
       })
     };
+
+    exampleState.demoScenario = {
+      id: DEMO_SCENARIO_ID,
+      version: DEMO_SCENARIO_VERSION,
+      signature: createDemoSignature(exampleState)
+    };
+    return exampleState;
   }
 
   function createBlankState() {
@@ -511,7 +579,8 @@
       expenses: expenses,
       agents: agents,
       ownerSales: inputNumber(source.ownerSales),
-      schemeCheck: normalizeDraftSchemeCheck(source.schemeCheck)
+      schemeCheck: normalizeDraftSchemeCheck(source.schemeCheck),
+      demoScenario: normalizeDemoScenario(source.demoScenario)
     };
   }
 
@@ -523,7 +592,8 @@
       expenses: clone(sourceState.expenses || []),
       agents: clone(sourceState.agents || []),
       ownerSales: inputNumber(sourceState.ownerSales),
-      schemeCheck: clone(Object.assign(createDefaultSchemeCheck(), sourceState.schemeCheck || {}))
+      schemeCheck: clone(Object.assign(createDefaultSchemeCheck(), sourceState.schemeCheck || {})),
+      demoScenario: normalizeDemoScenario(sourceState.demoScenario)
     };
   }
 
@@ -800,7 +870,10 @@
       return 'Черновик очищен';
     }
     if (reason === 'restore-example') {
-      return 'Пример сохранён ' + time;
+      return 'Демонстрационный пример заполнен';
+    }
+    if (reason === 'remove-example') {
+      return 'Демонстрационный пример удалён';
     }
     if (reason === 'restored') {
       return 'Черновик восстановлен';
@@ -1481,6 +1554,108 @@
       || Boolean(motivation.corporateEnabled);
   }
 
+  function hasMeaningfulStateData(sourceState) {
+    var currentState = sourceState || {};
+    var schemeCheck = Object.assign(createDefaultSchemeCheck(), currentState.schemeCheck || {});
+
+    return (currentState.expenses || []).some(function (expense) {
+      return Boolean(String(expense && expense.name || '').trim())
+        || positiveNumber(expense && expense.amount) > 0;
+    })
+      || (currentState.agents || []).some(function (agent) {
+        return hasMeaningfulAgentData(agent, calculateAgentForA4(agent));
+      })
+      || positiveNumber(currentState.ownerSales) > 0
+      || positiveNumber(schemeCheck.commission) > 0
+      || positiveNumber(schemeCheck.dealCount) !== 1
+      || schemeCheck.introduced === true
+      || schemeCheck.expenseShareMode !== 'manual'
+      || positiveNumber(schemeCheck.manualExpenseShare) > 0
+      || positiveNumber(schemeCheck.motivationReserve) > 0
+      || positiveNumber(schemeCheck.manualRate) !== 80;
+  }
+
+  function requestDemoConfirmation(confirmHandler, message) {
+    var handler = typeof confirmHandler === 'function'
+      ? confirmHandler
+      : (typeof window !== 'undefined' && typeof window.confirm === 'function' ? window.confirm.bind(window) : null);
+    return handler ? handler(message) : false;
+  }
+
+  function fillDemoScenario(confirmHandler) {
+    var selectedMonth;
+
+    if (hasDemoScenario(state)) {
+      return false;
+    }
+    if (hasMeaningfulStateData(state)
+      && !requestDemoConfirmation(
+        confirmHandler,
+        'Текущая форма уже содержит данные. Заменить их демонстрационным примером? Другие сохранённые месяцы не изменятся.'
+      )) {
+      return false;
+    }
+
+    selectedMonth = normalizeSelectedMonth(state && state.selectedMonth);
+    state = createExampleState(selectedMonth);
+    uiState = createUiState();
+    collapseInactiveAgentCards();
+    syncCountersFromState(state);
+    if (typeof window !== 'undefined') {
+      window.domianA4State = state;
+    }
+    return true;
+  }
+
+  function removeDemoScenario(confirmHandler) {
+    if (!hasDemoScenario(state)) {
+      return false;
+    }
+    if (isDemoScenarioModified(state)
+      && !requestDemoConfirmation(
+        confirmHandler,
+        'Демонстрационные данные были изменены. Удалить изменённый пример из текущей формы? Другие сохранённые месяцы не изменятся.'
+      )) {
+      return false;
+    }
+
+    clearCurrentForm();
+    return true;
+  }
+
+  function getDemoControlState(sourceState) {
+    var active = hasDemoScenario(sourceState);
+    return {
+      active: active,
+      label: active ? 'Удалить пример' : 'Заполнить пример',
+      title: active
+        ? 'Очистить только демонстрационный сценарий текущей формы или активного месяца.'
+        : 'Заполнить текущую форму фиксированным демонстрационным сценарием.'
+    };
+  }
+
+  function renderDemoControls() {
+    var controlState = getDemoControlState(state);
+    var buttons;
+    var resultsLinks;
+
+    if (typeof document === 'undefined' || typeof document.querySelectorAll !== 'function') {
+      return;
+    }
+
+    buttons = document.querySelectorAll('[data-action="restore-example"]');
+    Array.prototype.forEach.call(buttons, function (button) {
+      button.textContent = controlState.label;
+      button.title = controlState.title;
+      button.dataset.demoActive = String(controlState.active);
+    });
+
+    resultsLinks = document.querySelectorAll('[data-demo-results-link]');
+    Array.prototype.forEach.call(resultsLinks, function (link) {
+      link.hidden = !controlState.active;
+    });
+  }
+
   function isAgentDraft(agent, result) {
     return !hasMeaningfulAgentData(agent, result);
   }
@@ -1509,7 +1684,7 @@
   function getAgentEconomicsSnapshot(agentId) {
     var totals;
 
-    if (!IS_MOTIVATION_CALCULATOR || !state || !agentId) {
+    if (!state || !agentId) {
       return null;
     }
     totals = calculateOfficeForA4(state);
@@ -1601,7 +1776,7 @@
     }
 
     return '<p class="agent-collapsed-line agent-collapsed-line--title">' + escapeHtml(topLine.join(' · ')) + '</p>'
-      + '<p class="agent-collapsed-line">Комиссия: ' + escapeHtml(money(result.commission)) + ' · Выплата: ' + escapeHtml(money(result.payout)) + ' · Вклад: ' + escapeHtml(formatSignedMoney(result.contribution)) + '</p>'
+      + '<p class="agent-collapsed-line">Комиссия: ' + escapeHtml(money(result.commission)) + ' · Выплата: ' + escapeHtml(money(result.payout)) + ' · Вклад: ' + escapeHtml(formatSignedMoney(contribution)) + '</p>'
       + '<p class="agent-collapsed-line agent-collapsed-line--status">Статус: ' + escapeHtml(statusInfo.label) + '</p>';
   }
 
@@ -2924,6 +3099,7 @@
   }
 
   function render() {
+    renderDemoControls();
     renderExpenses();
     renderAgents();
     renderCalendarStatus();
@@ -3464,17 +3640,17 @@
     }
 
     if (target.dataset.action === 'restore-example') {
-      if (!window.confirm('Вернуть демонстрационный пример и заменить им текущие данные?')) {
+      var demoWasActive = hasDemoScenario(state);
+      var demoActionCompleted = demoWasActive
+        ? removeDemoScenario()
+        : fillDemoScenario();
+      if (!demoActionCompleted) {
         return;
       }
       markStateDirty();
-      state = createExampleState();
-      uiState = createUiState();
-      collapseInactiveAgentCards();
-      syncCountersFromState(state);
-      window.domianA4State = state;
       render();
-      saveDraft('restore-example');
+      saveDraft(demoWasActive ? 'remove-example' : 'restore-example');
+      return;
     }
 
     if (target.dataset.action === 'add-expense') {
