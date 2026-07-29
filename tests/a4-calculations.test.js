@@ -106,6 +106,7 @@ function loadAppHelpers() {
       '  renderTravelMotivationCard: renderTravelMotivationCard,',
       '  updateTravelMotivationCard: updateTravelMotivationCard,',
       '  collapsePreviousAgentIfReady: collapsePreviousAgentIfReady,',
+      '  collapseInactiveAgentCards: collapseInactiveAgentCards,',
       '  setState: function (nextState) { state = nextState; },',
       '  getState: function () { return state; },',
       '  setUiState: function (nextUiState) { uiState = nextUiState; },',
@@ -504,6 +505,32 @@ test('adding a new agent always collapses the previous card even if it is blank'
   appHelpers.collapsePreviousAgentIfReady();
 
   assert.equal(appHelpers.getUiState().collapsedAgents[state.agents[0].id], true);
+});
+
+test('adding a new agent collapses every existing card so only the new card stays open', () => {
+  const state = appHelpers.createBlankState();
+  state.agents.push(appHelpers.createAgent());
+
+  appHelpers.setState(state);
+  appHelpers.setUiState({ collapsedAgents: {} });
+  appHelpers.collapsePreviousAgentIfReady();
+
+  state.agents.forEach((agent) => {
+    assert.equal(appHelpers.getUiState().collapsedAgents[agent.id], true);
+  });
+});
+
+test('restoring several agents keeps only the last working card open', () => {
+  const state = appHelpers.createBlankState();
+  state.agents.push(appHelpers.createAgent(), appHelpers.createAgent());
+
+  appHelpers.setState(state);
+  appHelpers.setUiState({ collapsedAgents: {} });
+  appHelpers.collapseInactiveAgentCards();
+
+  assert.equal(appHelpers.getUiState().collapsedAgents[state.agents[0].id], true);
+  assert.equal(appHelpers.getUiState().collapsedAgents[state.agents[1].id], true);
+  assert.equal(appHelpers.getUiState().collapsedAgents[state.agents[2].id], undefined);
 });
 
 test('stipend recalculates when quarterly commission changes from 650000 to 1500000', () => {
@@ -2602,11 +2629,11 @@ test('A4 draft save handlers cover shortcut, unload, clear, restore and destruct
 });
 
 test('A4 entry page cache-busts the current calculator assets', () => {
-  assert.match(indexSource, /a4-calculator\.css\?v=a4-ledger-draft-20260706/);
-  assert.match(indexSource, /constants\.js\?v=a4-ledger-draft-20260706/);
-  assert.match(indexSource, /calculations\.js\?v=a4-ledger-draft-20260706/);
-  assert.match(indexSource, /calendar-policy\.js\?v=a4-ledger-draft-20260706/);
-  assert.match(indexSource, /app\.js\?v=a4-ledger-draft-20260706/);
+  assert.match(indexSource, /a4-calculator\.css\?v=motivation-compact-20260729/);
+  assert.match(indexSource, /constants\.js\?v=motivation-compact-20260729/);
+  assert.match(indexSource, /calculations\.js\?v=motivation-compact-20260729/);
+  assert.match(indexSource, /calendar-policy\.js\?v=motivation-compact-20260729/);
+  assert.match(indexSource, /app\.js\?v=motivation-compact-20260729/);
 });
 
 test('exact-deal layout keeps controls aligned and shrinkable on desktop and mobile', () => {
@@ -2691,6 +2718,18 @@ test('collapsed motivation summary uses warm variant 3 styling', () => {
   assert.match(calculatorCssSource, /\.motivation-summary--rules\s*\{[\s\S]*border-left-color:\s*#f59e0b/i);
   assert.doesNotMatch(calculatorCssSource, /\.motivation-box:not\(\[open\]\) \.motivation-summary::before\s*\{[\s\S]*content:\s*"!"/);
   assert.doesNotMatch(calculatorCssSource, /\.motivation-box:not\(\[open\]\) \.motivation-summary\s*\{[\s\S]*background:[^;]*#(?:c|d|e|f)[0-9a-f]{5}/i);
+});
+
+test('Motivation 2026 keeps advanced agent input and long results collapsed by default', () => {
+  assert.match(appSource, /details class="package-conditions" data-agent-id=/);
+  assert.doesNotMatch(appSource, /details class="package-conditions" open/);
+  assert.match(appSource, /details class="package-conditions package-overrides" data-agent-id=/);
+  assert.match(appSource, /details class="agent-secondary-fields" data-agent-id=/);
+  assert.match(appSource, /details class="career-motivation-summary" data-agent-id=/);
+  assert.match(appSource, /details class="agent-result-details" data-agent-id=/);
+  assert.match(indexSource, /details class="package-comparison-disclosure"/);
+  assert.match(calculatorCssSource, /\.agent-result-quick\s*\{/);
+  assert.match(calculatorCssSource, /\.package-comparison-summary::after\s*\{/);
 });
 
 test('A4 workflow sections use external collapsedSections UI layer', () => {
