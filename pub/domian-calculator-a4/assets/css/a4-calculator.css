@@ -3144,3 +3144,274 @@ select:disabled {
     flex-direction: column;
   }
 }
+
+/* Presentation-safe visual polish — 2026-07-29 */
+.page {
+  --ink: #172033;
+  --muted: #64748b;
+  --muted-2: #8491a4;
+  --line: #dce3eb;
+  --line-strong: #c8d2de;
+  --blue: #245c99;
+  --blue-dark: #194a7e;
+  --blue-soft: #edf4fb;
+  --shadow: 0 18px 48px rgba(15, 23, 42, .08);
+  --shadow-card: 0 4px 16px rgba(15, 23, 42, .045);
+  --radius: 16px;
+  --radius-sm: 11px;
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  font-family: "Segoe UI Variable", "Segoe UI", Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.page .mode-header,
+.page .mode-header__title,
+.page .mode-nav,
+.page .mode-nav a,
+.page .return-actions,
+.page .return-actions a,
+.page .button,
+.page input,
+.page select {
+  font-family: inherit;
+}
+
+.page .mode-header {
+  gap: 9px;
+  margin-bottom: 0;
+  padding-bottom: 13px;
+}
+
+.page .mode-header__top {
+  align-items: center;
+  gap: 14px;
+}
+
+.page .mode-header__project {
+  margin-bottom: 3px;
+  font-size: 12px;
+  letter-spacing: .02em;
+}
+
+.page .mode-header__title {
+  font-size: clamp(29px, 3vw, 36px);
+  line-height: 1.08;
+}
+
+.page .mode-header__subtitle {
+  margin-top: 5px;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.page .mode-nav {
+  gap: 6px;
+}
+
+.page .mode-nav a,
+.page .return-actions a {
+  min-height: 36px;
+  padding: 7px 11px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.page .hero {
+  gap: 18px;
+  padding: 18px 0;
+}
+
+.page .hero h1 {
+  margin-bottom: 8px;
+  font-size: clamp(38px, 4.5vw, 48px);
+  line-height: 1.04;
+}
+
+.page .lead {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.page .hero-note {
+  padding: 14px;
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+.page .toolbar {
+  gap: 8px;
+  padding-top: 12px;
+}
+
+.page .toolbar [data-action="save-draft"],
+.page .toolbar .draft-save-status,
+.page .agent-card.is-collapsed .agent-collapsed-line--title,
+.page .agent-card.is-collapsed .agent-collapsed-line--status {
+  display: none;
+}
+
+.page .toolbar [data-action="restore-example"] {
+  border-color: rgba(36, 92, 153, .26);
+  background: #fff;
+  color: var(--blue-dark);
+  box-shadow: none;
+}
+
+.page .button {
+  min-height: 40px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  box-shadow: none;
+}
+
+.page .button:hover,
+.page .button:focus-visible {
+  transform: none;
+}
+
+.page .draft-save-panel {
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, .12);
+}
+
+.page .calendar-panel,
+.page .help-panel {
+  margin-top: 16px;
+  margin-bottom: 16px;
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+.page .section-card {
+  padding: 18px;
+  border-radius: 16px;
+  box-shadow: 0 3px 14px rgba(15, 23, 42, .04);
+}
+
+.page .section-head {
+  margin: -18px -18px 16px;
+  padding: 17px 18px 15px;
+  background: #fff;
+}
+
+.page .section-head h2 {
+  font-size: clamp(23px, 2.5vw, 26px);
+}
+
+.page .expense-guidance-card,
+.page .expense-row,
+.page .exact-deal-row,
+.page .exact-deals-panel {
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+.page .agent-card {
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 3px 14px rgba(15, 23, 42, .04);
+}
+
+.page .agent-head {
+  margin: -16px -16px 12px;
+  padding: 14px 16px;
+}
+
+.page .agent-collapsed {
+  gap: 5px;
+  padding: 4px 0 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.page .agent-collapsed-line,
+.page .agent-collapsed-hint,
+.page .hint,
+.page .field small,
+.page .deal-mode-hint {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.page .field span {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.page input,
+.page select {
+  border-radius: 10px;
+}
+
+.page input::placeholder {
+  color: #7b889b;
+}
+
+.page .route-note {
+  min-height: 48px;
+  border-radius: 14px;
+  box-shadow: 0 5px 16px rgba(15, 23, 42, .04);
+}
+
+.page .route-list li {
+  min-height: 38px;
+  border-radius: 9px;
+}
+
+.page .route-list li::before {
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+}
+
+.page .route-list a {
+  font-size: 13px;
+}
+
+body.motivation-calculator-mode .page .hero-note {
+  border-color: rgba(197, 138, 42, .28);
+  background: #fff8e8;
+}
+
+@media (max-width: 680px) {
+  .page {
+    border-radius: 16px;
+  }
+
+  .page .mode-header__top {
+    align-items: stretch;
+  }
+
+  .page .mode-header__title {
+    font-size: 28px;
+  }
+
+  .page .mode-nav a,
+  .page .return-actions a {
+    font-size: 13px;
+  }
+
+  .page .hero {
+    padding: 14px 0;
+  }
+
+  .page .hero h1 {
+    font-size: 36px;
+  }
+
+  .page .section-card {
+    padding: 14px;
+  }
+
+  .page .section-head {
+    margin: -14px -14px 14px;
+    padding: 15px 14px;
+  }
+
+  .page .route-list a {
+    font-size: 12px;
+  }
+}
