@@ -1,2 +1,0 @@
-﻿PASS	0	node _audit/tests/audit-static-inventory.js
-FAIL	1	node _audit/tests/audit-calculation-matrix.js
