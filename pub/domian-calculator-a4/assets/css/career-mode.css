@@ -1,0 +1,508 @@
+:root {
+  --ink: #172033;
+  --muted: #667085;
+  --line: #d9dee8;
+  --blue: #245c99;
+  --blue-soft: #e8f1fb;
+  --paper: #f4f6f9;
+  --green: #16794d;
+  --green-soft: #e8f7ef;
+  --amber: #9a5b00;
+  --amber-soft: #fff4da;
+  --red: #a52b32;
+  --red-soft: #fff0f1;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(36, 92, 153, 0.10), transparent 32rem),
+    var(--paper);
+  color: var(--ink);
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.page {
+  width: min(1480px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 26px 0 40px;
+}
+
+.career-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  margin-bottom: 20px;
+  padding: 24px 28px;
+  border: 1px solid #cbd9e8;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fff, #eef5fc);
+  box-shadow: 0 16px 40px rgba(31, 55, 82, 0.08);
+}
+
+.career-intro h2,
+.section-head h2 {
+  margin: 3px 0 0;
+}
+
+.career-intro p {
+  max-width: 780px;
+  margin: 9px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.eyebrow {
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.formula {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 4px 10px;
+  min-width: 210px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: var(--ink);
+  color: #fff;
+}
+
+.formula span {
+  grid-row: 1 / 4;
+  align-self: center;
+  color: #8ec5ff;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.formula b,
+.formula i {
+  font-style: normal;
+}
+
+.formula i {
+  color: #aab7c8;
+  font-size: 12px;
+}
+
+.career-layout {
+  display: grid;
+  grid-template-columns: minmax(230px, 290px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.profile-panel,
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(31, 55, 82, 0.06);
+}
+
+.profile-panel {
+  position: sticky;
+  top: 16px;
+  padding: 18px;
+  min-width: 0;
+}
+
+.career-editor {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.panel {
+  padding: 22px;
+  min-width: 0;
+}
+
+.section-head,
+.section-actions,
+.save-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-actions {
+  justify-content: flex-end;
+}
+
+.button {
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 1px solid #bfc9d6;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--blue);
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.button:hover {
+  border-color: var(--blue);
+}
+
+.button--primary {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
+}
+
+.button--danger {
+  border-color: #e6b8bc;
+  color: var(--red);
+}
+
+.button--large {
+  min-height: 48px;
+  padding-inline: 22px;
+}
+
+.profile-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.profile-item {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.profile-item span,
+.profile-note,
+.field small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.profile-item.is-active {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+}
+
+.profile-note {
+  margin: 16px 0 0;
+}
+
+.identity-line {
+  margin: 14px 0 16px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+code {
+  overflow-wrap: anywhere;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.field,
+.check-field {
+  display: grid;
+  gap: 7px;
+  align-content: start;
+}
+
+.field--wide {
+  grid-column: span 2;
+}
+
+.field > span,
+.check-field > span {
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid #c9d1dc;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--blue);
+  outline: 3px solid rgba(36, 92, 153, 0.12);
+}
+
+.check-field {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.check-field input {
+  width: 18px;
+  height: 18px;
+}
+
+.decision-result {
+  margin-top: 18px;
+}
+
+.decision-hero {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.decision-hero > div {
+  display: grid;
+  gap: 5px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--ink);
+  color: #fff;
+}
+
+.decision-hero span {
+  color: #b8c4d4;
+  font-size: 12px;
+}
+
+.decision-hero strong {
+  font-size: 20px;
+}
+
+.decision-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 12px 0 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--line);
+}
+
+.decision-details div {
+  padding: 12px;
+  background: #fff;
+}
+
+.decision-details dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.decision-details dd {
+  margin: 4px 0 0;
+  font-weight: 700;
+}
+
+.career-warning {
+  margin-top: 10px;
+  padding: 11px 13px;
+  border-radius: 8px;
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.subheading {
+  margin: 22px 0 12px;
+  font-size: 16px;
+}
+
+.table-scroll {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  margin-top: 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.benefit-table {
+  width: 100%;
+  min-width: 900px;
+  border-collapse: collapse;
+}
+
+.benefit-table th,
+.benefit-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+  font-size: 13px;
+}
+
+.benefit-table thead th,
+.benefit-table tfoot th,
+.benefit-table tfoot td {
+  background: #f1f4f8;
+  font-weight: 800;
+}
+
+.benefit-table tbody th {
+  min-width: 150px;
+}
+
+.status-pill {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.status-pill--ok {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.status-pill--off {
+  background: #eef0f3;
+  color: #616a78;
+}
+
+.save-row {
+  justify-content: flex-start;
+  margin-top: 18px;
+}
+
+.career-save-status {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.career-save-status--saved {
+  color: var(--green);
+}
+
+.career-save-status--dirty {
+  color: var(--amber);
+}
+
+.decision-history {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.decision-history li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+
+.decision-history li div {
+  display: grid;
+  gap: 3px;
+}
+
+.decision-history span,
+.decision-history small,
+.empty-state {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (max-width: 1050px) {
+  .career-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-panel {
+    position: static;
+  }
+
+  .profile-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .page {
+    width: min(100% - 20px, 1480px);
+    padding-top: 14px;
+  }
+
+  .career-intro,
+  .section-head,
+  .section-actions,
+  .save-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .formula {
+    width: 100%;
+  }
+
+  .form-grid,
+  .decision-hero,
+  .decision-details,
+  .profile-list {
+    grid-template-columns: 1fr;
+  }
+
+  .field--wide {
+    grid-column: auto;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+
+  .decision-history li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

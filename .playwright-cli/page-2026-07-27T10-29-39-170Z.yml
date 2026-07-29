@@ -1,0 +1,268 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e5]:
+      - paragraph [ref=e6]: Домиан — калькулятор офиса
+      - heading "Ведомость сделок" [level=1] [ref=e7]
+      - paragraph [ref=e8]: Сделки строками, итоги агента и общий результат офиса.
+    - navigation "Навигация по режимам" [ref=e9]:
+      - link "На старт" [ref=e10] [cursor=pointer]:
+        - /url: start.html
+      - link "A4" [ref=e11] [cursor=pointer]:
+        - /url: index.html
+      - link "Ведомость" [ref=e12] [cursor=pointer]:
+        - /url: table.html
+      - link "Простой" [ref=e13] [cursor=pointer]:
+        - /url: simple.html
+      - link "Расширенный" [ref=e14] [cursor=pointer]:
+        - /url: extended.html
+      - link "Мотивация 2026" [ref=e15] [cursor=pointer]:
+        - /url: motivation-calculator.html
+      - link "Карьера" [ref=e16] [cursor=pointer]:
+        - /url: career.html
+  - generic [ref=e17]:
+    - generic [ref=e18]:
+      - heading "Домиан — ведомость сделок офиса" [level=2] [ref=e19]
+      - paragraph [ref=e20]: "Таблица для собственника: каждая сделка находится в отдельной строке, а процент и выплата видны сразу."
+    - generic [ref=e21]:
+      - button "Загрузить из A4" [ref=e22] [cursor=pointer]
+      - button "Очистить" [ref=e23] [cursor=pointer]
+      - button "+ Агент" [ref=e24] [cursor=pointer]
+      - button "+ Сделка" [ref=e25] [cursor=pointer]
+  - generic [ref=e26]: Заполните ведомость вручную или загрузите ранее сохранённые данные из A4.
+  - region "Состояние ведомости" [ref=e27]:
+    - generic [ref=e28]: "Месяц: не указан"
+    - generic [ref=e29]: "Данные: введены вручную"
+    - generic [ref=e30]: Изменения сохраняются автоматически
+  - region "Быстрые показатели офиса" [ref=e31]:
+    - article [ref=e32]:
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - paragraph [ref=e35]: Расходы офиса
+          - strong [ref=e36]: 0 ₽
+        - button "+ Расход" [ref=e37] [cursor=pointer]
+      - generic [ref=e38]:
+        - generic [ref=e39]:
+          - textbox "Название расхода" [ref=e40]: Аренда
+          - textbox [ref=e41]
+          - button "Удалить" [ref=e42] [cursor=pointer]
+        - generic [ref=e43]:
+          - textbox "Название расхода" [ref=e44]: Зарплаты / администратор
+          - textbox [ref=e45]
+          - button "Удалить" [ref=e46] [cursor=pointer]
+        - generic [ref=e47]:
+          - textbox "Название расхода" [ref=e48]: Реклама
+          - textbox [ref=e49]
+          - button "Удалить" [ref=e50] [cursor=pointer]
+        - generic [ref=e51]:
+          - textbox "Название расхода" [ref=e52]: Связь / сервисы
+          - textbox [ref=e53]
+          - button "Удалить" [ref=e54] [cursor=pointer]
+        - generic [ref=e55]:
+          - textbox "Название расхода" [ref=e56]: Хозяйственные расходы
+          - textbox [ref=e57]
+          - button "Удалить" [ref=e58] [cursor=pointer]
+        - generic [ref=e59]:
+          - textbox "Название расхода" [ref=e60]: Прочее
+          - textbox [ref=e61]
+          - button "Удалить" [ref=e62] [cursor=pointer]
+    - article [ref=e63]:
+      - paragraph [ref=e64]: Личные сделки собственника
+      - textbox [ref=e65]: "0"
+      - generic [ref=e66]: "Учитываются отдельно: видно итог с собственником и без него."
+    - article [ref=e67]:
+      - paragraph [ref=e68]: Роялти офиса
+      - strong [ref=e69]: 0 ₽
+      - generic [ref=e70]: "Ставка: 7%"
+  - region "Ведомость сделок" [ref=e71]:
+    - generic [ref=e72]:
+      - generic [ref=e73]:
+        - heading "Реестр сделок" [level=2] [ref=e74]
+        - paragraph [ref=e75]: Каждая строка — сделка активного месяца. Конгресс и звезда считаются один раз на агента, а не на каждую сделку.
+      - generic [ref=e76]:
+        - button "+ Агент" [ref=e77] [cursor=pointer]
+        - button "+ Сделка" [ref=e78] [cursor=pointer]
+        - generic [ref=e79]: Строка итога агента
+        - generic [ref=e80]: Строка итога офиса
+    - table [ref=e82]:
+      - rowgroup [ref=e83]:
+        - row [ref=e84]:
+          - columnheader "Агент / условия" [ref=e85]
+          - columnheader "№" [ref=e86]
+          - columnheader "Комиссия" [ref=e87]
+          - columnheader "%" [ref=e88]
+          - columnheader "Агенту" [ref=e89]
+          - columnheader "Реферальная выплата 2,5%" [ref=e90]
+          - columnheader "Примерная доля роялти*" [ref=e91]
+          - columnheader "Мотивации за счёт офиса" [ref=e92]
+          - columnheader "Конгресс" [ref=e93]
+          - columnheader "Звезда" [ref=e94]
+          - columnheader "Расходы" [ref=e95]
+          - columnheader "Остаток офису" [ref=e96]
+          - columnheader "Комментарий" [ref=e97]
+          - columnheader [ref=e98]
+      - rowgroup [ref=e99]:
+        - row [ref=e100]:
+          - cell [ref=e101]:
+            - generic [ref=e102]:
+              - generic [ref=e103]:
+                - text: Агент
+                - textbox "Агент" [ref=e104]
+              - generic [ref=e105]:
+                - text: Статус
+                - combobox "Статус" [ref=e106]:
+                  - option "Партнёр" [selected]
+                  - option "Стажёр"
+              - generic [ref=e107]:
+                - text: Как платить агенту
+                - combobox "Как платить агенту" [ref=e108]:
+                  - option "По стандартной шкале" [selected]
+                  - option "Не ниже выбранного процента"
+                  - option "Один процент на все сделки"
+              - generic [ref=e109]:
+                - text: Минимальный процент, %
+                - textbox "Минимальный процент, %" [disabled] [ref=e110]
+              - generic [ref=e111]:
+                - text: Один процент на все сделки, %
+                - textbox "Один процент на все сделки, %" [disabled] [ref=e112]: "80"
+              - generic [ref=e113]:
+                - text: Как вводить сделки
+                - combobox "Как вводить сделки" [ref=e114]:
+                  - option "Каждую отдельно" [selected]
+                  - option "Общей суммой"
+              - generic [ref=e115]:
+                - checkbox "Платить рефералу 2,5% за этого агента" [ref=e116]
+                - text: Платить рефералу 2,5% за этого агента
+              - generic [ref=e117]:
+                - 'checkbox "Конгресс учтён: 292 ₽/мес" [checked] [ref=e118]'
+                - text: "Конгресс учтён: 292 ₽/мес"
+              - generic [ref=e119]:
+                - 'checkbox "Звезда: нет" [ref=e120]'
+                - text: "Звезда: нет"
+            - group [ref=e121]:
+              - 'generic "Условия мотиваций Стипендия: нет, офис оплачивает: 0 ₽" [ref=e122] [cursor=pointer]'
+              - option "Автоматически по правилам" [selected]
+              - option "Не учитывать автоматические мотивации"
+              - option "Указать свою сумму"
+              - option "Считать автоматически"
+              - option "Указать вручную"
+              - option "Не учитывать" [selected]
+              - option "Не подтверждено" [selected]
+              - option "Подтверждено"
+              - option "Автоматически по правилам" [selected]
+              - option "Добавить вручную"
+              - option "Не учитывать"
+            - button "Удалить агента" [disabled] [ref=e124]
+        - row [ref=e125]:
+          - cell "Агент" [ref=e126]
+          - cell "1" [ref=e127]
+          - cell "Процент для этой сделки, % Пусто — автоматическая шкала. Новостройка, один агент" [ref=e128]:
+            - textbox [ref=e129]
+            - generic [ref=e130]:
+              - generic [ref=e131]:
+                - text: Процент для этой сделки, %
+                - spinbutton "Процент для этой сделки, % Пусто — автоматическая шкала." [ref=e132]
+                - generic [ref=e133]: Пусто — автоматическая шкала.
+              - generic [ref=e134]:
+                - checkbox "Новостройка, один агент" [ref=e135]
+                - text: Новостройка, один агент
+          - cell "45%" [ref=e136]
+          - cell "0 ₽" [ref=e138]
+          - cell "0 ₽" [ref=e139]
+          - cell "0 ₽" [ref=e140]
+          - cell "—" [ref=e141]
+          - cell [ref=e142]
+          - cell [ref=e143]
+          - cell "—" [ref=e144]
+          - cell "—" [ref=e145]
+          - cell [ref=e146]:
+            - textbox "Комментарий" [ref=e147]
+          - cell [ref=e148]:
+            - button "×" [disabled] [ref=e149]
+        - row [ref=e150]:
+          - cell "Итого Агент" [ref=e151]
+          - cell "0 ₽" [ref=e152]
+          - cell [ref=e153]
+          - cell "0 ₽" [ref=e154]
+          - cell "0 ₽" [ref=e155]
+          - cell "0 ₽" [ref=e156]
+          - cell "0 ₽" [ref=e157]
+          - cell "0 ₽" [ref=e158]
+          - cell "0 ₽" [ref=e159]
+          - cell "0 ₽" [ref=e160]
+          - cell "0 ₽" [ref=e161]
+          - cell [ref=e162]:
+            - button "+ Сделка" [ref=e163] [cursor=pointer]
+      - rowgroup [ref=e164]:
+        - row [ref=e165]:
+          - cell "ИТОГО ПО ОФИСУ" [ref=e166]
+          - cell "0 ₽" [ref=e167]
+          - cell [ref=e168]
+          - cell "0 ₽" [ref=e169]
+          - cell "0 ₽" [ref=e170]
+          - cell "0 ₽" [ref=e171]
+          - cell "0 ₽" [ref=e172]
+          - cell "0 ₽" [ref=e173]
+          - cell "0 ₽" [ref=e174]
+          - cell "0 ₽" [ref=e175]
+          - cell "0 ₽" [ref=e176]
+          - 'cell "С собственником: 0 ₽" [ref=e177]'
+    - paragraph [ref=e178]: "* Точное роялти офиса считается от общего оборота и показано в итоговой строке. В строке агента указана только примерная часть общего роялти."
+    - generic [ref=e179]:
+      - button "+ Добавить агента" [ref=e180] [cursor=pointer]
+      - button "+ Добавить сделку к последнему агенту" [ref=e181] [cursor=pointer]
+  - region "Итоговая сводка" [ref=e182]:
+    - generic [ref=e183]:
+      - generic [ref=e184]:
+        - heading "Итоговая сводная таблица по агентам" [level=2] [ref=e185]
+        - paragraph [ref=e186]: "Формат как в управленческом отчёте: агент, сумма сделок, зарплата, расходы и остаток."
+      - button "+ Добавить агента" [ref=e187] [cursor=pointer]
+    - generic [ref=e188]:
+      - strong [ref=e189]: "В расчёте участвуют:"
+      - text: нет активных агентов
+    - generic [ref=e190]: Активных агентов пока нет. Добавь сделки в ведомость выше.
+    - generic [ref=e191]:
+      - generic [ref=e192]:
+        - generic [ref=e193]: Оборот агентов
+        - strong [ref=e194]: 0 ₽
+      - generic [ref=e195]:
+        - generic [ref=e196]: Общий оборот
+        - strong [ref=e197]: 0 ₽
+      - generic [ref=e198]:
+        - generic [ref=e199]: Выплаты агентам
+        - strong [ref=e200]: 0 ₽
+      - generic [ref=e201]:
+        - generic [ref=e202]: Рефералы
+        - strong [ref=e203]: 0 ₽
+      - generic [ref=e204]:
+        - generic [ref=e205]: Мотивации
+        - strong [ref=e206]: 0 ₽
+      - generic [ref=e207]:
+        - generic [ref=e208]: Роялти
+        - strong [ref=e209]: 0 ₽
+      - generic [ref=e210]:
+        - generic [ref=e211]: Расходы офиса
+        - strong [ref=e212]: 0 ₽
+      - generic [ref=e213]:
+        - generic [ref=e214]: Итог без собственника
+        - strong [ref=e215]: 0 ₽
+      - generic [ref=e216]:
+        - generic [ref=e217]: Итог с собственником
+        - strong [ref=e218]: 0 ₽
+      - generic [ref=e219]: Офис в минусе при текущих вводных.
+  - generic [ref=e220]:
+    - paragraph [ref=e221]: Калькулятор показывает примерный финансовый результат офиса по введённым данным.
+    - navigation "Нижняя навигация" [ref=e222]:
+      - link "На старт" [ref=e223] [cursor=pointer]:
+        - /url: start.html
+      - link "Основной A4" [ref=e224] [cursor=pointer]:
+        - /url: index.html
+      - link "Ведомость сделок" [ref=e225] [cursor=pointer]:
+        - /url: table.html
+      - link "Простой режим" [ref=e226] [cursor=pointer]:
+        - /url: simple.html
+      - link "Расширенный режим" [ref=e227] [cursor=pointer]:
+        - /url: extended.html
+      - link "Мотивация 2026" [ref=e228] [cursor=pointer]:
+        - /url: motivation-calculator.html
+      - link "Карьерные профили" [ref=e229] [cursor=pointer]:
+        - /url: career.html

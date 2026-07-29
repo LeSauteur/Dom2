@@ -1,0 +1,766 @@
+- main [ref=f1e2]:
+  - generic [ref=f1e3]:
+    - generic [ref=f1e4]:
+      - generic [ref=f1e5]:
+        - paragraph [ref=f1e6]: Домиан — калькулятор офиса
+        - heading "Экономика мотивации 2026" [level=1] [ref=f1e7]
+        - paragraph [ref=f1e8]: Пакет агента, сделки, мотивации, окупаемость и итог собственнику — в одном расчёте.
+      - generic [ref=f1e9]:
+        - link "← На старт" [ref=f1e10] [cursor=pointer]:
+          - /url: start.html
+        - link "Ведомость сделок" [ref=f1e11] [cursor=pointer]:
+          - /url: table.html
+    - navigation "Навигация по режимам" [ref=f1e12]:
+      - link "На старт" [ref=f1e13] [cursor=pointer]:
+        - /url: start.html
+      - link "Калькулятор" [ref=f1e14] [cursor=pointer]:
+        - /url: index.html
+      - link "Мотивация 2026" [ref=f1e15] [cursor=pointer]:
+        - /url: motivation-calculator.html
+      - link "Ведомость" [ref=f1e16] [cursor=pointer]:
+        - /url: table.html
+      - link "Простой" [ref=f1e17] [cursor=pointer]:
+        - /url: simple.html
+      - link "Расширенный" [ref=f1e18] [cursor=pointer]:
+        - /url: extended.html
+      - link "Профили" [ref=f1e19] [cursor=pointer]:
+        - /url: career.html
+  - generic [ref=f1e20]:
+    - generic [ref=f1e21]:
+      - paragraph [ref=f1e22]: Основной демонстрационный режим
+      - heading "Сколько новая мотивация оставляет офису" [level=1] [ref=f1e23]
+      - paragraph [ref=f1e24]: "Добавьте агента, выберите пакет и введите сделки. Профиль сотрудника создавать не нужно: прибыль и точка окупаемости пересчитываются сразу."
+    - complementary [ref=f1e25]:
+      - strong [ref=f1e26]: Главное правило
+      - generic [ref=f1e27]: Роялти не добавляйте в расходы — калькулятор считает его автоматически.
+  - region "Управление примером" [ref=f1e28]:
+    - link "Выбор режима" [ref=f1e29] [cursor=pointer]:
+      - /url: start.html
+    - button "💾 Сохранить" [ref=f1e30] [cursor=pointer]
+    - generic [ref=f1e31]: Есть несохранённые изменения
+    - button "Очистить текущую форму" [ref=f1e32] [cursor=pointer]
+    - button "Вернуть пример" [ref=f1e33] [cursor=pointer]
+  - generic [ref=f1e34]:
+    - button "💾 Сохранить" [ref=f1e35] [cursor=pointer]
+    - generic [ref=f1e36]: Есть несохранённые изменения
+  - region [ref=f1e37]:
+    - generic [ref=f1e38]:
+      - generic [ref=f1e39]:
+        - generic [ref=f1e40]: Календарная политика
+        - heading "Месяц расчёта" [level=2] [ref=f1e41]
+        - paragraph [ref=f1e42]: Каждый месяц хранится отдельно. Переключение месяца не удаляет заполненные данные.
+      - generic [ref=f1e43]:
+        - generic [ref=f1e44]: Месяц
+        - textbox "Месяц" [ref=f1e45]
+    - generic [ref=f1e46]: Итог считается по активному месяцу. Календарные статусы показывают обязательства выбранного периода.
+    - generic [ref=f1e47]: Месяц не выбран. Сейчас это условный расчёт, календарные статусы показаны только после выбора месяца.
+  - region [ref=f1e49]:
+    - generic [ref=f1e50]:
+      - generic [ref=f1e51]: Маршрут расчёта
+      - heading "Как пользоваться калькулятором" [level=2] [ref=f1e52]
+      - paragraph [ref=f1e53]: "Идите сверху вниз: расходы, пакет и сделки агента, итог офиса, окупаемость и сравнение пакетов."
+    - list [ref=f1e54]:
+      - listitem [ref=f1e55]:
+        - link "Расходы" [ref=f1e56]:
+          - /url: "#expenses"
+      - listitem [ref=f1e57]:
+        - link "Агенты" [ref=f1e58]:
+          - /url: "#agents"
+      - listitem [ref=f1e59]:
+        - link "Личные сделки" [ref=f1e60]:
+          - /url: "#ownerDeals"
+      - listitem [ref=f1e61]:
+        - link "Итог" [ref=f1e62]:
+          - /url: "#result"
+      - listitem [ref=f1e63]:
+        - link "Анализ" [ref=f1e64]:
+          - /url: "#profitability"
+      - listitem [ref=f1e65]:
+        - link "Пакеты" [ref=f1e66]:
+          - /url: "#packageComparisonSection"
+      - listitem [ref=f1e67]:
+        - link "Прогноз" [ref=f1e68]:
+          - /url: "#forecast"
+  - group [ref=f1e69]:
+    - generic "Показать короткие пояснения простыми словами Раскрыть ↓" [ref=f1e70] [cursor=pointer]:
+      - generic [ref=f1e71]: Показать короткие пояснения простыми словами
+      - generic [ref=f1e72]: Раскрыть ↓
+  - generic [ref=f1e74]:
+    - region [ref=f1e75]:
+      - generic [ref=f1e76]:
+        - generic [ref=f1e77]:
+          - generic [ref=f1e78]: Шаг 1
+          - heading "Сколько офис съедает каждый месяц" [level=2] [ref=f1e79]
+        - paragraph [ref=f1e80]: Сюда вводятся только постоянные расходы офиса. Роялти, выплаты агентам, рефералы и мотивации калькулятор считает отдельно, чтобы не было двойного учёта.
+      - generic [ref=f1e81]:
+        - generic [ref=f1e2724]:
+          - generic [ref=f1e2725]:
+            - generic [ref=f1e2726]:
+              - heading "Что можно добавить" [level=3] [ref=f1e2727]
+              - paragraph [ref=f1e2728]: аренда офиса, связь, CRM, реклама, интернет, бухгалтерия, уборка, коммунальные платежи, зарплата администратора, прочие постоянные расходы.
+            - generic [ref=f1e2729]:
+              - heading "Не добавляйте сюда роялти" [level=3] [ref=f1e2730]
+              - paragraph [ref=f1e2731]: Роялти, выплаты агентам, рефералы и мотивации.
+              - paragraph [ref=f1e2732]: Калькулятор считает их автоматически в других разделах.
+          - generic [ref=f1e2733]:
+            - generic [ref=f1e2734]: Категория
+            - textbox "Категория Удалить" [ref=f1e2735]:
+              - /placeholder: "Например: аренда офиса"
+            - textbox "Сумма расхода" [ref=f1e2736]:
+              - /placeholder: Введите сумму расхода
+            - button "Удалить" [ref=f1e2737] [cursor=pointer]
+          - generic [ref=f1e2738]:
+            - generic [ref=f1e2739]: Категория
+            - textbox "Категория Удалить" [ref=f1e2740]:
+              - /placeholder: "Например: связь"
+            - textbox "Сумма расхода" [ref=f1e2741]:
+              - /placeholder: Введите сумму расхода
+            - button "Удалить" [ref=f1e2742] [cursor=pointer]
+          - generic [ref=f1e2743]:
+            - generic [ref=f1e2744]: Категория
+            - textbox "Категория Удалить" [ref=f1e2745]:
+              - /placeholder: "Например: интернет"
+            - textbox "Сумма расхода" [ref=f1e2746]:
+              - /placeholder: Введите сумму расхода
+            - button "Удалить" [ref=f1e2747] [cursor=pointer]
+        - generic [ref=f1e107]:
+          - generic [ref=f1e108]: Итого расходов офиса
+          - strong [ref=f1e109]: 0 ₽
+        - button "+ Добавить еще расход" [ref=f1e111] [cursor=pointer]
+        - button "✓ Расходы заполнены Перейти к агентам →" [ref=f1e113] [cursor=pointer]:
+          - generic [ref=f1e114]: ✓ Расходы заполнены
+          - generic [ref=f1e115]: Перейти к агентам →
+    - region [ref=f1e116]:
+      - generic [ref=f1e117]:
+        - generic [ref=f1e118]:
+          - generic [ref=f1e119]: Шаг 2
+          - heading "Кто приносит деньги" [level=2] [ref=f1e120]
+        - button "Добавить агента" [ref=f1e121] [cursor=pointer]
+      - generic [ref=f1e122]:
+        - paragraph [ref=f1e123]: Выберите пакет 2026, затем введите точные сделки или общую комиссию. Калькулятор применит floor, определит плательщика мотиваций и покажет вклад агента.
+        - generic [ref=f1e124]:
+          - article [ref=f1e2748]:
+            - generic [ref=f1e2749]:
+              - generic [ref=f1e2750]:
+                - heading "Агент 1" [level=3] [ref=f1e2751]
+                - paragraph [ref=f1e2752]: Агент 1 · Альфа · Партнёр · Стандарт · 100 000 ₽ · не окупается
+              - generic [ref=f1e2753]:
+                - button "Развернуть" [ref=f1e2754] [cursor=pointer]
+                - button "Удалить" [ref=f1e2755] [cursor=pointer]
+            - generic [ref=f1e2756]:
+              - paragraph [ref=f1e2757]: Альфа · Партнёр · Стандарт
+              - paragraph [ref=f1e2758]: "Комиссия: 100 000 ₽ · Выплата: 45 000 ₽ · Вклад: 0 ₽"
+              - paragraph [ref=f1e2759]: "Статус: не окупается"
+          - article [ref=f1e2760]:
+            - generic [ref=f1e2761]:
+              - generic [ref=f1e2762]:
+                - heading "Агент 2" [level=3] [ref=f1e2763]
+                - paragraph [ref=f1e2764]: Агент 2 · Бета · Партнёр · Стандарт · 200 000 ₽ · не окупается
+              - generic [ref=f1e2765]:
+                - button "Развернуть" [ref=f1e2766] [cursor=pointer]
+                - button "Удалить" [ref=f1e2767] [cursor=pointer]
+            - generic [ref=f1e2768]:
+              - paragraph [ref=f1e2769]: Бета · Партнёр · Стандарт
+              - paragraph [ref=f1e2770]: "Комиссия: 200 000 ₽ · Выплата: 120 000 ₽ · Вклад: 0 ₽"
+              - paragraph [ref=f1e2771]: "Статус: не окупается"
+          - article [ref=f1e2772]:
+            - generic [ref=f1e2773]:
+              - generic [ref=f1e2774]:
+                - heading "Агент 3" [level=3] [ref=f1e2775]
+                - paragraph [ref=f1e2776]: Агент 3 · Гамма · Партнёр · Стандарт · не окупается
+              - generic [ref=f1e2777]:
+                - button "Свернуть" [ref=f1e2778] [cursor=pointer]
+                - button "Удалить" [ref=f1e2779] [cursor=pointer]
+            - generic [ref=f1e2780]:
+              - generic [ref=f1e2781]:
+                - generic [ref=f1e2782]:
+                  - generic [ref=f1e2783]: Имя
+                  - textbox "Имя" [active] [ref=f1e2784]:
+                    - /placeholder: Новый агент
+                    - text: Гамма
+                - generic [ref=f1e2785]:
+                  - generic [ref=f1e2786]: Статус агента
+                  - combobox "Статус агента Стажёр и партнёр считаются по разным шкалам выплат." [ref=f1e2787]:
+                    - option "Стажёр"
+                    - option "Партнёр" [selected]
+                  - generic [ref=f1e2788]: Стажёр и партнёр считаются по разным шкалам выплат.
+                - generic [ref=f1e2789]:
+                  - generic [ref=f1e2790]:
+                    - generic [ref=f1e2791]:
+                      - strong [ref=f1e2792]: Карьерный пакет 2026
+                      - paragraph [ref=f1e2793]: Выберите пакет вручную — кадровый профиль для расчёта не нужен.
+                    - link "Автоматический расчёт по стажу" [ref=f1e2794] [cursor=pointer]:
+                      - /url: career.html
+                  - generic [ref=f1e2795]:
+                    - generic [ref=f1e2796]:
+                      - generic [ref=f1e2797]: Пакет
+                      - combobox "Пакет Пакет задаёт гарантированный минимум и плательщика мотиваций." [ref=f1e2798]:
+                        - option "Новичок · минимум 30%"
+                        - option "Стандарт · минимум 45%"
+                        - option "Расширенный · минимум 50%"
+                        - option "Продвинутый · минимум 55%"
+                        - option "Премиум · минимум 60%"
+                        - option "Премиум + · минимум 65%"
+                        - option "Индивидуальный · минимум 70%" [selected]
+                      - generic [ref=f1e2799]: Пакет задаёт гарантированный минимум и плательщика мотиваций.
+                    - generic [ref=f1e2800]:
+                      - generic [ref=f1e2801]: Индивидуальный договорной минимум, %
+                      - spinbutton "Индивидуальный договорной минимум, % Исключение сверх минимума пакета. Полностью фиксированный процент выбирается ниже в особых условиях." [ref=f1e2802]: "0"
+                      - generic [ref=f1e2803]: Исключение сверх минимума пакета. Полностью фиксированный процент выбирается ниже в особых условиях.
+                  - generic [ref=f1e2804]:
+                    - generic [ref=f1e2805]: Индивидуальный · гарантировано не ниже 70%
+                    - generic [ref=f1e2806]: Офис оплачивает 0 ₽; агент оплачивает 0 ₽.
+                  - group [ref=f1e2807]:
+                    - generic "Условия и суммы мотиваций" [ref=f1e2808] [cursor=pointer]
+                    - generic [ref=f1e2809]:
+                      - generic [ref=f1e2810]:
+                        - generic [ref=f1e2811]: Задатки за квартал, ₽
+                        - textbox "Задатки за квартал, ₽ 250 000 ₽ открывают партнёрские бонусы, но не влияют на floor." [ref=f1e2812]
+                        - generic [ref=f1e2813]: 250 000 ₽ открывают партнёрские бонусы, но не влияют на floor.
+                      - generic [ref=f1e2814]:
+                        - generic [ref=f1e2815]: Результат за квартал, ₽
+                        - textbox "Результат за квартал, ₽ Определяет уровень и стипендию." [ref=f1e2816]
+                        - generic [ref=f1e2817]: Определяет уровень и стипендию.
+                      - generic [ref=f1e2818]:
+                        - generic [ref=f1e2819]: Результат за полугодие, ₽
+                        - textbox "Результат за полугодие, ₽ От 1 600 000 ₽ доступно «Путешествуй»." [ref=f1e2820]
+                        - generic [ref=f1e2821]: От 1 600 000 ₽ доступно «Путешествуй».
+                      - generic [ref=f1e2822]:
+                        - generic [ref=f1e2823]: Задатки предыдущего месяца, ₽
+                        - 'textbox "Задатки предыдущего месяца, ₽ Для индивидуальной рекламы: 3%, максимум 15 000 ₽." [ref=f1e2824]'
+                        - generic [ref=f1e2825]: "Для индивидуальной рекламы: 3%, максимум 15 000 ₽."
+                      - generic [ref=f1e2826]:
+                        - checkbox "План офиса по акции выполнен" [ref=f1e2827]
+                        - generic [ref=f1e2828]: План офиса по акции выполнен
+                      - generic [ref=f1e2829]:
+                        - checkbox "Агент участвовал в выполнении плана" [ref=f1e2830]
+                        - generic [ref=f1e2831]: Агент участвовал в выполнении плана
+                      - generic [ref=f1e2832]:
+                        - checkbox "Партнёрство подтверждено перед поездкой" [ref=f1e2833]
+                        - generic [ref=f1e2834]: Партнёрство подтверждено перед поездкой
+                      - generic [ref=f1e2835]:
+                        - generic [ref=f1e2836]: Горы / Море в этом расчёте, ₽
+                        - textbox "Горы / Море в этом расчёте, ₽" [ref=f1e2837]: 15 000
+                      - generic [ref=f1e2838]:
+                        - generic [ref=f1e2839]: Путешествуй в этом расчёте, ₽
+                        - textbox "Путешествуй в этом расчёте, ₽" [ref=f1e2840]: 100 000
+                      - generic [ref=f1e2841]:
+                        - generic [ref=f1e2842]: Корпоративы в этом расчёте, ₽
+                        - textbox "Корпоративы в этом расчёте, ₽" [ref=f1e2843]: 20 000
+                - generic [ref=f1e2844]:
+                  - strong [ref=f1e2845]: "Стандартная шкала: 45 / 50 / 55 / 60 / 65 / 70 / 80%."
+                  - text: Партнёр — с 7-го задатка применяется максимум 80%. Чем щедрее условия, тем больше комиссии агент должен приносить, чтобы оставаться выгодным офису.
+                - generic [ref=f1e2846]:
+                  - generic [ref=f1e2847]: Партнёр работает по какой системе?
+                  - combobox "Партнёр работает по какой системе? Стандартная система — выплата по шкале и возможные мотивации." [ref=f1e2848]:
+                    - option "Стандартная система" [selected]
+                    - option "Особые условия"
+                  - generic [ref=f1e2849]: Стандартная система — выплата по шкале и возможные мотивации.
+                - generic [ref=f1e2850]:
+                  - generic [ref=f1e2851]: Как считать сделки?
+                  - combobox "Как считать сделки? Точный режим нужен для сделок разного размера. Быстрый подходит для прикидки, но может отличаться от точного расчёта." [ref=f1e2852]:
+                    - 'option "Точно: ввести каждую сделку отдельно" [selected]'
+                    - 'option "Быстро: общая комиссия и количество сделок"'
+                  - generic [ref=f1e2853]: Точный режим нужен для сделок разного размера. Быстрый подходит для прикидки, но может отличаться от точного расчёта.
+                - generic [ref=f1e2854]:
+                  - paragraph [ref=f1e2855]: Введите комиссию, которая приходится именно на этого агента. Для точной зарплаты введите сделки отдельно.
+                  - paragraph [ref=f1e2856]: Обычная сделка меньше 50 000 ₽ не считается задатком, оплачивается по гарантированному минимуму 70% и не двигает шкалу. Для новостройки с одним агентом любая сумма может считаться задатком.
+                  - paragraph [ref=f1e2857]: Процент для этой сделки меняет ставку только в выбранной строке. Оставьте поле пустым, чтобы применить автоматическую шкалу.
+                  - generic [ref=f1e2859]:
+                    - generic [ref=f1e2860]:
+                      - generic [ref=f1e2861]: Сделка 1 — комиссия, ₽
+                      - textbox "Сделка 1 — комиссия, ₽ Комиссия, приходящаяся на этого агента." [ref=f1e2862]:
+                        - /placeholder: 100 000
+                      - generic [ref=f1e2863]: Комиссия, приходящаяся на этого агента.
+                    - generic [ref=f1e2864]:
+                      - generic [ref=f1e2865]: Процент для этой сделки, %
+                      - spinbutton "Процент для этой сделки, % Пусто — автоматическая шкала. Меняет только эту сделку." [ref=f1e2866]
+                      - generic [ref=f1e2867]: Пусто — автоматическая шкала. Меняет только эту сделку.
+                    - generic [ref=f1e2868]:
+                      - generic [ref=f1e2869]: Особое условие
+                      - generic [ref=f1e2870]:
+                        - checkbox "Новостройка, один агент" [ref=f1e2871]
+                        - generic [ref=f1e2872]: Новостройка, один агент
+                      - generic [ref=f1e2873]: Квалифицируется при любой сумме.
+                    - generic [ref=f1e2874]:
+                      - generic [ref=f1e2875]:
+                        - strong [ref=f1e2876]: 70%
+                        - generic [ref=f1e2877]: Применённый процент
+                      - generic [ref=f1e2878]:
+                        - strong [ref=f1e2879]: 0 ₽
+                        - generic [ref=f1e2880]: Агенту
+                      - generic [ref=f1e2881]:
+                        - strong [ref=f1e2882]: Минимум карьерного пакета
+                        - generic [ref=f1e2883]: Источник ставки
+                    - button "Удалить" [disabled] [ref=f1e2884]
+                  - button "Добавить сделку" [ref=f1e2885] [cursor=pointer]
+                  - generic [ref=f1e2886]:
+                    - generic [ref=f1e2887]:
+                      - term [ref=f1e2888]: Итого комиссия по сделкам
+                      - definition [ref=f1e2889]: 0 ₽
+                    - generic [ref=f1e2890]:
+                      - term [ref=f1e2891]: Итого зарплата агенту
+                      - definition [ref=f1e2892]: 0 ₽
+                    - generic [ref=f1e2893]:
+                      - term [ref=f1e2894]: Количество сделок
+                      - definition [ref=f1e2895]: "1"
+                - generic [ref=f1e2896]:
+                  - generic [ref=f1e2897]: Приведённый агент
+                  - combobox "Приведённый агент Если выбрать “Да”, офис дополнительно платит 2,5% от комиссии этого агента." [ref=f1e2898]:
+                    - option "Нет" [selected]
+                    - option "Да"
+                  - generic [ref=f1e2899]: Если выбрать “Да”, офис дополнительно платит 2,5% от комиссии этого агента.
+              - generic [ref=f1e2900]:
+                - generic [ref=f1e2901]:
+                  - strong [ref=f1e2902]: Пакетные мотивации 2026
+                  - paragraph [ref=f1e2903]: В прибыль офиса попадают только расходы с плательщиком «Офис». Расходы агента показаны отдельно.
+                - list [ref=f1e2904]:
+                  - listitem [ref=f1e2905]:
+                    - generic [ref=f1e2906]:
+                      - generic [ref=f1e2907]: Индивидуальная реклама
+                      - generic [ref=f1e2908]: Нет права · Не подтверждён квартальный порог партнёрства 250 000 ₽.
+                    - generic [ref=f1e2909]: 0 ₽
+                  - listitem [ref=f1e2910]:
+                    - generic [ref=f1e2911]:
+                      - generic [ref=f1e2912]: Стипендия
+                      - generic [ref=f1e2913]: Нет права · Не подтверждён квартальный порог партнёрства 250 000 ₽.
+                    - generic [ref=f1e2914]: 0 ₽
+                  - listitem [ref=f1e2915]:
+                    - generic [ref=f1e2916]:
+                      - generic [ref=f1e2917]: Горы / Море
+                      - generic [ref=f1e2918]: Нет права · Не подтверждён квартальный порог партнёрства 250 000 ₽.
+                    - generic [ref=f1e2919]: 0 ₽
+                  - listitem [ref=f1e2920]:
+                    - generic [ref=f1e2921]:
+                      - generic [ref=f1e2922]: Путешествуй с Домиан
+                      - generic [ref=f1e2923]: Нет права · Не подтверждён квартальный порог партнёрства 250 000 ₽.
+                    - generic [ref=f1e2924]: 0 ₽
+                  - listitem [ref=f1e2925]:
+                    - generic [ref=f1e2926]:
+                      - generic [ref=f1e2927]: Корпоративы
+                      - generic [ref=f1e2928]: Нет права · Не подтверждён квартальный порог партнёрства 250 000 ₽.
+                    - generic [ref=f1e2929]: 0 ₽
+                - generic [ref=f1e2930]:
+                  - generic [ref=f1e2931]: "За счёт офиса: 0 ₽"
+                  - generic [ref=f1e2932]: "За счёт агента: 0 ₽"
+              - generic [ref=f1e2933]:
+                - generic [ref=f1e2934]:
+                  - term [ref=f1e2935]: Выплата агенту
+                  - definition [ref=f1e2936]: 0 ₽
+                - generic [ref=f1e2937]:
+                  - term [ref=f1e2938]: Реферал
+                  - definition [ref=f1e2939]: 0 ₽
+                - generic [ref=f1e2940]:
+                  - term [ref=f1e2941]: Мотивационный резерв
+                  - definition [ref=f1e2942]: 0 ₽
+                - generic [ref=f1e2943]:
+                  - term [ref=f1e2944]: До роялти и расходов
+                  - definition [ref=f1e2945]: 0 ₽
+                - generic [ref=f1e2946]:
+                  - term [ref=f1e2947]: Мотивации агента
+                  - definition [ref=f1e2948]: 0 ₽
+                - generic [ref=f1e2949]:
+                  - term [ref=f1e2950]: Роялти-оценка
+                  - definition [ref=f1e2951]: 0 ₽
+                - generic [ref=f1e2952]:
+                  - term [ref=f1e2953]: Доля расходов
+                  - definition [ref=f1e2954]: 0 ₽
+                - generic [ref=f1e2955]:
+                  - term [ref=f1e2956]: Вклад агента
+                  - definition [ref=f1e2957]: 0 ₽ · На грани
+                - generic [ref=f1e2958]:
+                  - term [ref=f1e2959]: Окупится от
+                  - definition [ref=f1e2960]: 0 ₽
+              - button "Свернуть" [ref=f1e2962] [cursor=pointer]
+        - button "Добавить агента" [ref=f1e305] [cursor=pointer]
+        - button "✓ Агенты заполнены Перейти к личным сделкам →" [ref=f1e307] [cursor=pointer]:
+          - generic [ref=f1e308]: ✓ Агенты заполнены
+          - generic [ref=f1e309]: Перейти к личным сделкам →
+    - region [ref=f1e310]:
+      - generic [ref=f1e311]:
+        - generic [ref=f1e312]:
+          - generic [ref=f1e313]: Шаг 3
+          - heading "Личные сделки собственника" [level=2] [ref=f1e314]
+        - paragraph [ref=f1e315]: Этот блок показывает, держится ли офис сам или плюс появляется только благодаря личным продажам собственника. По этим сделкам агентская выплата равна 0, но роялти считается.
+      - generic [ref=f1e316]:
+        - generic [ref=f1e317]:
+          - generic [ref=f1e318]: Комиссия личных сделок за месяц
+          - textbox "Комиссия личных сделок за месяц" [ref=f1e319]
+        - button "✓ Личные сделки заполнены Перейти к итогам →" [ref=f1e321] [cursor=pointer]:
+          - generic [ref=f1e322]: ✓ Личные сделки заполнены
+          - generic [ref=f1e323]: Перейти к итогам →
+    - region [ref=f1e324]:
+      - generic [ref=f1e325]:
+        - generic [ref=f1e326]:
+          - generic [ref=f1e327]: Результат 1
+          - heading "Что осталось собственнику" [level=2] [ref=f1e328]
+        - paragraph [ref=f1e329]: Сначала смотрите итог без личных сделок собственника, а потом с ними. Разница между этими двумя строками показывает, насколько офис зависит от собственника.
+      - generic [ref=f1e330]: Офис в плюсе на 114 000 ₽.
+      - generic [ref=f1e331]:
+        - generic [ref=f1e332]:
+          - term [ref=f1e333]: Агенты продали
+          - definition [ref=f1e334]: 300 000 ₽
+        - generic [ref=f1e335]:
+          - term [ref=f1e336]: Личные сделки собственника
+          - definition [ref=f1e337]: 0 ₽
+        - generic [ref=f1e338]:
+          - term [ref=f1e339]: Общий оборот
+          - definition [ref=f1e340]: 300 000 ₽
+        - generic [ref=f1e341]:
+          - term [ref=f1e342]: Выплаты агентам
+          - definition [ref=f1e343]: 165 000 ₽
+        - generic [ref=f1e344]:
+          - term [ref=f1e345]: Рефералы
+          - definition [ref=f1e346]: 0 ₽
+        - generic [ref=f1e347]:
+          - term [ref=f1e348]: Мотивации за счёт офиса
+          - definition [ref=f1e349]: 0 ₽
+        - generic [ref=f1e350]:
+          - term [ref=f1e351]: Роялти
+          - definition [ref=f1e352]: 21 000 ₽
+        - generic [ref=f1e353]:
+          - term [ref=f1e354]: Расходы офиса
+          - definition [ref=f1e355]: 0 ₽
+        - generic [ref=f1e356]:
+          - term [ref=f1e357]: Без собственника до резервов
+          - definition [ref=f1e358]: 114 000 ₽
+        - generic [ref=f1e359]:
+          - term [ref=f1e360]: Итог без личных сделок
+          - definition [ref=f1e361]: 114 000 ₽
+        - generic [ref=f1e362]:
+          - term [ref=f1e363]: С собственником до резервов
+          - definition [ref=f1e364]: 114 000 ₽
+        - generic [ref=f1e365]:
+          - term [ref=f1e366]: Итог с личными сделками
+          - definition [ref=f1e367]: 114 000 ₽
+    - region [ref=f1e368]:
+      - generic [ref=f1e370]:
+        - generic [ref=f1e371]: Контроль
+        - heading "Опасные места" [level=2] [ref=f1e372]
+      - generic [ref=f1e373]:
+        - generic [ref=f1e2963]: "Роялти рассчитано автоматически от общего оборота: 300 000 ₽ × 7%."
+        - generic [ref=f1e2964]: "Роялти по агенту в блоке окупаемости показано как управленческая оценка: реальная ставка зависит от общего оборота офиса."
+    - region [ref=f1e376]:
+      - generic [ref=f1e377]:
+        - generic [ref=f1e378]:
+          - generic [ref=f1e379]: Результат 2
+          - heading "Кто окупает своё место" [level=2] [ref=f1e380]
+        - paragraph [ref=f1e381]: Здесь видно, сколько агент оставляет офису после выплаты, реферала, мотивационного резерва и своей доли расходов. Агент с оборотом тоже может быть убыточным, если условия слишком щедрые.
+      - generic [ref=f1e382]:
+        - paragraph [ref=f1e383]:
+          - strong [ref=f1e384]: Роялти-оценка
+          - text: — примерная доля роялти по агенту. Реальная ставка зависит от общего оборота офиса.
+        - paragraph [ref=f1e385]:
+          - strong [ref=f1e386]: Доля расходов
+          - text: — часть расходов офиса, условно распределённая на агента.
+        - paragraph [ref=f1e387]:
+          - strong [ref=f1e388]: Вклад
+          - text: — сколько агент оставляет офису после выплаты, реферала, роялти-оценки, мотиваций и своей доли расходов.
+      - generic [ref=f1e568]:
+        - article [ref=f1e2965]:
+          - generic [ref=f1e2966]:
+            - strong [ref=f1e2967]: Альфа
+            - generic [ref=f1e2968]: Окупается
+          - generic [ref=f1e2969]:
+            - generic [ref=f1e2970]:
+              - term [ref=f1e2971]: Комиссия
+              - definition [ref=f1e2972]: 100 000 ₽
+            - generic [ref=f1e2973]:
+              - term [ref=f1e2974]: Выплата
+              - definition [ref=f1e2975]: 45 000 ₽
+            - generic [ref=f1e2976]:
+              - term [ref=f1e2977]: Реферал
+              - definition [ref=f1e2978]: 0 ₽
+            - generic [ref=f1e2979]:
+              - term [ref=f1e2980]: Резерв
+              - definition [ref=f1e2981]: 0 ₽
+            - generic [ref=f1e2982]:
+              - term [ref=f1e2983]: Роялти-оценка
+              - definition [ref=f1e2984]: 7 000 ₽
+            - generic [ref=f1e2985]:
+              - term [ref=f1e2986]: Доля расходов
+              - definition [ref=f1e2987]: 0 ₽
+            - generic [ref=f1e2988]:
+              - term [ref=f1e2989]: Вклад
+              - definition [ref=f1e2990]: 48 000 ₽
+        - article [ref=f1e2991]:
+          - generic [ref=f1e2992]:
+            - strong [ref=f1e2993]: Бета
+            - generic [ref=f1e2994]: Окупается
+          - generic [ref=f1e2995]:
+            - generic [ref=f1e2996]:
+              - term [ref=f1e2997]: Комиссия
+              - definition [ref=f1e2998]: 200 000 ₽
+            - generic [ref=f1e2999]:
+              - term [ref=f1e3000]: Выплата
+              - definition [ref=f1e3001]: 120 000 ₽
+            - generic [ref=f1e3002]:
+              - term [ref=f1e3003]: Реферал
+              - definition [ref=f1e3004]: 0 ₽
+            - generic [ref=f1e3005]:
+              - term [ref=f1e3006]: Резерв
+              - definition [ref=f1e3007]: 0 ₽
+            - generic [ref=f1e3008]:
+              - term [ref=f1e3009]: Роялти-оценка
+              - definition [ref=f1e3010]: 14 000 ₽
+            - generic [ref=f1e3011]:
+              - term [ref=f1e3012]: Доля расходов
+              - definition [ref=f1e3013]: 0 ₽
+            - generic [ref=f1e3014]:
+              - term [ref=f1e3015]: Вклад
+              - definition [ref=f1e3016]: 66 000 ₽
+        - article [ref=f1e3017]:
+          - generic [ref=f1e3018]:
+            - strong [ref=f1e3019]: Гамма
+            - generic [ref=f1e3020]: На грани
+          - generic [ref=f1e3021]:
+            - generic [ref=f1e3022]:
+              - term [ref=f1e3023]: Комиссия
+              - definition [ref=f1e3024]: 0 ₽
+            - generic [ref=f1e3025]:
+              - term [ref=f1e3026]: Выплата
+              - definition [ref=f1e3027]: 0 ₽
+            - generic [ref=f1e3028]:
+              - term [ref=f1e3029]: Реферал
+              - definition [ref=f1e3030]: 0 ₽
+            - generic [ref=f1e3031]:
+              - term [ref=f1e3032]: Резерв
+              - definition [ref=f1e3033]: 0 ₽
+            - generic [ref=f1e3034]:
+              - term [ref=f1e3035]: Роялти-оценка
+              - definition [ref=f1e3036]: 0 ₽
+            - generic [ref=f1e3037]:
+              - term [ref=f1e3038]: Доля расходов
+              - definition [ref=f1e3039]: 0 ₽
+            - generic [ref=f1e3040]:
+              - term [ref=f1e3041]: Вклад
+              - definition [ref=f1e3042]: 0 ₽
+    - region [ref=f1e389]:
+      - generic [ref=f1e390]:
+        - generic [ref=f1e391]:
+          - generic [ref=f1e392]: Ключевое сравнение
+          - heading "Один агент — все пакеты 2026" [level=2] [ref=f1e393]
+        - generic [ref=f1e394]:
+          - generic [ref=f1e395]: Сравнить агента
+          - combobox "Сравнить агента" [ref=f1e396]:
+            - option "Альфа" [selected]
+            - option "Бета"
+            - option "Гамма"
+      - paragraph [ref=f1e397]: Сделки, реферал и доля постоянных расходов 0 ₽ одинаковы во всех строках.
+      - table [ref=f1e399]:
+        - rowgroup [ref=f1e400]:
+          - row [ref=f1e401]:
+            - columnheader "Пакет" [ref=f1e402]
+            - columnheader "Минимум" [ref=f1e403]
+            - columnheader "Выплата агенту" [ref=f1e404]
+            - columnheader "Мотивации офиса" [ref=f1e405]
+            - columnheader "Мотивации агента" [ref=f1e406]
+            - columnheader "Вклад агента" [ref=f1e407]
+            - columnheader "Окупится от" [ref=f1e408]
+            - columnheader "Статус" [ref=f1e409]
+        - rowgroup [ref=f1e410]:
+          - row [ref=f1e3043]:
+            - rowheader "Новичок" [ref=f1e3044]
+            - cell "30%" [ref=f1e3045]
+            - cell "30 000 ₽" [ref=f1e3046]
+            - cell "0 ₽" [ref=f1e3047]
+            - cell "0 ₽" [ref=f1e3048]
+            - cell "63 000 ₽" [ref=f1e3049]
+            - cell "0 ₽" [ref=f1e3050]
+            - cell "Окупается" [ref=f1e3051]
+          - row [ref=f1e3052]:
+            - rowheader "Стандарт Выбран" [ref=f1e3053]:
+              - text: Стандарт
+              - generic [ref=f1e3054]: Выбран
+            - cell "45%" [ref=f1e3055]
+            - cell "45 000 ₽" [ref=f1e3056]
+            - cell "0 ₽" [ref=f1e3057]
+            - cell "0 ₽" [ref=f1e3058]
+            - cell "48 000 ₽" [ref=f1e3059]
+            - cell "0 ₽" [ref=f1e3060]
+            - cell "Окупается" [ref=f1e3061]
+          - row [ref=f1e3062]:
+            - rowheader "Расширенный" [ref=f1e3063]
+            - cell "50%" [ref=f1e3064]
+            - cell "50 000 ₽" [ref=f1e3065]
+            - cell "0 ₽" [ref=f1e3066]
+            - cell "0 ₽" [ref=f1e3067]
+            - cell "43 000 ₽" [ref=f1e3068]
+            - cell "0 ₽" [ref=f1e3069]
+            - cell "Окупается" [ref=f1e3070]
+          - row [ref=f1e3071]:
+            - rowheader "Продвинутый" [ref=f1e3072]
+            - cell "55%" [ref=f1e3073]
+            - cell "55 000 ₽" [ref=f1e3074]
+            - cell "0 ₽" [ref=f1e3075]
+            - cell "0 ₽" [ref=f1e3076]
+            - cell "38 000 ₽" [ref=f1e3077]
+            - cell "0 ₽" [ref=f1e3078]
+            - cell "Окупается" [ref=f1e3079]
+          - row [ref=f1e3080]:
+            - rowheader "Премиум" [ref=f1e3081]
+            - cell "60%" [ref=f1e3082]
+            - cell "60 000 ₽" [ref=f1e3083]
+            - cell "0 ₽" [ref=f1e3084]
+            - cell "0 ₽" [ref=f1e3085]
+            - cell "33 000 ₽" [ref=f1e3086]
+            - cell "0 ₽" [ref=f1e3087]
+            - cell "Окупается" [ref=f1e3088]
+          - row [ref=f1e3089]:
+            - rowheader "Премиум +" [ref=f1e3090]
+            - cell "65%" [ref=f1e3091]
+            - cell "65 000 ₽" [ref=f1e3092]
+            - cell "0 ₽" [ref=f1e3093]
+            - cell "0 ₽" [ref=f1e3094]
+            - cell "28 000 ₽" [ref=f1e3095]
+            - cell "0 ₽" [ref=f1e3096]
+            - cell "Окупается" [ref=f1e3097]
+          - row [ref=f1e3098]:
+            - rowheader "Индивидуальный" [ref=f1e3099]
+            - cell "70%" [ref=f1e3100]
+            - cell "70 000 ₽" [ref=f1e3101]
+            - cell "0 ₽" [ref=f1e3102]
+            - cell "0 ₽" [ref=f1e3103]
+            - cell "23 000 ₽" [ref=f1e3104]
+            - cell "0 ₽" [ref=f1e3105]
+            - cell "Окупается" [ref=f1e3106]
+    - region [ref=f1e475]:
+      - generic [ref=f1e476]:
+        - generic [ref=f1e477]:
+          - generic [ref=f1e478]: Итог
+          - heading "Управленческий итог" [level=2] [ref=f1e479]
+        - paragraph [ref=f1e480]: "Короткий управленческий вывод: в каком состоянии офис сейчас, кто создаёт риск и куда смотреть в первую очередь."
+      - generic [ref=f1e481]:
+        - generic [ref=f1e3107]:
+          - generic [ref=f1e3108]: Диагноз офиса
+          - paragraph [ref=f1e3109]: "Офис окупается как система. Даже без личных сделок собственника остаётся положительный результат: +114 000 ₽."
+        - generic [ref=f1e3110]:
+          - article [ref=f1e3111]:
+            - generic [ref=f1e3112]:
+              - strong [ref=f1e3113]: Альфа
+              - generic [ref=f1e3114]: Сильный агент
+            - generic [ref=f1e3115]:
+              - generic [ref=f1e3116]:
+                - term [ref=f1e3117]: Вклад
+                - definition [ref=f1e3118]: 48 000 ₽
+              - generic [ref=f1e3119]:
+                - term [ref=f1e3120]: Причина
+                - definition [ref=f1e3121]: вклад ниже безопасного уровня при текущей комиссии и расходах
+              - generic [ref=f1e3122]:
+                - term [ref=f1e3123]: Рекомендация
+                - definition [ref=f1e3124]: Удерживать оборот и условия, при которых агент продолжает закрывать своё место.
+          - article [ref=f1e3125]:
+            - generic [ref=f1e3126]:
+              - strong [ref=f1e3127]: Бета
+              - generic [ref=f1e3128]: Сильный агент
+            - generic [ref=f1e3129]:
+              - generic [ref=f1e3130]:
+                - term [ref=f1e3131]: Вклад
+                - definition [ref=f1e3132]: 66 000 ₽
+              - generic [ref=f1e3133]:
+                - term [ref=f1e3134]: Причина
+                - definition [ref=f1e3135]: вклад ниже безопасного уровня при текущей комиссии и расходах
+              - generic [ref=f1e3136]:
+                - term [ref=f1e3137]: Рекомендация
+                - definition [ref=f1e3138]: Удерживать оборот и условия, при которых агент продолжает закрывать своё место.
+          - article [ref=f1e3139]:
+            - generic [ref=f1e3140]:
+              - strong [ref=f1e3141]: Гамма
+              - generic [ref=f1e3142]: Почти в ноль
+            - generic [ref=f1e3143]:
+              - generic [ref=f1e3144]:
+                - term [ref=f1e3145]: Вклад
+                - definition [ref=f1e3146]: 0 ₽
+              - generic [ref=f1e3147]:
+                - term [ref=f1e3148]: Причина
+                - definition [ref=f1e3149]: низкая комиссия, комиссия недостаточна для покрытия выплаты, роялти-оценки и доли расходов
+              - generic [ref=f1e3150]:
+                - term [ref=f1e3151]: Рекомендация
+                - definition [ref=f1e3152]: "Проверить запас прочности: небольшое снижение комиссии или рост расходов может увести вклад в минус."
+        - generic [ref=f1e3153]:
+          - generic [ref=f1e3154]: Рекомендации собственнику
+          - list [ref=f1e3155]:
+            - listitem [ref=f1e3156]: Команда окупает своё место. Следующий фокус — удержать оборот и не увеличивать постоянные расходы без необходимости.
+    - region [ref=f1e489]:
+      - generic [ref=f1e490]:
+        - generic [ref=f1e491]:
+          - generic [ref=f1e492]: Прогноз
+          - heading "Прогноз при текущих показателях" [level=2] [ref=f1e493]
+        - paragraph [ref=f1e494]: Прогноз умножает показатели активного месяца. Это управленческий сценарий, а не фактическая агрегация сохранённых месяцев.
+      - generic [ref=f1e495]: Это условный прогноз от текущего месяца, а не полноценный годовой расчёт. Роялти считается как сумма одинаковых месяцев; если реальный оборот по месяцам будет отличаться, ставка роялти может измениться.
+      - table [ref=f1e497]:
+        - rowgroup [ref=f1e498]:
+          - row [ref=f1e499]:
+            - columnheader "Период" [ref=f1e500]
+            - columnheader "Оборот" [ref=f1e501]
+            - columnheader "Выплаты агентам" [ref=f1e502]
+            - columnheader "Рефералы" [ref=f1e503]
+            - columnheader "Мотивации/резервы" [ref=f1e504]
+            - columnheader "Роялти" [ref=f1e505]
+            - columnheader "Расходы" [ref=f1e506]
+            - columnheader "Итог без собственника" [ref=f1e507]
+            - columnheader "Итог с собственником" [ref=f1e508]
+        - rowgroup [ref=f1e509]:
+          - row [ref=f1e3157]:
+            - rowheader "Месяц ×1" [ref=f1e3158]
+            - cell "300 000 ₽" [ref=f1e3159]
+            - cell "165 000 ₽" [ref=f1e3160]
+            - cell "0 ₽" [ref=f1e3161]
+            - cell "0 ₽" [ref=f1e3162]
+            - cell "21 000 ₽" [ref=f1e3163]
+            - cell "0 ₽" [ref=f1e3164]
+            - cell "114 000 ₽" [ref=f1e3165]
+            - cell "114 000 ₽" [ref=f1e3166]
+          - row [ref=f1e3167]:
+            - rowheader "Квартал ×3" [ref=f1e3168]
+            - cell "900 000 ₽" [ref=f1e3169]
+            - cell "495 000 ₽" [ref=f1e3170]
+            - cell "0 ₽" [ref=f1e3171]
+            - cell "0 ₽" [ref=f1e3172]
+            - cell "63 000 ₽" [ref=f1e3173]
+            - cell "0 ₽" [ref=f1e3174]
+            - cell "342 000 ₽" [ref=f1e3175]
+            - cell "342 000 ₽" [ref=f1e3176]
+          - row [ref=f1e3177]:
+            - rowheader "Полугодие ×6" [ref=f1e3178]
+            - cell "1 800 000 ₽" [ref=f1e3179]
+            - cell "990 000 ₽" [ref=f1e3180]
+            - cell "0 ₽" [ref=f1e3181]
+            - cell "0 ₽" [ref=f1e3182]
+            - cell "126 000 ₽" [ref=f1e3183]
+            - cell "0 ₽" [ref=f1e3184]
+            - cell "684 000 ₽" [ref=f1e3185]
+            - cell "684 000 ₽" [ref=f1e3186]
+          - row [ref=f1e3187]:
+            - rowheader "Год ×12" [ref=f1e3188]
+            - cell "3 600 000 ₽" [ref=f1e3189]
+            - cell "1 980 000 ₽" [ref=f1e3190]
+            - cell "0 ₽" [ref=f1e3191]
+            - cell "0 ₽" [ref=f1e3192]
+            - cell "252 000 ₽" [ref=f1e3193]
+            - cell "0 ₽" [ref=f1e3194]
+            - cell "1 368 000 ₽" [ref=f1e3195]
+            - cell "1 368 000 ₽" [ref=f1e3196]
+  - region [ref=f1e550]:
+    - generic [ref=f1e551]:
+      - generic [ref=f1e552]: Сервисная операция
+      - heading "Полный сброс калькулятора" [level=2] [ref=f1e553]
+      - paragraph [ref=f1e554]: Удалит все сохранённые месяцы, текущий черновик и данные для ведомости из этого браузера. После обновления страница откроется чистой.
+    - button "Удалить все сохранённые данные" [ref=f1e555] [cursor=pointer]
+  - generic [ref=f1e556]:
+    - paragraph [ref=f1e557]: Расчёт является управленческой моделью и помогает оценить экономику офиса.
+    - navigation "Нижняя навигация" [ref=f1e558]:
+      - link "На старт" [ref=f1e559] [cursor=pointer]:
+        - /url: start.html
+      - link "Калькулятор" [ref=f1e560] [cursor=pointer]:
+        - /url: index.html
+      - link "Мотивация 2026" [ref=f1e561] [cursor=pointer]:
+        - /url: motivation-calculator.html
+      - link "Ведомость сделок" [ref=f1e562] [cursor=pointer]:
+        - /url: table.html
+      - link "Простой режим" [ref=f1e563] [cursor=pointer]:
+        - /url: simple.html
+      - link "Расширенный режим" [ref=f1e564] [cursor=pointer]:
+        - /url: extended.html
+      - link "Карьерные профили" [ref=f1e565] [cursor=pointer]:
+        - /url: career.html

@@ -1,0 +1,301 @@
+.extended-page {
+  width: min(1260px, calc(100% - 28px));
+  margin: 22px auto;
+  padding: 32px;
+  background: var(--paper);
+  border-radius: 10px;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+}
+
+.extended-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 18px;
+  align-items: start;
+}
+
+.extended-main,
+.agents-editor,
+.agent-card,
+.deals-list,
+.summary-block,
+.summary-list-extended,
+.agent-summary-cards {
+  display: grid;
+  gap: 12px;
+}
+
+.step-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.step-head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.step-head.split {
+  justify-content: space-between;
+}
+
+.step-head h2,
+.summary-block h2,
+.result-panel h2 {
+  margin: 0;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-weight: 900;
+  line-height: 1.12;
+}
+
+.step-head p,
+.result-panel p,
+.summary-block p,
+.calculation-note {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+.period-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.period-options label,
+.agent-card,
+.deal-row-extended,
+.extended-status,
+.summary-row,
+.agent-summary-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, .82);
+}
+
+.period-options label {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.period-options span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.input-mode-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.extended-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.flag-line {
+  display: flex;
+  grid-template-columns: none;
+  gap: 8px;
+  align-items: center;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .82);
+}
+
+.flag-line input {
+  width: auto;
+  min-height: auto;
+}
+
+.extended-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 900;
+}
+
+.agent-card {
+  padding: 14px;
+}
+
+.agent-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.agent-fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.agent-fields label,
+.deal-row-extended label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.agent-fields input,
+.agent-fields select,
+.deal-row-extended input {
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 12px;
+  border: 1px solid #c8cfda;
+  border-radius: 6px;
+}
+
+.deal-row-extended {
+  display: grid;
+  grid-template-columns: minmax(90px, .7fr) minmax(150px, 1fr) 96px 128px 44px;
+  gap: 8px;
+  align-items: end;
+  padding: 10px;
+}
+
+.deal-stat {
+  display: grid;
+  gap: 4px;
+  padding-bottom: 8px;
+  font-weight: 900;
+}
+
+.deal-stat span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.extended-summary {
+  position: sticky;
+  top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.result-panel {
+  border-color: rgba(36, 92, 153, .35);
+  background: var(--blue-soft);
+}
+
+.result-panel h2 {
+  color: var(--blue);
+  font-size: 38px;
+  line-height: 1.05;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.summary-row span {
+  color: var(--muted);
+}
+
+.summary-row strong {
+  text-align: right;
+}
+
+.agent-summary-panel {
+  margin-top: 18px;
+}
+
+.agent-summary-cards {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.agent-summary-card {
+  padding: 14px;
+}
+
+.agent-summary-card h3 {
+  margin: 0 0 10px;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.agent-summary-card dl {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+
+.agent-summary-card div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.agent-summary-card dt {
+  color: var(--muted);
+}
+
+.agent-summary-card dd {
+  margin: 0;
+  font-weight: 900;
+}
+
+.danger-button {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+@media (max-width: 1100px) {
+  .extended-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .extended-summary {
+    position: static;
+  }
+
+  .agent-summary-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .extended-page {
+    width: min(100% - 16px, 1180px);
+    margin: 8px auto;
+    padding: 14px;
+  }
+
+  .period-options,
+  .extended-form-grid,
+  .agent-fields,
+  .agent-summary-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .step-head,
+  .step-head.split,
+  .agent-card__head {
+    flex-direction: column;
+  }
+
+  .deal-row-extended {
+    grid-template-columns: 1fr;
+  }
+}

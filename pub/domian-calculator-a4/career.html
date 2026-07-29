@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Домиан — профили сотрудников и выбор пакета</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="assets/css/navigation.css">
+  <link rel="stylesheet" href="assets/css/career-mode.css">
+</head>
+<body>
+  <main class="page">
+    <header class="mode-header">
+      <div class="mode-header__top">
+        <div>
+          <p class="mode-header__project">Домиан — калькулятор офиса</p>
+          <h1 class="mode-header__title">Профили сотрудников и выбор пакета</h1>
+          <p class="mode-header__subtitle">Здесь можно подобрать пакет по стажу и результатам, сохранить историю и затем вручную выбрать этот профиль в A4.</p>
+        </div>
+        <div class="return-actions">
+          <a href="index.html">Перейти в A4</a>
+        </div>
+      </div>
+      <nav class="mode-nav" aria-label="Навигация по режимам">
+        <a href="start.html">На старт</a>
+        <a href="index.html">A4</a>
+        <a href="table.html">Ведомость</a>
+        <a href="simple.html">Простой</a>
+        <a href="extended.html">Расширенный</a>
+        <a href="motivation-calculator.html">Мотивация 2026</a>
+        <a href="career.html" aria-current="page">Карьера</a>
+      </nav>
+    </header>
+
+    <section class="career-intro">
+      <div>
+        <span class="eyebrow">Правила мотивации, версия 2026.1</span>
+        <h2>Как калькулятор выбирает пакет</h2>
+        <p>Калькулятор отдельно определяет пакет по стажу и пакет по результатам. Затем выбирает более высокий. Пакет по стажу не понижается, а пакет по результатам может снизиться не больше чем на одну ступень за полугодие.</p>
+      </div>
+      <div class="formula" aria-label="Выбирается более высокий пакет">
+        <b>Пакет по стажу</b>
+        <i>сравниваем с</i>
+        <b>пакетом по результатам</b>
+        <span>берём более высокий</span>
+      </div>
+    </section>
+
+    <div class="career-layout">
+      <aside class="profile-panel">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Сотрудники</span>
+            <h2>Профили</h2>
+          </div>
+          <button class="button button--primary" type="button" data-action="new-profile">Новый</button>
+        </div>
+        <div id="profileList" class="profile-list"></div>
+        <p class="profile-note">Каждый профиль имеет свой номер. Профиль нужно вручную выбрать у нужного агента в A4.</p>
+      </aside>
+
+      <div id="careerEditor" class="career-editor">
+        <section class="panel">
+          <div class="section-head">
+            <div>
+              <span class="eyebrow">Карточка сотрудника</span>
+              <h2>Данные сотрудника</h2>
+            </div>
+            <div class="section-actions">
+              <button class="button" type="button" data-action="save-profile">Сохранить профиль</button>
+              <button class="button button--danger" type="button" data-action="delete-profile">Удалить</button>
+            </div>
+          </div>
+
+          <div class="identity-line">ID: <code id="profileIdValue"></code></div>
+          <div class="form-grid">
+            <label class="field field--wide">
+              <span>Имя сотрудника</span>
+              <input id="profileName" type="text" autocomplete="off">
+            </label>
+            <label class="field">
+              <span>Статус</span>
+              <select id="profileStatus">
+                <option value="trainee">Стажёр</option>
+                <option value="partner">Партнёр</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Дата начала непрерывной работы</span>
+              <input id="employmentStartDate" type="date">
+            </label>
+            <label class="field">
+              <span>Дата перехода в партнёры</span>
+              <input id="partnerStartDate" type="date">
+            </label>
+            <label class="field">
+              <span>Минимальный процент по договору, %</span>
+              <input id="contractualFloorRate" type="number" min="0" max="100" step="1" placeholder="Нет">
+            </label>
+            <label class="field field--wide">
+              <span>Комментарий</span>
+              <textarea id="profileNotes" rows="2" placeholder="Причина индивидуальных условий или служебная заметка"></textarea>
+            </label>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-head">
+            <div>
+              <span class="eyebrow">Расчёт</span>
+              <h2>Рассчитать новый пакет</h2>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <label class="field">
+              <span>Дата оценки</span>
+              <input id="asOfDate" type="date">
+            </label>
+            <label class="field">
+              <span>Действует с месяца</span>
+              <input id="effectivePeriod" type="month">
+            </label>
+            <label class="field">
+              <span>Пакет по результатам прошлого полугодия</span>
+              <select id="previousPerformancePackage"></select>
+            </label>
+            <label class="field">
+              <span>Результат полугодия</span>
+              <select id="halfYearResultStatus">
+                <option value="unconfirmed">Не подтверждён / отсутствует</option>
+                <option value="confirmed">Подтверждён</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Уровень за полугодие</span>
+              <select id="halfYearLevel">
+                <option value="1">1 уровень</option>
+                <option value="2">2 уровень</option>
+                <option value="3">3 уровень</option>
+                <option value="4">4 уровень</option>
+                <option value="5">5 уровень</option>
+                <option value="6">6 уровень</option>
+                <option value="7">7 уровень</option>
+              </select>
+            </label>
+          </div>
+
+          <div id="decisionResult" class="decision-result" aria-live="polite"></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-head">
+            <div>
+              <span class="eyebrow">Условия и стоимость</span>
+              <h2>Какие мотивации доступны и кто их оплачивает</h2>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <label class="field">
+              <span>Задатки за квартал, ₽</span>
+              <input id="quarterDeposits" type="number" min="0" step="1000">
+              <small>Для некоторых мотиваций нужно не меньше 250 000 ₽ задатков за квартал. Эта сумма не меняет минимальный процент агента.</small>
+            </label>
+            <label class="field">
+              <span>Заработано агентом за квартал, ₽</span>
+              <input id="quarterlyCommission" type="number" min="0" step="1000">
+              <small>Определяет уровень и стипендию следующего квартала.</small>
+            </label>
+            <label class="field">
+              <span>Задатки предыдущего месяца, ₽</span>
+              <input id="previousMonthDeposits" type="number" min="0" step="1000">
+              <small>Для рекламы индивидуального пакета: 3%, максимум 15 000 ₽.</small>
+            </label>
+            <label class="check-field">
+              <input id="officePlanCompleted" type="checkbox">
+              <span>План офиса по акции выполнен</span>
+            </label>
+            <label class="check-field">
+              <input id="agentParticipated" type="checkbox">
+              <span>Агент участвовал в выполнении плана</span>
+            </label>
+            <label class="check-field">
+              <input id="travelQuarterPartnershipConfirmed" type="checkbox">
+              <span>Партнёрство подтверждено перед поездкой</span>
+            </label>
+          </div>
+
+          <h3 class="subheading">Суммы для выбранного месяца</h3>
+          <div class="form-grid">
+            <label class="field">
+              <span>Горы / Море, ₽</span>
+              <input id="mountainSeaCost" type="number" min="0" step="1000">
+            </label>
+            <label class="field">
+              <span>Путешествуй, ₽</span>
+              <input id="travelCost" type="number" min="0" step="1000">
+            </label>
+            <label class="field">
+              <span>Корпоративы, ₽</span>
+              <input id="corporateCost" type="number" min="0" step="1000">
+            </label>
+          </div>
+
+          <div class="table-scroll">
+            <table class="benefit-table">
+              <thead>
+                <tr>
+                  <th>Мотивация</th>
+                  <th>Доступна?</th>
+                  <th>Кто оплачивает</th>
+                  <th>Расход офиса</th>
+                  <th>Расход агента</th>
+                  <th>Причина</th>
+                </tr>
+              </thead>
+              <tbody id="benefitRows"></tbody>
+              <tfoot>
+                <tr>
+                  <th colspan="3">Итого</th>
+                  <td id="officeCostTotal">0 ₽</td>
+                  <td id="agentCostTotal">0 ₽</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <div class="save-row">
+            <button class="button button--primary button--large" type="button" data-action="save-decision">Сохранить пакет и мотивации</button>
+            <span id="careerSaveStatus" class="career-save-status career-save-status--info" aria-live="polite">Изменения сохраняются только по кнопке.</span>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-head">
+            <div>
+              <span class="eyebrow">История</span>
+              <h2>Ранее сохранённые пакеты</h2>
+            </div>
+          </div>
+          <ol id="decisionHistory" class="decision-history"></ol>
+        </section>
+      </div>
+    </div>
+
+    <footer class="mode-footer">
+      <p>Профили сотрудников хранятся отдельно и не перезаписывают сохранённые месяцы A4.</p>
+      <nav class="mode-footer__links" aria-label="Нижняя навигация">
+        <a href="start.html">На старт</a>
+        <a href="index.html">Основной A4</a>
+        <a href="motivation-calculator.html">Мотивация 2026</a>
+        <a href="career.html" aria-current="page">Карьерные профили</a>
+      </nav>
+    </footer>
+  </main>
+
+  <script src="assets/js/policies/motivation-policy-2026.js"></script>
+  <script src="assets/js/domain/career-engine.js"></script>
+  <script src="assets/js/domain/benefit-engine.js"></script>
+  <script src="assets/js/career-storage.js"></script>
+  <script src="assets/js/career-mode.js"></script>
+</body>
+</html>

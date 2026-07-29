@@ -1,0 +1,104 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e5]:
+      - paragraph [ref=e6]: Домиан — калькулятор офиса
+      - heading "Простой расчёт" [level=1] [ref=e7]
+      - paragraph [ref=e8]: Быстрая оценка экономики офиса без подробного ввода сделок.
+    - navigation "Навигация по режимам" [ref=e9]:
+      - link "На старт" [ref=e10] [cursor=pointer]:
+        - /url: start.html
+      - link "A4" [ref=e11] [cursor=pointer]:
+        - /url: index.html
+      - link "Ведомость" [ref=e12] [cursor=pointer]:
+        - /url: table.html
+      - link "Простой" [ref=e13] [cursor=pointer]:
+        - /url: simple.html
+      - link "Расширенный" [ref=e14] [cursor=pointer]:
+        - /url: extended.html
+      - link "Мотивация 2026" [ref=e15] [cursor=pointer]:
+        - /url: motivation-calculator.html
+      - link "Карьера" [ref=e16] [cursor=pointer]:
+        - /url: career.html
+  - generic [ref=e17]: Это каркас простого режима. Сейчас поля не выполняют расчёт; полноценная логика simple остаётся отдельным этапом.
+  - generic [ref=e18]:
+    - generic [ref=e19]:
+      - heading "Шаг 1. Оборот" [level=2] [ref=e20]
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e23]: Общая комиссия агентов за месяц
+          - textbox "Например, 2 400 000" [ref=e24]
+        - generic [ref=e25]:
+          - generic [ref=e26]: Личные сделки собственника за месяц
+          - textbox "Например, 300 000" [ref=e27]
+    - generic [ref=e28]:
+      - heading "Шаг 2. Агентская модель" [level=2] [ref=e29]
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - generic [ref=e32]:
+            - generic [ref=e33]: Количество агентов
+            - spinbutton "6" [ref=e34]
+          - generic [ref=e35]:
+            - generic [ref=e36]: Среднее количество сделок на агента
+            - spinbutton "3" [ref=e37]
+        - generic [ref=e38]:
+          - generic [ref=e39]: Основная схема выплат
+          - combobox [ref=e40]:
+            - option "партнёр стандарт" [selected]
+            - option "стажёр"
+            - option "фиксированный процент"
+            - option "повышенный стартовый процент"
+    - generic [ref=e41]:
+      - heading "Шаг 3. Расходы" [level=2] [ref=e42]
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - generic [ref=e46]: Общие расходы офиса за месяц
+            - textbox "Например, 420 000" [ref=e47]
+          - generic [ref=e48]:
+            - generic [ref=e49]: Аренда
+            - textbox "—" [ref=e50]
+          - generic [ref=e51]:
+            - generic [ref=e52]: Реклама
+            - textbox "—" [ref=e53]
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - generic [ref=e56]: Администратор / офис
+            - textbox "—" [ref=e57]
+          - generic [ref=e58]:
+            - generic [ref=e59]: Прочее
+            - textbox "—" [ref=e60]
+    - generic [ref=e61]:
+      - heading "Шаг 4. Итог" [level=2] [ref=e62]
+      - list [ref=e63]:
+        - listitem [ref=e64]:
+          - generic [ref=e65]: "Оборот агентов:"
+          - strong [ref=e66]: —
+        - listitem [ref=e67]:
+          - generic [ref=e68]: "Выплаты агентам:"
+          - strong [ref=e69]: —
+        - listitem [ref=e70]:
+          - generic [ref=e71]: "Роялти:"
+          - strong [ref=e72]: —
+        - listitem [ref=e73]:
+          - generic [ref=e74]: "Расходы:"
+          - strong [ref=e75]: —
+        - listitem [ref=e76]:
+          - generic [ref=e77]: "Остаток собственнику:"
+          - strong [ref=e78]: расчёт будет добавлен позже
+  - generic [ref=e79]:
+    - paragraph [ref=e80]: После подключения расчёта этот режим будет показывать примерный финансовый результат офиса.
+    - navigation "Нижняя навигация" [ref=e81]:
+      - link "На старт" [ref=e82] [cursor=pointer]:
+        - /url: start.html
+      - link "Основной A4" [ref=e83] [cursor=pointer]:
+        - /url: index.html
+      - link "Ведомость сделок" [ref=e84] [cursor=pointer]:
+        - /url: table.html
+      - link "Простой режим" [ref=e85] [cursor=pointer]:
+        - /url: simple.html
+      - link "Расширенный режим" [ref=e86] [cursor=pointer]:
+        - /url: extended.html
+      - link "Мотивация 2026" [ref=e87] [cursor=pointer]:
+        - /url: motivation-calculator.html
+      - link "Карьерные профили" [ref=e88] [cursor=pointer]:
+        - /url: career.html

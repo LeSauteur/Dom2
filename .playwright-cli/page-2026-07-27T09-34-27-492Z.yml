@@ -1,0 +1,111 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e5]:
+      - paragraph [ref=e6]: Домиан — калькулятор офиса
+      - heading "Выбор режима расчёта" [level=1] [ref=e7]
+      - paragraph [ref=e8]: "Выберите формат работы: быстрый ориентир, основной A4, ведомость сделок или расширенный расчёт периода."
+    - navigation "Навигация по режимам" [ref=e9]:
+      - link "На старт" [ref=e10] [cursor=pointer]:
+        - /url: start.html
+      - link "A4" [ref=e11] [cursor=pointer]:
+        - /url: index.html
+      - link "Мотивация 2026" [ref=e12] [cursor=pointer]:
+        - /url: motivation-calculator.html
+      - link "Ведомость" [ref=e13] [cursor=pointer]:
+        - /url: table.html
+      - link "Простой" [ref=e14] [cursor=pointer]:
+        - /url: simple.html
+      - link "Расширенный" [ref=e15] [cursor=pointer]:
+        - /url: extended.html
+      - link "Карьера" [ref=e16] [cursor=pointer]:
+        - /url: career.html
+  - generic [ref=e18]:
+    - article [ref=e19]:
+      - generic [ref=e20]:
+        - heading "Простой расчёт" [level=3] [ref=e21]
+        - paragraph [ref=e22]: Быстрая оценка экономики офиса без детального ввода каждого агента и каждой сделки.
+      - list [ref=e23]:
+        - listitem [ref=e24]: общий оборот;
+        - listitem [ref=e25]: количество агентов;
+        - listitem [ref=e26]: расходы;
+        - listitem [ref=e27]: быстрый ориентир.
+      - link "Открыть простой режим" [ref=e29] [cursor=pointer]:
+        - /url: simple.html
+    - article [ref=e30]:
+      - generic [ref=e31]:
+        - heading "Основной A4-калькулятор" [level=3] [ref=e32]
+        - paragraph [ref=e33]: Основной управленческий расчёт текущего месяца по агентам, сделкам, расходам, роялти и мотивациям.
+      - list [ref=e34]:
+        - listitem [ref=e35]: агенты и сделки;
+        - listitem [ref=e36]: выплаты и рефералы;
+        - listitem [ref=e37]: роялти;
+        - listitem [ref=e38]: итог собственнику.
+      - link "Открыть A4" [ref=e40] [cursor=pointer]:
+        - /url: index.html
+    - article [ref=e41]:
+      - generic [ref=e42]:
+        - heading "Ведомость сделок" [level=3] [ref=e43]
+        - paragraph [ref=e44]: "Табличная ведомость для Генерального: сделки строками, итоги агента и общий итог офиса."
+      - list [ref=e45]:
+        - listitem [ref=e46]: реестр сделок;
+        - listitem [ref=e47]: итоги агента;
+        - listitem [ref=e48]: контроль выплат;
+        - listitem [ref=e49]: алиас через table.html.
+      - generic [ref=e50]:
+        - link "Открыть ведомость" [ref=e51] [cursor=pointer]:
+          - /url: table.html
+        - link "Прямой вход" [ref=e52] [cursor=pointer]:
+          - /url: table-ledger.html
+    - article [ref=e53]:
+      - generic [ref=e54]:
+        - heading "Расширенный расчёт" [level=3] [ref=e55]
+        - paragraph [ref=e56]: "Расчёт периода для собственника: месяц, квартал, полугодие или год с агентами, сделками и черновиком."
+      - list [ref=e57]:
+        - listitem [ref=e58]: период 1 / 3 / 6 / 12 месяцев;
+        - listitem [ref=e59]: быстрый или подробный ввод;
+        - listitem [ref=e60]: мотивации и обязательства;
+        - listitem [ref=e61]: сохранение черновика.
+      - link "Открыть расширенный режим" [ref=e63] [cursor=pointer]:
+        - /url: extended.html
+    - article [ref=e64]:
+      - generic [ref=e65]:
+        - heading "Экономика мотивации 2026" [level=3] [ref=e66]
+        - paragraph [ref=e67]: "Основной режим для собрания: пакет выбирается вручную, а экономика агента и офиса пересчитывается сразу."
+      - list [ref=e68]:
+        - listitem [ref=e69]: точные сделки или быстрый ввод;
+        - listitem [ref=e70]: выплата и мотивации по пакету;
+        - listitem [ref=e71]: вклад и точка окупаемости;
+        - listitem [ref=e72]: сравнение всех пакетов.
+      - link "Открыть мотивацию 2026" [ref=e74] [cursor=pointer]:
+        - /url: motivation-calculator.html
+    - article [ref=e75]:
+      - generic [ref=e76]:
+        - heading "Карьерные профили" [level=3] [ref=e77]
+        - paragraph [ref=e78]: Дополнительный административный режим для пакета по стажу и результатам, истории решений и связи с A4.
+      - list [ref=e79]:
+        - listitem [ref=e80]: профиль сотрудника;
+        - listitem [ref=e81]: стажевой и результативный трек;
+        - listitem [ref=e82]: история решений;
+        - listitem [ref=e83]: ручное сопоставление с A4.
+      - link "Открыть профили" [ref=e85] [cursor=pointer]:
+        - /url: career.html
+  - generic [ref=e86]:
+    - heading "Как выбрать режим" [level=2] [ref=e87]
+    - paragraph [ref=e88]: Для текущего месяца используйте A4. Для сделки-по-строке откройте ведомость. Для периода больше месяца используйте расширенный режим.
+  - generic [ref=e89]:
+    - paragraph [ref=e90]: Расчёт является управленческой моделью и помогает оценить экономику офиса.
+    - navigation "Нижняя навигация" [ref=e91]:
+      - link "На старт" [ref=e92] [cursor=pointer]:
+        - /url: start.html
+      - link "Основной A4" [ref=e93] [cursor=pointer]:
+        - /url: index.html
+      - link "Мотивация 2026" [ref=e94] [cursor=pointer]:
+        - /url: motivation-calculator.html
+      - link "Ведомость сделок" [ref=e95] [cursor=pointer]:
+        - /url: table.html
+      - link "Простой режим" [ref=e96] [cursor=pointer]:
+        - /url: simple.html
+      - link "Расширенный режим" [ref=e97] [cursor=pointer]:
+        - /url: extended.html
+      - link "Карьерные профили" [ref=e98] [cursor=pointer]:
+        - /url: career.html

@@ -1,0 +1,111 @@
+:root {
+  --ink: #172033;
+  --muted: #667085;
+  --line: #d9dee8;
+  --blue: #245c99;
+  --blue-soft: #e8f1fb;
+}
+
+.mode-header {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+}
+
+.mode-header__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.mode-header__project {
+  margin: 0 0 4px;
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.mode-header__title {
+  margin: 0;
+  color: var(--ink);
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-size: clamp(26px, 4vw, 44px);
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.mode-header__subtitle {
+  margin: 8px 0 0;
+  max-width: 760px;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.mode-nav,
+.mode-footer__links,
+.return-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.mode-nav a,
+.mode-footer__links a,
+.return-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--blue);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.mode-nav a[aria-current="page"],
+.return-actions a.primary {
+  border-color: var(--blue);
+  background: var(--blue);
+  color: #fff;
+}
+
+.mode-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.mode-footer p {
+  margin: 0;
+  max-width: 620px;
+}
+
+@media (max-width: 760px) {
+  .mode-header__top,
+  .mode-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mode-nav a,
+  .mode-footer__links a,
+  .return-actions a {
+    flex: 1 1 132px;
+  }
+}

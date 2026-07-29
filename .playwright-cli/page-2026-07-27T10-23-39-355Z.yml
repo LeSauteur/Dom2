@@ -1,0 +1,250 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - paragraph [ref=e6]: Домиан — калькулятор офиса
+        - heading "Профили сотрудников и выбор пакета" [level=1] [ref=e7]
+        - paragraph [ref=e8]: Здесь можно подобрать пакет по стажу и результатам, сохранить историю и затем вручную выбрать этот профиль в A4.
+      - link "Перейти в A4" [ref=e10] [cursor=pointer]:
+        - /url: index.html
+    - navigation "Навигация по режимам" [ref=e11]:
+      - link "На старт" [ref=e12] [cursor=pointer]:
+        - /url: start.html
+      - link "A4" [ref=e13] [cursor=pointer]:
+        - /url: index.html
+      - link "Ведомость" [ref=e14] [cursor=pointer]:
+        - /url: table.html
+      - link "Простой" [ref=e15] [cursor=pointer]:
+        - /url: simple.html
+      - link "Расширенный" [ref=e16] [cursor=pointer]:
+        - /url: extended.html
+      - link "Мотивация 2026" [ref=e17] [cursor=pointer]:
+        - /url: motivation-calculator.html
+      - link "Карьера" [ref=e18] [cursor=pointer]:
+        - /url: career.html
+  - generic [ref=e19]:
+    - generic [ref=e20]:
+      - text: Правила мотивации, версия 2026.1
+      - heading "Как калькулятор выбирает пакет" [level=2] [ref=e21]
+      - paragraph [ref=e22]: Калькулятор отдельно определяет пакет по стажу и пакет по результатам. Затем выбирает более высокий. Пакет по стажу не понижается, а пакет по результатам может снизиться не больше чем на одну ступень за полугодие.
+    - generic "Выбирается более высокий пакет" [ref=e23]:
+      - generic [ref=e24]: Пакет по стажу
+      - generic [ref=e25]: сравниваем с
+      - generic [ref=e26]: пакетом по результатам
+      - generic [ref=e27]: берём более высокий
+  - generic [ref=e28]:
+    - complementary [ref=e29]:
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - text: Сотрудники
+          - heading "Профили" [level=2] [ref=e32]
+        - button "Новый" [ref=e33] [cursor=pointer]
+      - button "Новый агент Решение не сохранено" [ref=e35] [cursor=pointer]:
+        - strong [ref=e36]: Новый агент
+        - generic [ref=e37]: Решение не сохранено
+      - paragraph [ref=e38]: Каждый профиль имеет свой номер. Профиль нужно вручную выбрать у нужного агента в A4.
+    - generic [ref=e39]:
+      - generic [ref=e40]:
+        - generic [ref=e41]:
+          - generic [ref=e42]:
+            - text: Карточка сотрудника
+            - heading "Данные сотрудника" [level=2] [ref=e43]
+          - generic [ref=e44]:
+            - button "Сохранить профиль" [ref=e45] [cursor=pointer]
+            - button "Удалить" [ref=e46] [cursor=pointer]
+        - generic [ref=e47]:
+          - text: "ID:"
+          - code [ref=e48]: career-agent-fb5add3e-61b8-4a3a-af63-6342a172752b
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - generic [ref=e51]: Имя сотрудника
+            - textbox "Имя сотрудника" [active] [ref=e52]: Новый агент
+          - generic [ref=e53]:
+            - generic [ref=e54]: Статус
+            - combobox "Статус" [ref=e55]:
+              - option "Стажёр"
+              - option "Партнёр" [selected]
+          - generic [ref=e56]:
+            - generic [ref=e57]: Дата начала непрерывной работы
+            - textbox "Дата начала непрерывной работы" [ref=e58]
+          - generic [ref=e59]:
+            - generic [ref=e60]: Дата перехода в партнёры
+            - textbox "Дата перехода в партнёры" [ref=e61]
+          - generic [ref=e62]:
+            - generic [ref=e63]: Минимальный процент по договору, %
+            - spinbutton "Минимальный процент по договору, %" [ref=e64]
+          - generic [ref=e65]:
+            - generic [ref=e66]: Комментарий
+            - textbox "Комментарий" [ref=e67]:
+              - /placeholder: Причина индивидуальных условий или служебная заметка
+      - generic [ref=e68]:
+        - generic [ref=e70]:
+          - text: Расчёт
+          - heading "Рассчитать новый пакет" [level=2] [ref=e71]
+        - generic [ref=e72]:
+          - generic [ref=e73]:
+            - generic [ref=e74]: Дата оценки
+            - textbox "Дата оценки" [ref=e75]: 2026-07-27
+          - generic [ref=e76]:
+            - generic [ref=e77]: Действует с месяца
+            - textbox "Действует с месяца" [ref=e78]: 2026-07
+          - generic [ref=e79]:
+            - generic [ref=e80]: Пакет по результатам прошлого полугодия
+            - combobox "Пакет по результатам прошлого полугодия" [ref=e81]:
+              - option "Стандарт · агенту не меньше 45%" [selected]
+              - option "Расширенный · агенту не меньше 50%"
+              - option "Продвинутый · агенту не меньше 55%"
+              - option "Премиум · агенту не меньше 60%"
+              - option "Премиум + · агенту не меньше 65%"
+              - option "Индивидуальный · агенту не меньше 70%"
+          - generic [ref=e82]:
+            - generic [ref=e83]: Результат полугодия
+            - combobox "Результат полугодия" [ref=e84]:
+              - option "Не подтверждён / отсутствует" [selected]
+              - option "Подтверждён"
+          - generic [ref=e85]:
+            - generic [ref=e86]: Уровень за полугодие
+            - combobox "Уровень за полугодие" [ref=e87]:
+              - option "1 уровень" [selected]
+              - option "2 уровень"
+              - option "3 уровень"
+              - option "4 уровень"
+              - option "5 уровень"
+              - option "6 уровень"
+              - option "7 уровень"
+        - generic [ref=e88]:
+          - generic [ref=e89]:
+            - generic [ref=e90]:
+              - generic [ref=e91]: Итоговый пакет
+              - strong [ref=e92]: Стандарт
+            - generic [ref=e93]:
+              - generic [ref=e94]: Агенту не меньше
+              - strong [ref=e95]: 45%
+            - generic [ref=e96]:
+              - generic [ref=e97]: Почему выбран этот пакет
+              - strong [ref=e98]: Стаж и результат
+          - generic [ref=e99]:
+            - generic [ref=e100]:
+              - term [ref=e101]: Пакет по стажу
+              - definition [ref=e102]: Стандарт
+            - generic [ref=e103]:
+              - term [ref=e104]: Пакет по результатам
+              - definition [ref=e105]: Стандарт
+            - generic [ref=e106]:
+              - term [ref=e107]: Как учтён результат
+              - definition [ref=e108]: Результат полугодия не подтверждён, поэтому пакет по результатам не изменился. Пакет по стажу рассчитан отдельно.
+            - generic [ref=e109]:
+              - term [ref=e110]: Стаж
+              - definition [ref=e111]: 0 мес.
+          - generic [ref=e112]: Дата начала работы не указана. Поэтому по стажу выбран начальный пакет для текущего статуса.
+      - generic [ref=e113]:
+        - generic [ref=e115]:
+          - text: Условия и стоимость
+          - heading "Какие мотивации доступны и кто их оплачивает" [level=2] [ref=e116]
+        - generic [ref=e117]:
+          - generic [ref=e118]:
+            - generic [ref=e119]: Задатки за квартал, ₽
+            - spinbutton "Задатки за квартал, ₽ Для некоторых мотиваций нужно не меньше 250 000 ₽ задатков за квартал. Эта сумма не меняет минимальный процент агента." [ref=e120]
+            - generic [ref=e121]: Для некоторых мотиваций нужно не меньше 250 000 ₽ задатков за квартал. Эта сумма не меняет минимальный процент агента.
+          - generic [ref=e122]:
+            - generic [ref=e123]: Заработано агентом за квартал, ₽
+            - spinbutton "Заработано агентом за квартал, ₽ Определяет уровень и стипендию следующего квартала." [ref=e124]
+            - generic [ref=e125]: Определяет уровень и стипендию следующего квартала.
+          - generic [ref=e126]:
+            - generic [ref=e127]: Задатки предыдущего месяца, ₽
+            - 'spinbutton "Задатки предыдущего месяца, ₽ Для рекламы индивидуального пакета: 3%, максимум 15 000 ₽." [ref=e128]'
+            - generic [ref=e129]: "Для рекламы индивидуального пакета: 3%, максимум 15 000 ₽."
+          - generic [ref=e130]:
+            - checkbox "План офиса по акции выполнен" [ref=e131]
+            - generic [ref=e132]: План офиса по акции выполнен
+          - generic [ref=e133]:
+            - checkbox "Агент участвовал в выполнении плана" [ref=e134]
+            - generic [ref=e135]: Агент участвовал в выполнении плана
+          - generic [ref=e136]:
+            - checkbox "Партнёрство подтверждено перед поездкой" [ref=e137]
+            - generic [ref=e138]: Партнёрство подтверждено перед поездкой
+        - heading "Суммы для выбранного месяца" [level=3] [ref=e139]
+        - generic [ref=e140]:
+          - generic [ref=e141]:
+            - generic [ref=e142]: Горы / Море, ₽
+            - spinbutton "Горы / Море, ₽" [ref=e143]
+          - generic [ref=e144]:
+            - generic [ref=e145]: Путешествуй, ₽
+            - spinbutton "Путешествуй, ₽" [ref=e146]
+          - generic [ref=e147]:
+            - generic [ref=e148]: Корпоративы, ₽
+            - spinbutton "Корпоративы, ₽" [ref=e149]
+        - table [ref=e151]:
+          - rowgroup [ref=e152]:
+            - row [ref=e153]:
+              - columnheader "Мотивация" [ref=e154]
+              - columnheader "Доступна?" [ref=e155]
+              - columnheader "Кто оплачивает" [ref=e156]
+              - columnheader "Расход офиса" [ref=e157]
+              - columnheader "Расход агента" [ref=e158]
+              - columnheader "Причина" [ref=e159]
+          - rowgroup [ref=e160]:
+            - row [ref=e161]:
+              - rowheader "Лидогенерация" [ref=e162]
+              - cell "Нет" [ref=e163]
+              - cell "—" [ref=e165]
+              - cell "0 ₽" [ref=e166]
+              - cell "0 ₽" [ref=e167]
+              - cell "За квартал меньше 250 000 ₽ задатков. Поэтому мотивация недоступна." [ref=e168]
+            - row [ref=e169]:
+              - rowheader "Стипендия" [ref=e170]
+              - cell "Нет" [ref=e171]
+              - cell "—" [ref=e173]
+              - cell "0 ₽" [ref=e174]
+              - cell "0 ₽" [ref=e175]
+              - cell "За квартал меньше 250 000 ₽ задатков. Поэтому стипендия недоступна." [ref=e176]
+            - row [ref=e177]:
+              - rowheader "Горы / Море" [ref=e178]
+              - cell "Нет" [ref=e179]
+              - cell "—" [ref=e181]
+              - cell "0 ₽" [ref=e182]
+              - cell "0 ₽" [ref=e183]
+              - cell "За квартал меньше 250 000 ₽ задатков. Поэтому поездка недоступна." [ref=e184]
+            - row [ref=e185]:
+              - rowheader "Путешествуй с Домиан" [ref=e186]
+              - cell "Нет" [ref=e187]
+              - cell "—" [ref=e189]
+              - cell "0 ₽" [ref=e190]
+              - cell "0 ₽" [ref=e191]
+              - cell "За квартал меньше 250 000 ₽ задатков. Поэтому программа недоступна." [ref=e192]
+            - row [ref=e193]:
+              - rowheader "Корпоративы" [ref=e194]
+              - cell "Нет" [ref=e195]
+              - cell "—" [ref=e197]
+              - cell "0 ₽" [ref=e198]
+              - cell "0 ₽" [ref=e199]
+              - cell "За квартал меньше 250 000 ₽ задатков. Поэтому корпоратив недоступен." [ref=e200]
+          - rowgroup [ref=e201]:
+            - row [ref=e202]:
+              - rowheader "Итого" [ref=e203]
+              - cell "0 ₽" [ref=e204]
+              - cell "0 ₽" [ref=e205]
+              - cell [ref=e206]
+        - generic [ref=e207]:
+          - button "Сохранить пакет и мотивации" [ref=e208] [cursor=pointer]
+          - generic [ref=e209]: Создан новый карьерный профиль.
+      - generic [ref=e210]:
+        - generic [ref=e212]:
+          - text: История
+          - heading "Ранее сохранённые пакеты" [level=2] [ref=e213]
+        - list [ref=e214]:
+          - listitem [ref=e215]: Сохранённых решений пока нет.
+  - generic [ref=e216]:
+    - paragraph [ref=e217]:
+      - text: Карьерные данные хранятся отдельно от месячных черновиков A4 в формате
+      - code [ref=e218]: domianCareerDraftV1
+      - text: .
+    - navigation "Нижняя навигация" [ref=e219]:
+      - link "На старт" [ref=e220] [cursor=pointer]:
+        - /url: start.html
+      - link "Основной A4" [ref=e221] [cursor=pointer]:
+        - /url: index.html
+      - link "Мотивация 2026" [ref=e222] [cursor=pointer]:
+        - /url: motivation-calculator.html
+      - link "Карьерные профили" [ref=e223] [cursor=pointer]:
+        - /url: career.html

@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Калькулятор пени для Валерия Николаевича</title>
+<style>
+:root{--bg:#f5f1ea;--card:#fff;--text:#1f1f1f;--muted:#6b6258;--line:#ded4c5;--accent:#6f4a1f;--danger:#a22b1d;--good:#24733a;--soft:#fff7e6}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(180deg,#f7efe3,#efe5d6);color:var(--text);line-height:1.45}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 14px 48px}
+.hero,.panel,.agent{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:0 14px 36px rgba(60,40,18,.08)}
+.hero{padding:30px;margin-bottom:16px;background:linear-gradient(135deg,#fff,#f2dfc2)}h1{margin:0 0 10px;font-size:clamp(30px,5vw,52px);line-height:1.05}h2{margin:0 0 14px;font-size:24px}h3{margin:0 0 10px}
+.badge{display:inline-block;padding:7px 12px;border-radius:999px;background:#ead9c2;color:var(--accent);font-weight:800;font-size:13px;margin-bottom:12px}
+.muted{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}.span-4{grid-column:span 4}.span-5{grid-column:span 5}.span-6{grid-column:span 6}.span-7{grid-column:span 7}.span-12{grid-column:span 12}
+.panel{padding:20px;margin-bottom:14px}label{display:block;font-weight:800;margin-bottom:6px}input,select,textarea{width:100%;border:1px solid #d8caba;border-radius:13px;padding:11px 12px;font:inherit;background:#fff}textarea{min-height:116px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#a87535;box-shadow:0 0 0 4px rgba(168,117,53,.14)}.hint{font-size:13px;color:var(--muted);margin-top:5px}
+button{border:0;border-radius:999px;padding:11px 16px;background:var(--accent);color:#fff;font-weight:900;cursor:pointer}button.secondary{background:#fff;color:var(--accent);border:1px solid var(--accent)}button.danger{background:#fff;color:var(--danger);border:1px solid rgba(162,43,29,.35)}
+.controls{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}.notice{background:var(--soft);border:1px solid #ead7b5;border-radius:16px;padding:13px 15px}.notice.danger{background:#fff0ec;border-color:#efc8c0;color:#6d1e14}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric,.mini{border:1px solid var(--line);border-radius:15px;background:#fff;padding:12px}.metric small,.mini small{display:block;color:var(--muted);font-weight:800;margin-bottom:5px}.metric b{font-size:21px}.dangerText{color:var(--danger)}.goodText{color:var(--good)}
+.timeline{display:grid;gap:8px}.timelineRow{display:grid;grid-template-columns:190px 1fr;gap:10px;border-bottom:1px dashed var(--line);padding:9px 0}.timelineRow:last-child{border-bottom:0}.tlTitle{font-weight:900;color:var(--accent)}.pills{display:flex;flex-wrap:wrap;gap:6px}.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:6px 9px;background:#fff;font-size:13px;font-weight:800}.pill.work{background:#f2fff5;color:#1d6e36}.pill.pay{background:#fff8e8;color:#6f4a1f}.pill.off{background:#fff2ee;color:#8c2a1e}
+.agent{padding:16px;margin-bottom:12px}.agentHead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}.agentTitle{font-weight:900;color:var(--accent)}
+.agentGrid{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:10px;align-items:end}.check{display:flex;align-items:center;gap:8px;min-height:44px;color:var(--muted)}.check input{width:auto}.agentResult{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}.messageBox{margin-top:12px}
+.copyRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.calendarList{columns:2;margin-top:10px}
+@media(max-width:900px){.span-4,.span-5,.span-6,.span-7,.span-12{grid-column:span 12}.metrics,.agentResult{grid-template-columns:repeat(2,1fr)}.agentGrid{grid-template-columns:1fr}.timelineRow{grid-template-columns:1fr}.calendarList{columns:1}}
+@media print{body{background:#fff}.hero,.panel,.agent{box-shadow:none}button,.controls{display:none!important}.wrap{max-width:none;padding:0}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<section class="hero">
+<div class="badge">0,1% за каждый календарный день просрочки</div>
+<h1>Калькулятор пени для Валерия Николаевича</h1>
+<p class="muted">Одностраничный калькулятор для расчёта пени по правилу договора: <b>0,1% от суммы вознаграждения за каждый день просрочки</b>. Срок оплаты считается по рабочим дням РФ 2026: 7 рабочих дней на сверку + 3 рабочих дня на оплату.</p>
+</section>
+
+<section class="grid">
+<div class="panel span-7">
+<h2>1. Общие настройки</h2>
+<div class="grid">
+<div class="span-6"><label>Отчётный месяц</label><select id="reportMonth"></select></div>
+<div class="span-6"><label>Год отчёта</label><select id="reportYear"><option>2025</option><option selected>2026</option></select><div class="hint">Календарь рабочих дней вшит за 2026. Для сроков в 2027 появится предупреждение.</div></div>
+<div class="span-6"><label>Считать пени на дату</label><input id="calcDate" type="date"><div class="hint">Можно поставить сегодня, 11.06, 15.06 или любую другую дату. Для неоплаченных сумм пеня считается именно на эту дату.</div></div>
+<div class="span-6"><label>Ставка пени за день</label><input id="rate" value="0,1%" inputmode="decimal"><div class="hint">По договору: 0,1% в день.</div></div>
+</div>
+<div class="notice" style="margin-top:14px"><b>Логика срока:</b> отчёт за май проверяется в июне. С 1-го числа месяца оплаты идут 7 рабочих дней сверки, затем 3 рабочих дня оплаты. Последний день оплаты — 10-й рабочий день. Пеня начинается со следующего календарного дня. Если сумма не оплачена, количество дней просрочки считается до выбранной даты “Считать пени на дату”.</div>
+</div>
+
+<div class="panel span-5">
+<h2>2. Срок оплаты</h2>
+<div class="metrics">
+<div class="metric"><small>Месяц оплаты</small><b id="payMonth">—</b></div>
+<div class="metric"><small>Срок оплаты</small><b id="dueDate">—</b></div>
+<div class="metric"><small>Пени с</small><b id="penaltyFrom">—</b></div>
+<div class="metric"><small>Ставка</small><b id="rateLabel">0,1%</b></div>
+</div>
+<div id="warning" class="notice danger" style="display:none;margin-top:12px"></div>
+</div>
+
+<div class="panel span-12">
+<h2>3. Расшифровка срока</h2>
+<div id="timeline" class="timeline"></div>
+</div>
+
+<div class="panel span-12">
+<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
+<div><h2>4. Агенты / пользователи</h2><p class="muted">По каждому: ФИО, сумма роялти/вознаграждения, дата оплаты или “не оплачено”. Ниже автоматически формируется сообщение.</p></div>
+<div class="controls" style="margin-top:0"><button id="addBtn" type="button">+ Добавить агента</button><button id="exampleBtn" type="button" class="secondary">Пример</button><button id="clearBtn" type="button" class="danger">Очистить</button></div>
+</div>
+<div id="agents"></div>
+</div>
+
+<div class="panel span-12">
+<h2>5. Итого</h2>
+<div class="metrics">
+<div class="metric"><small>Задолженность</small><b id="totalDebt">0,00 ₽</b></div>
+<div class="metric"><small>Пени</small><b class="dangerText" id="totalPenalty">0,00 ₽</b></div>
+<div class="metric"><small>Суммарно дней просрочки</small><b id="totalDays">0</b></div>
+<div class="metric"><small>Итого к оплате</small><b class="goodText" id="totalPay">0,00 ₽</b></div>
+</div>
+<div class="controls"><button type="button" onclick="window.print()">Печать / сохранить PDF</button></div>
+</div>
+
+<div class="span-12">
+<details class="panel">
+<summary><b>Производственный календарь РФ 2026, заложенный в расчёт</b></summary>
+<p class="muted">Пятидневная рабочая неделя. Учитываются субботы/воскресенья и федеральные праздничные выходные/переносы 2026 года. Региональные праздники не учитываются.</p>
+<ul class="calendarList">
+<li>1–8 января — новогодние каникулы и Рождество.</li>
+<li>21–23 февраля — выходные к 23 февраля.</li>
+<li>7–9 марта — выходные к 8 марта.</li>
+<li>1–3 мая — выходные к 1 мая.</li>
+<li>9–11 мая — выходные к 9 мая.</li>
+<li>12–14 июня — выходные к Дню России.</li>
+<li>4 ноября — День народного единства.</li>
+</ul>
+<p class="muted">Сокращённые предпраздничные дни для этой задачи не влияют на срок, потому что считаются рабочими.</p>
+</details>
+</div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+const MONTHS=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const MONTHS_LOW=['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const MONTHS_GEN=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const OFF_2026=new Set([
+'2026-01-01','2026-01-02','2026-01-03','2026-01-04','2026-01-05','2026-01-06','2026-01-07','2026-01-08',
+'2026-02-23','2026-03-09','2026-05-01','2026-05-11','2026-06-12','2026-11-04'
+]);
+const OFF_NAMES={
+'2026-01-01':'Новогодние каникулы','2026-01-02':'Новогодние каникулы','2026-01-03':'Новогодние каникулы','2026-01-04':'Новогодние каникулы','2026-01-05':'Новогодние каникулы','2026-01-06':'Новогодние каникулы','2026-01-07':'Рождество','2026-01-08':'Новогодние каникулы',
+'2026-02-23':'День защитника Отечества','2026-03-09':'Перенос выходного к 8 марта','2026-05-01':'Праздник Весны и Труда','2026-05-11':'Перенос выходного к 9 мая','2026-06-12':'День России','2026-11-04':'День народного единства'
+};
+const state={agents:[]};
+const $=id=>document.getElementById(id);
+const els={reportMonth:$('reportMonth'),reportYear:$('reportYear'),calcDate:$('calcDate'),rate:$('rate'),payMonth:$('payMonth'),dueDate:$('dueDate'),penaltyFrom:$('penaltyFrom'),rateLabel:$('rateLabel'),warning:$('warning'),timeline:$('timeline'),agents:$('agents'),totalDebt:$('totalDebt'),totalPenalty:$('totalPenalty'),totalDays:$('totalDays'),totalPay:$('totalPay')};
+MONTHS.forEach((m,i)=>{const o=document.createElement('option');o.value=i;o.textContent=m;if(i===4)o.selected=true;els.reportMonth.appendChild(o);});
+function pad(n){return String(n).padStart(2,'0')}
+function d(y,m,day){return new Date(Date.UTC(y,m,day))}
+function add(date,n){const x=new Date(date.getTime());x.setUTCDate(x.getUTCDate()+n);return x}
+function key(date){return date.getUTCFullYear()+'-'+pad(date.getUTCMonth()+1)+'-'+pad(date.getUTCDate())}
+function fmt(date){return date?pad(date.getUTCDate())+' '+MONTHS_GEN[date.getUTCMonth()]+' '+date.getUTCFullYear():'—'}
+function fmtShort(date){return date?pad(date.getUTCDate())+'.'+pad(date.getUTCMonth()+1)+'.'+date.getUTCFullYear():'—'}
+function toInput(date){return date.getUTCFullYear()+'-'+pad(date.getUTCMonth()+1)+'-'+pad(date.getUTCDate())}
+function parseDate(v){if(!v)return null;const p=v.split('-').map(Number);return p.length===3?d(p[0],p[1]-1,p[2]):null}
+function weekend(date){const x=date.getUTCDay();return x===0||x===6}
+function working(date){return date.getUTCFullYear()===2026&&!weekend(date)&&!OFF_2026.has(key(date))}
+function reason(date){return OFF_NAMES[key(date)]||(weekend(date)?'выходной':'вне календаря 2026')}
+function money(v){if(typeof v!=='string')return Number(v)||0;const n=Number(v.replace(/\s/g,'').replace('₽','').replace('%','').replace(',','.').replace(/[^\d.-]/g,''));return Number.isFinite(n)?Math.max(0,n):0}
+function rate(){return money(els.rate.value)/100}
+function rateText(){return money(els.rate.value).toLocaleString('ru-RU',{maximumFractionDigits:4})+'%'}
+function rub(v){return (Number.isFinite(v)?v:0).toLocaleString('ru-RU',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₽'}
+function int(v){return Math.round(v||0).toLocaleString('ru-RU')}
+function diff(a,b){return Math.floor((b.getTime()-a.getTime())/86400000)}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function payMonthInfo(){const y=Number(els.reportYear.value),m=Number(els.reportMonth.value)+1;return m>11?{year:y+1,month:0}:{year:y,month:m}}
+function deadline(){const p=payMonthInfo();let cur=d(p.year,p.month,1),count=0,days=[],due=null,guard=0;while(count<10&&guard<70){const w=working(cur);let role='';if(w){count++;role=count<=7?'Сверка':'Оплата';if(count===10)due=cur}days.push({date:cur,working:w,index:w?count:null,role,reason:w?'':reason(cur)});cur=add(cur,1);guard++}return{payment:p,days,due,from:due?add(due,1):null}}
+function message(agent, amount, days, penalty, total, details, effectiveDate){
+const month=MONTHS_LOW[Number(els.reportMonth.value)]+' '+els.reportYear.value;
+const name=(agent.name||'').trim()||'коллеги';
+const paid=agent.unpaid?'на '+fmt(parseDate(els.calcDate.value))+' оплата не поступила':'дата оплаты: '+fmt(effectiveDate);
+return 'Добрый день, '+name+'.\n\nПо расчёту роялти за '+month+' задолженность составляет '+rub(amount)+'.\nСрок оплаты: '+fmt(details.due)+'. '+paid+'.\nКоличество дней просрочки: '+int(days)+'.\nПени по договору: '+rub(penalty)+' (0,1% за каждый день просрочки).\n\nИтого к оплате: '+rub(total)+'.';
+}
+function calcAgent(agent,details){const amount=money(agent.amount);const calc=parseDate(els.calcDate.value)||new Date();const eff=agent.unpaid?calc:(parseDate(agent.paidDate)||calc);const days=details.due?Math.max(0,diff(details.due,eff)):0;const perDay=amount*rate();const penalty=perDay*days;return{amount,eff,days,perDay,penalty,total:amount+penalty,msg:message(agent,amount,days,penalty,amount+penalty,details,eff)}}
+function renderTimeline(details){
+const groups=[
+['Сверка отчётов',x=>x.working&&x.index<=7,'work'],
+['Оплата',x=>x.working&&x.index>=8&&x.index<=10,'pay'],
+['Нерабочие внутри срока',x=>!x.working,'off']
+];
+els.timeline.innerHTML=groups.map(g=>{const items=details.days.filter(g[1]);return '<div class="timelineRow"><div class="tlTitle">'+g[0]+'</div><div class="pills">'+(items.length?items.map(x=>'<span class="pill '+g[2]+'">'+fmtShort(x.date)+' · '+(x.working?x.role+' '+x.index:x.reason)+'</span>').join(''):'<span class="muted">нет</span>')+'</div></div>'}).join('');
+}
+function addAgent(data){state.agents.push(Object.assign({id:'a'+Date.now()+Math.random().toString(16).slice(2),name:'',amount:'',paidDate:'',unpaid:false},data||{}));render()}
+function removeAgent(id){state.agents=state.agents.filter(a=>a.id!==id);if(!state.agents.length)state.agents.push({id:'a0',name:'',amount:'',paidDate:'',unpaid:false});render()}
+function render(){
+const details=deadline();els.payMonth.textContent=MONTHS[details.payment.month]+' '+details.payment.year;els.dueDate.textContent=fmt(details.due);els.penaltyFrom.textContent=fmt(details.from);els.rateLabel.textContent=rateText();
+const outside=details.payment.year!==2026;els.warning.style.display=outside?'block':'none';els.warning.innerHTML=outside?'<b>Внимание:</b> срок оплаты попадает вне 2026 года. В файл вшит производственный календарь только за 2026, расчёт рабочих дней может быть некорректным.':'';
+renderTimeline(details);
+let debt=0,pen=0,daysSum=0;
+els.agents.innerHTML=state.agents.map((a,i)=>{const c=calcAgent(a,details);debt+=c.amount;pen+=c.penalty;daysSum+=c.days;return `
+<div class="agent" data-id="${a.id}">
+<div class="agentHead"><div class="agentTitle">Расчёт ${i+1}</div><button class="danger" type="button" data-remove="${a.id}">Удалить</button></div>
+<div class="agentGrid">
+<div><label>Фамилия / ФИО</label><input data-id="${a.id}" data-field="name" value="${esc(a.name)}" placeholder="Иванов"></div>
+<div><label>Сумма роялти</label><input data-id="${a.id}" data-field="amount" value="${esc(a.amount)}" placeholder="100 000" inputmode="decimal"></div>
+<div><label>Дата оплаты</label><input type="date" data-id="${a.id}" data-field="paidDate" value="${esc(a.paidDate)}" ${a.unpaid?'disabled':''}></div>
+<label class="check"><input type="checkbox" data-id="${a.id}" data-field="unpaid" ${a.unpaid?'checked':''}> не оплачено</label>
+</div>
+<div class="agentResult">
+<div class="mini"><small>Дней просрочки</small><b>${int(c.days)}</b></div>
+<div class="mini"><small>Пеня за день</small><b>${rub(c.perDay)}</b></div>
+<div class="mini"><small>Пени</small><b class="dangerText">${rub(c.penalty)}</b></div>
+<div class="mini"><small>Итого</small><b class="goodText">${rub(c.total)}</b></div>
+</div>
+<div class="messageBox">
+<label>Сообщение для отправки</label>
+<textarea readonly data-message="${a.id}">${esc(c.msg)}</textarea>
+<div class="copyRow"><button type="button" class="secondary" data-copy="${a.id}">Скопировать сообщение</button></div>
+</div>
+</div>`}).join('');
+els.totalDebt.textContent=rub(debt);els.totalPenalty.textContent=rub(pen);els.totalDays.textContent=int(daysSum);els.totalPay.textContent=rub(debt+pen);
+}
+['change','input'].forEach(ev=>{els.reportMonth.addEventListener(ev,render);els.reportYear.addEventListener(ev,render);els.calcDate.addEventListener(ev,render);els.rate.addEventListener(ev,render);});
+els.agents.addEventListener('input',e=>{const id=e.target.dataset.id,field=e.target.dataset.field;if(!id||!field)return;const a=state.agents.find(x=>x.id===id);if(!a)return;if(field==='unpaid')a.unpaid=e.target.checked;else a[field]=e.target.value;render()});
+els.agents.addEventListener('change',e=>{const id=e.target.dataset.id,field=e.target.dataset.field;if(!id||!field)return;const a=state.agents.find(x=>x.id===id);if(!a)return;if(field==='unpaid')a.unpaid=e.target.checked;else a[field]=e.target.value;render()});
+els.agents.addEventListener('click',async e=>{const rem=e.target.dataset.remove;if(rem){removeAgent(rem);return}const cp=e.target.dataset.copy;if(cp){const ta=document.querySelector('textarea[data-message="'+cp+'"]');if(ta){try{await navigator.clipboard.writeText(ta.value);e.target.textContent='Скопировано';setTimeout(()=>e.target.textContent='Скопировать сообщение',1200)}catch(err){ta.select();document.execCommand('copy')}}}});
+$('addBtn').addEventListener('click',()=>addAgent());
+$('exampleBtn').addEventListener('click',()=>{els.reportYear.value='2026';els.reportMonth.value='4';els.calcDate.value='2026-06-20';els.rate.value='0,1%';state.agents=[{id:'ex1',name:'Иванов',amount:'100 000',paidDate:'2026-06-18',unpaid:false},{id:'ex2',name:'Петров',amount:'250 000',paidDate:'',unpaid:true}];render()});
+$('clearBtn').addEventListener('click',()=>{state.agents=[];addAgent()});
+const now=new Date();els.calcDate.value=toInput(d(now.getFullYear(),now.getMonth(),now.getDate()));
+addAgent();
+})();
+</script>
+</body>
+</html>

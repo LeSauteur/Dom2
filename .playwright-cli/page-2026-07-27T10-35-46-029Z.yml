@@ -1,0 +1,272 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e5]:
+      - paragraph [ref=e6]: Домиан — калькулятор офиса
+      - heading "Расширенный расчёт офиса" [level=1] [ref=e7]
+      - paragraph [ref=e8]: Период, агенты, сделки, расходы и обязательства
+    - navigation "Навигация по режимам" [ref=e9]:
+      - link "На старт" [ref=e10] [cursor=pointer]:
+        - /url: start.html
+      - link "A4" [ref=e11] [cursor=pointer]:
+        - /url: index.html
+      - link "Ведомость" [ref=e12] [cursor=pointer]:
+        - /url: table.html
+      - link "Простой" [ref=e13] [cursor=pointer]:
+        - /url: simple.html
+      - link "Расширенный" [ref=e14] [cursor=pointer]:
+        - /url: extended.html
+      - link "Мотивация 2026" [ref=e15] [cursor=pointer]:
+        - /url: motivation-calculator.html
+      - link "Карьера" [ref=e16] [cursor=pointer]:
+        - /url: career.html
+  - generic [ref=e17]:
+    - generic [ref=e18]: Найден сохранённый черновик.
+    - button "Загрузить" [ref=e19]
+  - generic [ref=e20]:
+    - generic [ref=e21]:
+      - generic [ref=e22]:
+        - generic [ref=e23]:
+          - generic [ref=e24]: Шаг 1
+          - generic [ref=e25]:
+            - heading "Выберите период" [level=2] [ref=e26]
+            - paragraph [ref=e27]: Все введённые суммы будут относиться к выбранному периоду целиком.
+        - radiogroup "Период расчёта" [ref=e28]:
+          - generic [ref=e29] [cursor=pointer]:
+            - radio "Месяц 1 месяц" [checked] [ref=e30]
+            - text: Месяц
+            - generic [ref=e31]: 1 месяц
+          - generic [ref=e32] [cursor=pointer]:
+            - radio "Квартал 3 месяца" [ref=e33]
+            - text: Квартал
+            - generic [ref=e34]: 3 месяца
+          - generic [ref=e35] [cursor=pointer]:
+            - radio "Полугодие 6 месяцев" [ref=e36]
+            - text: Полугодие
+            - generic [ref=e37]: 6 месяцев
+          - generic [ref=e38] [cursor=pointer]:
+            - radio "Год 12 месяцев" [ref=e39]
+            - text: Год
+            - generic [ref=e40]: 12 месяцев
+        - paragraph [ref=e41]: "Выбран период: месяц, 1 месяц."
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - generic [ref=e44]: Шаг 2
+          - generic [ref=e45]:
+            - heading "Выберите способ ввода" [level=2] [ref=e46]
+            - paragraph [ref=e47]: Быстрый ввод даёт грубую оценку, подробный ввод считает агентов и сделки строками.
+        - generic [ref=e48]:
+          - button "Общий ручной ввод периода" [ref=e49]
+          - button "Подробный ввод по агентам и сделкам" [ref=e50]
+      - generic [ref=e51]:
+        - generic [ref=e52]:
+          - generic [ref=e53]: Шаг 3
+          - generic [ref=e54]:
+            - heading "Общий ручной ввод периода" [level=2] [ref=e55]
+            - paragraph [ref=e56]: Подходит для быстрой модели, когда точных сделок ещё нет.
+        - generic [ref=e57]:
+          - generic [ref=e58]:
+            - text: Общий оборот/комиссия за период
+            - textbox "Общий оборот/комиссия за период" [ref=e59]:
+              - /placeholder: Например, 400 000
+          - generic [ref=e60]:
+            - text: Количество агентов
+            - spinbutton "Количество агентов" [ref=e61]
+          - generic [ref=e62]:
+            - text: Расходы офиса за период
+            - textbox "Расходы офиса за период" [ref=e63]:
+              - /placeholder: Например, 215 000
+          - generic [ref=e64]:
+            - text: Примерное количество сделок
+            - spinbutton "Примерное количество сделок" [ref=e65]
+      - generic [ref=e66]:
+        - generic [ref=e67]:
+          - generic [ref=e68]:
+            - text: Шаг 3
+            - heading "Агенты и сделки" [level=2] [ref=e69]
+            - paragraph [ref=e70]: Добавляйте агентов, схему выплаты и точные сделки за выбранный период.
+          - button "+ Агент" [ref=e71]
+        - article [ref=e699]:
+          - generic [ref=e700]:
+            - heading "Агент 1" [level=3] [ref=e701]
+            - button "Удалить агента" [disabled] [ref=e702]
+          - generic [ref=e703]:
+            - generic [ref=e704]:
+              - text: Имя агента
+              - textbox "Имя агента" [ref=e705]:
+                - /placeholder: Имя
+            - generic [ref=e706]:
+              - text: Роль
+              - combobox "Роль" [ref=e707]:
+                - option "Стажёр"
+                - option "Партнёр" [selected]
+            - generic [ref=e708]:
+              - text: Как платить агенту
+              - combobox "Как платить агенту" [ref=e709]:
+                - option "По стандартной шкале" [selected]
+                - option "Не ниже выбранного процента"
+                - option "Один процент на все сделки"
+            - generic [ref=e710]:
+              - text: Минимальный процент
+              - spinbutton "Минимальный процент" [disabled] [ref=e711]: "55"
+            - generic [ref=e712]:
+              - text: Один процент на все сделки
+              - spinbutton "Один процент на все сделки" [disabled] [ref=e713]: "80"
+            - generic [ref=e714]:
+              - checkbox "Приведённый агент" [ref=e715]
+              - text: Приведённый агент
+            - generic [ref=e716]:
+              - checkbox "Конгресс" [checked] [ref=e717]
+              - text: Конгресс
+            - generic [ref=e718]:
+              - checkbox "Звезда" [ref=e719]
+              - text: Звезда
+          - generic [ref=e720]:
+            - generic [ref=e721]:
+              - generic [ref=e722]:
+                - text: № сделки
+                - textbox "№ сделки" [disabled] [ref=e723]: "1"
+              - generic [ref=e724]:
+                - text: Комиссия сделки
+                - textbox "Комиссия сделки" [ref=e725]:
+                  - /placeholder: Например, 100 000
+              - generic [ref=e726]:
+                - generic [ref=e727]: Процент
+                - text: 45%
+              - generic [ref=e728]:
+                - generic [ref=e729]: Агенту
+                - text: 0 ₽
+              - button "×" [ref=e730]
+            - generic [ref=e731]:
+              - generic [ref=e732]:
+                - text: № сделки
+                - textbox "№ сделки" [disabled] [ref=e733]: "2"
+              - generic [ref=e734]:
+                - text: Комиссия сделки
+                - textbox "Комиссия сделки" [ref=e735]:
+                  - /placeholder: Например, 100 000
+              - generic [ref=e736]:
+                - generic [ref=e737]: Процент
+                - text: 50%
+              - generic [ref=e738]:
+                - generic [ref=e739]: Агенту
+                - text: 0 ₽
+              - button "×" [ref=e740]
+          - button "+ Сделка" [ref=e742]
+      - generic [ref=e107]:
+        - generic [ref=e108]:
+          - generic [ref=e109]: Шаг 4
+          - generic [ref=e110]:
+            - heading "Расходы и мотивации" [level=2] [ref=e111]
+            - paragraph [ref=e112]: Конгресс включён по умолчанию. Звезда может быть только у одного агента.
+        - generic [ref=e113]:
+          - generic [ref=e114]:
+            - text: Расходы офиса за период для подробного режима
+            - textbox "Расходы офиса за период для подробного режима" [ref=e115]:
+              - /placeholder: Например, 420 000
+          - generic [ref=e116]:
+            - checkbox "Добавить «Горы / Море» в расходы выбранного периода" [ref=e117]
+            - text: Добавить «Горы / Море» в расходы выбранного периода
+          - generic [ref=e118]:
+            - checkbox "Добавить путешествие в расходы выбранного периода" [ref=e119]
+            - text: Добавить путешествие в расходы выбранного периода
+          - generic [ref=e120]:
+            - checkbox "Добавить стипендию следующего квартала, если агент выполнил условия" [ref=e121]
+            - text: Добавить стипендию следующего квартала, если агент выполнил условия
+        - paragraph [ref=e122]: Калькулятор добавляет выбранные мотивации одной суммой за весь период. Он не распределяет их по отдельным месяцам.
+      - generic [ref=e123]:
+        - generic [ref=e124]:
+          - generic [ref=e125]: Шаг 5
+          - generic [ref=e126]:
+            - heading "Сохранение черновика" [level=2] [ref=e127]
+            - paragraph [ref=e128]: Долгий ввод можно сохранить локально в этом браузере.
+        - generic [ref=e129]:
+          - button "Сохранить черновик" [ref=e130]
+          - button "Загрузить черновик" [ref=e131]
+          - button "Очистить черновик" [ref=e132]
+        - paragraph
+    - complementary "Итоговая сводка" [ref=e133]:
+      - generic [ref=e134]:
+        - paragraph [ref=e135]: Итог периода
+        - heading "-292 ₽" [level=2] [ref=e743]
+        - paragraph [ref=e137]: Итог собственнику после выплат, рефералов, роялти, расходов и обязательств.
+      - generic [ref=e138]:
+        - heading "Итог по выбранному периоду" [level=2] [ref=e744]
+        - generic [ref=e745]:
+          - generic [ref=e746]:
+            - generic [ref=e747]: Общий оборот/комиссия периода
+            - strong [ref=e748]: 0 ₽
+          - generic [ref=e749]:
+            - generic [ref=e750]: Выплаты агентам
+            - strong [ref=e751]: 0 ₽
+          - generic [ref=e752]:
+            - generic [ref=e753]: Реферальные выплаты
+            - strong [ref=e754]: 0 ₽
+          - generic [ref=e755]:
+            - generic [ref=e756]: Роялти
+            - strong [ref=e757]: 0 ₽ · 0%
+          - generic [ref=e758]:
+            - generic [ref=e759]: Расходы офиса
+            - strong [ref=e760]: 0 ₽
+          - generic [ref=e761]:
+            - generic [ref=e762]: Мотивации за счёт офиса
+            - strong [ref=e763]: 292 ₽
+          - generic [ref=e764]:
+            - generic [ref=e765]: Итог до обязательств
+            - strong [ref=e766]: 0 ₽
+          - generic [ref=e767]:
+            - generic [ref=e768]: Итог собственнику
+            - strong [ref=e769]: "-292 ₽"
+          - generic [ref=e770]:
+            - generic [ref=e771]: Маржинальность / доля остатка
+            - strong [ref=e772]: 0%
+          - generic [ref=e773]:
+            - generic [ref=e774]: Количество агентов
+            - strong [ref=e775]: "1"
+          - generic [ref=e776]:
+            - generic [ref=e777]: Количество сделок
+            - strong [ref=e778]: "1"
+      - paragraph [ref=e175]: Роялти считается от общей комиссии за весь выбранный период. Для точного помесячного расчёта считайте каждый месяц отдельно.
+  - generic [ref=e176]:
+    - generic [ref=e177]:
+      - generic [ref=e178]: Сводка
+      - generic [ref=e179]:
+        - heading "Сводка по агентам" [level=2] [ref=e180]
+        - paragraph [ref=e181]: Показывает результат каждого агента и сколько денег остаётся офису после основных расходов.
+    - article [ref=e780]:
+      - heading "Агент 1" [level=3] [ref=e781]
+      - generic [ref=e782]:
+        - generic [ref=e783]:
+          - term [ref=e784]: Комиссия
+          - definition [ref=e785]: 0 ₽
+        - generic [ref=e786]:
+          - term [ref=e787]: Количество сделок
+          - definition [ref=e788]: "1"
+        - generic [ref=e789]:
+          - term [ref=e790]: Выплата агенту
+          - definition [ref=e791]: 0 ₽
+        - generic [ref=e792]:
+          - term [ref=e793]: Реферал
+          - definition [ref=e794]: 0 ₽
+        - generic [ref=e795]:
+          - term [ref=e796]: Мотивации/обязательства
+          - definition [ref=e797]: 292 ₽
+        - generic [ref=e798]:
+          - term [ref=e799]: Остаток офису после основных расходов
+          - definition [ref=e800]: "-292 ₽"
+  - generic [ref=e184]:
+    - paragraph [ref=e185]: Калькулятор показывает примерный финансовый результат офиса по введённым данным.
+    - navigation "Нижняя навигация" [ref=e186]:
+      - link "На старт" [ref=e187] [cursor=pointer]:
+        - /url: start.html
+      - link "Основной A4" [ref=e188] [cursor=pointer]:
+        - /url: index.html
+      - link "Ведомость сделок" [ref=e189] [cursor=pointer]:
+        - /url: table.html
+      - link "Простой режим" [ref=e190] [cursor=pointer]:
+        - /url: simple.html
+      - link "Расширенный режим" [ref=e191] [cursor=pointer]:
+        - /url: extended.html
+      - link "Мотивация 2026" [ref=e192] [cursor=pointer]:
+        - /url: motivation-calculator.html
+      - link "Карьерные профили" [ref=e193] [cursor=pointer]:
+        - /url: career.html
