@@ -1,0 +1,65 @@
+# Dependencies
+node_modules/
+
+# Playwright and browser test output
+.playwright-cli/
+**/.playwright-cli/
+playwright-report/
+**/playwright-report/
+test-results/
+**/test-results/
+output/playwright/
+
+# Browser profiles and caches
+browser-profile/
+**/browser-profile/
+chrome-profile/
+**/chrome-profile/
+**/Cache/
+**/Code Cache/
+**/GPUCache/
+**/DawnGraphiteCache/
+**/DawnWebGPUCache/
+**/ShaderCache/
+**/GrShaderCache/
+**/Crashpad/
+**/Local Storage/
+**/Session Storage/
+**/Sessions/
+**/Service Worker/
+**/Network/Cookies*
+**/History*
+**/Login Data*
+**/Preferences
+**/Secure Preferences
+
+# Logs, local servers, archives, and temporary files
+*.log
+*.log.*
+*.pid
+*.tmp
+*.zip
+*.bak
+*.swp
+*~
+~$*
+audit-output/
+**/audit-output/
+codex/audit/browser/
+codex/audit/logs/
+codex/audit_handoff/
+
+# Local agent state
+.codex/
+**/.codex/
+.agents/
+**/.agents/
+
+# Copy folders
+*копия*/
+**/*копия*/
+
+# Operating-system metadata
+.DS_Store
+Thumbs.db
+Desktop.ini

@@ -1,4 +1,13 @@
-domian-calculator-a4/*.html text eol=lf
-domian-calculator-a4/assets/css/*.css text eol=lf
-domian-calculator-a4/assets/js/*.js text eol=lf
-domian-calculator-a4/tests/*.js text eol=lf
+* text=auto
+
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sh text eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.zip binary
+*.pdf binary
