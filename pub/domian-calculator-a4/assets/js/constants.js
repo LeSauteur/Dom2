@@ -67,46 +67,226 @@
   };
 
   window.DEFAULT_EXPENSES = [
-    { id: 'rent', name: 'Аренда', amount: 35000 },
-    { id: 'utilities', name: 'Коммуналка', amount: 15000 },
-    { id: 'internet', name: 'Интернет', amount: 2500 },
-    { id: 'phone', name: 'Связь', amount: 5000 },
-    { id: 'ads', name: 'Реклама', amount: 65000 },
-    { id: 'admin', name: 'Администратор', amount: 55000 },
-    { id: 'accounting', name: 'Бухгалтер', amount: 25000 },
-    { id: 'other', name: 'Прочее (вода, канцелярка и тд)', amount: 15000 }
+    { id: 'rent', name: 'Аренда', amount: 90000 },
+    { id: 'utilities', name: 'Коммунальные платежи', amount: 18000 },
+    { id: 'internet', name: 'Интернет', amount: 4500 },
+    { id: 'phone', name: 'Связь', amount: 8500 },
+    { id: 'ads', name: 'Реклама', amount: 95000 },
+    { id: 'admin', name: 'Администратор', amount: 65000 },
+    { id: 'accounting', name: 'Бухгалтерия', amount: 30000 },
+    { id: 'crm', name: 'CRM', amount: 21000 },
+    { id: 'other', name: 'Прочие расходы', amount: 18000 }
   ];
 
-  window.DEFAULT_AGENTS = [
-    {
-      id: 'agent-1',
-      name: 'Анна',
-      commission: 0,
-      dealCount: 1,
-      commissionMode: 'exact',
-      dealsInput: [''],
-      dealManualRates: [''],
-      dealNewbuildSoloFlags: [false],
-      paymentType: 'standard',
-      status: 'partner',
+  function demoMotivation(overrides) {
+    return Object.assign({}, window.DEFAULT_MOTIVATION, {
+      mode: 'off',
+      congressEnabled: false,
+      starEnabled: false
+    }, overrides || {});
+  }
+
+  function demoAgent(config) {
+    var deals = config.deals.slice();
+    var commission = deals.reduce(function (sum, amount) {
+      return sum + amount;
+    }, 0);
+
+    return {
+      id: config.id,
+      name: config.name,
+      commission: commission,
+      dealCount: deals.length,
+      commissionMode: config.commissionMode,
+      dealsInput: deals,
+      dealManualRates: deals.map(function () { return ''; }),
+      dealNewbuildSoloFlags: config.dealNewbuildSoloFlags || deals.map(function () { return false; }),
+      careerProfileId: '',
+      careerPackageId: config.careerPackageId,
+      contractualFloorRate: 0,
+      careerPreviousMonthDeposits: config.careerPreviousMonthDeposits || 0,
+      careerOfficePlanCompleted: config.careerOfficePlanCompleted === true,
+      careerAgentParticipated: config.careerAgentParticipated === true,
+      careerMountainSeaCost: 15000,
+      careerTravelCost: 100000,
+      careerCorporateCost: 20000,
+      paymentType: config.paymentType || 'standard',
+      status: config.status,
       boostedRates: [55, 55, 55, 60],
-      startingRate: 55,
-      fixedRate: 80,
-      introduced: false,
-      partnerConfirmed: true,
-      quarterlyCommission: 400000,
-      quarterlyDeposits: 250000,
-      halfYearCommission: 1600000,
-      preTripQuarterDeposits: 250000,
-      travelQuarterPartnershipConfirmed: true,
-      travelDecision: 'auto',
+      startingRate: config.startingRate || 55,
+      fixedRate: config.fixedRate || 80,
+      introduced: config.introduced === true,
+      partnerConfirmed: config.partnerConfirmed === true,
+      quarterlyCommission: config.quarterlyCommission || 0,
+      quarterlyDeposits: config.quarterlyDeposits || 0,
+      halfYearCommission: config.halfYearCommission || 0,
+      preTripQuarterDeposits: config.preTripQuarterDeposits || 0,
+      travelQuarterPartnershipConfirmed: config.travelQuarterPartnershipConfirmed === true,
+      travelDecision: config.travelDecision || 'auto',
       motivationOverride: false,
       stipendOverride: false,
       mountainSeaOverride: false,
       travelOverride: false,
       eventsOverride: false,
       specialTermsOverride: false,
-      motivation: window.DEFAULT_MOTIVATION
-    }
+      motivation: demoMotivation(config.motivation)
+    };
+  }
+
+  window.DEFAULT_AGENTS = [
+    demoAgent({
+      id: 'demo-agent-elena',
+      name: 'Елена Миронова',
+      status: 'trainee',
+      careerPackageId: 'newcomer',
+      commissionMode: 'exact',
+      deals: [100000, 80000, 60000]
+    }),
+    demoAgent({
+      id: 'demo-agent-anna',
+      name: 'Анна Соколова',
+      status: 'partner',
+      careerPackageId: 'standard',
+      commissionMode: 'exact',
+      deals: [180000, 140000, 110000, 80000],
+      dealNewbuildSoloFlags: [false, false, false, true],
+      partnerConfirmed: true,
+      quarterlyCommission: 1000000,
+      quarterlyDeposits: 400000,
+      halfYearCommission: 2000000,
+      preTripQuarterDeposits: 350000,
+      travelQuarterPartnershipConfirmed: true,
+      careerPreviousMonthDeposits: 420000,
+      careerOfficePlanCompleted: true,
+      careerAgentParticipated: true,
+      motivation: {
+        mode: 'rules',
+        stipendMode: 'auto',
+        mountainSeaEnabled: true,
+        travelEnabled: true,
+        corporateEnabled: true
+      }
+    }),
+    demoAgent({
+      id: 'demo-agent-boris',
+      name: 'Борис Волков',
+      status: 'partner',
+      careerPackageId: 'extended',
+      commissionMode: 'quick',
+      deals: [150000, 150000, 150000, 150000],
+      introduced: true,
+      partnerConfirmed: true,
+      quarterlyCommission: 800000,
+      quarterlyDeposits: 320000,
+      halfYearCommission: 1800000,
+      preTripQuarterDeposits: 300000,
+      travelQuarterPartnershipConfirmed: true,
+      careerPreviousMonthDeposits: 360000,
+      careerOfficePlanCompleted: true,
+      careerAgentParticipated: true,
+      motivation: {
+        mode: 'rules',
+        stipendMode: 'auto',
+        mountainSeaEnabled: true,
+        travelEnabled: true,
+        corporateEnabled: true
+      }
+    }),
+    demoAgent({
+      id: 'demo-agent-viktor',
+      name: 'Виктор Крылов',
+      status: 'partner',
+      careerPackageId: 'advanced',
+      commissionMode: 'quick',
+      deals: [180000, 170000, 170000],
+      paymentType: 'boosted',
+      startingRate: 55,
+      partnerConfirmed: true,
+      quarterlyCommission: 900000,
+      quarterlyDeposits: 330000,
+      halfYearCommission: 1900000,
+      preTripQuarterDeposits: 300000,
+      travelQuarterPartnershipConfirmed: true,
+      travelDecision: 'forceExclude',
+      careerPreviousMonthDeposits: 410000,
+      careerOfficePlanCompleted: true,
+      careerAgentParticipated: true,
+      motivation: {
+        mode: 'manual',
+        manualReserveMonthly: 135000,
+        specialManualReserveEnabled: true
+      }
+    }),
+    demoAgent({
+      id: 'demo-agent-irina',
+      name: 'Ирина Лебедева',
+      status: 'partner',
+      careerPackageId: 'premium',
+      commissionMode: 'exact',
+      deals: [250000, 200000, 150000],
+      partnerConfirmed: true,
+      quarterlyCommission: 1100000,
+      quarterlyDeposits: 450000,
+      halfYearCommission: 2200000,
+      preTripQuarterDeposits: 400000,
+      travelQuarterPartnershipConfirmed: true,
+      careerPreviousMonthDeposits: 500000,
+      careerOfficePlanCompleted: true,
+      careerAgentParticipated: true,
+      motivation: {
+        mode: 'manual',
+        manualReserveMonthly: 35000
+      }
+    }),
+    demoAgent({
+      id: 'demo-agent-pavel',
+      name: 'Павел Орлов',
+      status: 'partner',
+      careerPackageId: 'premiumPlus',
+      commissionMode: 'exact',
+      deals: [130000, 120000],
+      paymentType: 'fixed',
+      fixedRate: 65,
+      partnerConfirmed: true,
+      quarterlyCommission: 1200000,
+      quarterlyDeposits: 500000,
+      halfYearCommission: 2500000,
+      preTripQuarterDeposits: 450000,
+      travelQuarterPartnershipConfirmed: true,
+      travelDecision: 'forceExclude',
+      careerPreviousMonthDeposits: 550000,
+      careerOfficePlanCompleted: true,
+      careerAgentParticipated: true,
+      motivation: {
+        mode: 'manual',
+        manualReserveMonthly: 20000,
+        specialManualReserveEnabled: true
+      }
+    }),
+    demoAgent({
+      id: 'demo-agent-olga',
+      name: 'Ольга Романова',
+      status: 'partner',
+      careerPackageId: 'individual',
+      commissionMode: 'quick',
+      deals: [100000, 100000],
+      paymentType: 'fixed',
+      fixedRate: 70,
+      partnerConfirmed: true,
+      quarterlyCommission: 1500000,
+      quarterlyDeposits: 600000,
+      halfYearCommission: 3200000,
+      preTripQuarterDeposits: 550000,
+      travelQuarterPartnershipConfirmed: true,
+      travelDecision: 'forceExclude',
+      careerPreviousMonthDeposits: 600000,
+      careerOfficePlanCompleted: true,
+      careerAgentParticipated: true,
+      motivation: {
+        mode: 'manual',
+        manualReserveMonthly: 15000,
+        specialManualReserveEnabled: true
+      }
+    })
   ];
 }());

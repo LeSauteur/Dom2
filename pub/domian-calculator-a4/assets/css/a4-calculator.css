@@ -3258,6 +3258,10 @@ select:disabled {
   box-shadow: none;
 }
 
+.page .demo-results-link[hidden] {
+  display: none;
+}
+
 .page .button {
   min-height: 40px;
   padding: 9px 14px;

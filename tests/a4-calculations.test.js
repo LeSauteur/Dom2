@@ -11,7 +11,10 @@ function loadCalculator() {
 
   [
     'assets/js/constants.js',
-    'assets/js/calculations.js'
+    'assets/js/policies/motivation-policy-2026.js',
+    'assets/js/domain/benefit-engine.js',
+    'assets/js/calculations.js',
+    'assets/js/domain/motivation-calculator-engine.js'
   ].forEach((fileName) => {
     const source = fs.readFileSync(path.join(rootDir, fileName), 'utf8');
     vm.runInContext(source, context, { filename: fileName });
@@ -77,6 +80,15 @@ function loadAppHelpers() {
       '  createState: createState,',
       '  createExampleState: createExampleState,',
       '  createBlankState: createBlankState,',
+      '  getDemoFinancialState: getDemoFinancialState,',
+      '  createDemoSignature: createDemoSignature,',
+      '  hasDemoScenario: hasDemoScenario,',
+      '  isDemoScenarioModified: isDemoScenarioModified,',
+      '  hasMeaningfulStateData: hasMeaningfulStateData,',
+      '  fillDemoScenario: fillDemoScenario,',
+      '  removeDemoScenario: removeDemoScenario,',
+      '  getDemoControlState: getDemoControlState,',
+      '  calculateOfficeForA4: calculateOfficeForA4,',
       '  createAgent: createAgent,',
       '  createBlankExpense: createBlankExpense,',
       '  normalizeAgent: normalizeAgent,',
@@ -198,12 +210,15 @@ test('A4 blank state starts empty while example state keeps demo data', () => {
   assert.equal(blank.schemeCheck.commission, 0);
   assert.equal(blank.schemeCheck.manualRate, 80);
 
-  assert.equal(example.ownerSales, 150000);
-  assert.ok(example.expenses.some((item) => item.amount > 0));
-  assert.equal(example.agents[0].name, 'Анна');
-  assert.equal(example.agents[0].commission, 0);
+  assert.equal(example.ownerSales, 220000);
+  assert.equal(example.expenses.length, 9);
+  assert.ok(example.expenses.every((item) => item.name && item.amount > 0));
+  assert.equal(example.agents.length, 7);
+  assert.equal(example.agents[0].name, 'Елена Миронова');
+  assert.ok(example.agents.every((agent) => agent.commission > 0));
   assert.equal(example.schemeCheck.commission, 400000);
   assert.equal(example.schemeCheck.manualRate, 75);
+  assert.equal(appHelpers.hasDemoScenario(example), true);
 });
 
 test('A4 draft serialization stores only restorable calculator state', () => {
@@ -247,7 +262,7 @@ test('A4 draft serialization stores only restorable calculator state', () => {
   appHelpers.setState(state);
   const draft = appHelpers.serializeDraftState();
 
-  assert.deepEqual(Object.keys(draft).sort(), ['agents', 'expenses', 'ownerSales', 'schemeCheck', 'selectedMonth', 'version'].sort());
+  assert.deepEqual(Object.keys(draft).sort(), ['agents', 'demoScenario', 'expenses', 'ownerSales', 'schemeCheck', 'selectedMonth', 'version'].sort());
   assert.equal(draft.version, 1);
   assert.equal(draft.selectedMonth, '2026-06');
   assert.equal(draft.ownerSales, 250000);
@@ -257,6 +272,7 @@ test('A4 draft serialization stores only restorable calculator state', () => {
   assert.equal(draft.agents[0].startingRate, 70);
   assert.equal(draft.agents[0].motivation.manualReserveMonthly, 15000);
   assert.equal(draft.schemeCheck.manualExpenseShare, 21000);
+  assert.equal(draft.demoScenario, null);
 });
 
 test('A4 draft normalization restores partial state without changing calculation rules', () => {
@@ -2310,14 +2326,25 @@ test('future mode entry pages exist as static scaffolds', () => {
   });
 });
 
-test('example agent anna starts with placeholder deal only and no turnover', () => {
-  const anna = calculator.DEFAULT_AGENTS[0];
+test('demo office is deterministic and contains seven agents with filled expenses and deals', () => {
+  const first = appHelpers.createExampleState('2026-07');
+  const second = appHelpers.createExampleState('2026-07');
+  const packages = Array.from(first.agents, (agent) => agent.careerPackageId);
 
-  assert.equal(anna.commissionMode, 'exact');
-  assert.deepEqual(Array.from(anna.dealsInput), ['']);
-  assert.equal(anna.commission, 0);
-  assert.equal(anna.dealCount, 1);
-  assert.equal(calculator.calculateAgent(anna).commission, 0);
+  assert.equal(first.agents.length, 7);
+  assert.equal(new Set(first.agents.map((agent) => agent.name)).size, 7);
+  assert.deepEqual(Array.from(new Set(Array.from(first.agents, (agent) => agent.status))).sort(), ['partner', 'trainee']);
+  assert.deepEqual(packages, ['newcomer', 'standard', 'extended', 'advanced', 'premium', 'premiumPlus', 'individual']);
+  assert.equal(first.agents.some((agent) => agent.commissionMode === 'exact'), true);
+  assert.equal(first.agents.some((agent) => agent.commissionMode === 'quick'), true);
+  assert.equal(first.agents.some((agent) => agent.introduced), true);
+  assert.equal(first.agents.every((agent) => agent.dealsInput.length > 0 && agent.dealsInput.every((amount) => amount > 0)), true);
+  assert.equal(first.expenses.length, 9);
+  assert.equal(first.expenses.every((expense) => expense.name && expense.amount > 0), true);
+  assert.equal(first.expenses.some((expense) => expense.name === 'CRM'), true);
+  assert.equal(JSON.stringify(appHelpers.getDemoFinancialState(first)), JSON.stringify(appHelpers.getDemoFinancialState(second)));
+  assert.equal(first.demoScenario.signature, second.demoScenario.signature);
+  assert.equal(appHelpers.isDemoScenarioModified(first), false);
 });
 
 test('new A4 agent keeps congress ready by default but does not charge blank drafts', () => {
@@ -2338,11 +2365,149 @@ test('new A4 agent keeps congress ready by default but does not charge blank dra
   closeTo(active.motivationReserve, calculator.DEFAULT_MOTIVATION.congressPerYear / 12);
 });
 
+test('demo office produces non-zero regular and Motivation 2026 reports without changing formulas', () => {
+  const example = appHelpers.createExampleState('2026-07');
+  const regular = calculator.calculateOffice(example);
+  const motivationAgents = calculator.DEFAULT_AGENTS.map((agent) => {
+    const integration = calculator.MotivationCalculator2026.buildIntegration(
+      { ...agent, selectedPeriod: '2026-07' },
+      agent.careerPackageId
+    );
+    return { ...agent, careerIntegration: integration };
+  });
+  const motivation = calculator.calculateOffice({
+    expenses: calculator.DEFAULT_EXPENSES,
+    agents: motivationAgents,
+    ownerSales: example.ownerSales
+  });
+
+  [
+    regular.totalTurnover,
+    regular.agentPayouts,
+    regular.referrals,
+    regular.motivationReserves,
+    regular.royaltyWithOwner,
+    regular.expenses,
+    regular.resultWithOwner,
+    motivation.totalTurnover,
+    motivation.agentPayouts,
+    motivation.motivationReserves,
+    motivation.resultWithOwner
+  ].forEach((value) => assert.notEqual(value, 0));
+
+  assert.equal(regular.agentEconomics.some((agent) => agent.status === 'Окупается'), true);
+  assert.equal(regular.agentEconomics.some((agent) => agent.status === 'На грани'), true);
+  assert.equal(regular.agentEconomics.some((agent) => agent.status === 'Не окупается'), true);
+  assert.equal(motivation.agentEconomics.some((agent) => agent.status === 'Окупается'), true);
+  assert.equal(motivation.agentEconomics.some((agent) => agent.status === 'На грани'), true);
+  assert.equal(motivation.agentEconomics.some((agent) => agent.status === 'Не окупается'), true);
+  assert.equal(motivationAgents.some((agent) => agent.careerIntegration.motivationReserveMonthly > 0), true);
+  assert.equal(motivationAgents.some((agent) => agent.careerIntegration.motivationAgentCost > 0), true);
+});
+
+test('demo fill does not replace user data without confirmation', () => {
+  const userState = appHelpers.createBlankState();
+  let confirmations = 0;
+
+  userState.selectedMonth = '2026-07';
+  userState.ownerSales = 123456;
+  userState.agents[0].name = 'Пользовательский агент';
+  appHelpers.setState(userState);
+  appHelpers.setDraftWorkspace(appHelpers.createDraftWorkspace());
+
+  assert.equal(appHelpers.fillDemoScenario(() => {
+    confirmations += 1;
+    return false;
+  }), false);
+  assert.equal(confirmations, 1);
+  assert.equal(appHelpers.getState().ownerSales, 123456);
+  assert.equal(appHelpers.getState().agents[0].name, 'Пользовательский агент');
+  assert.equal(appHelpers.hasDemoScenario(appHelpers.getState()), false);
+
+  assert.equal(appHelpers.fillDemoScenario(() => true), true);
+  assert.equal(appHelpers.getState().selectedMonth, '2026-07');
+  assert.equal(appHelpers.getState().agents.length, 7);
+  assert.equal(appHelpers.hasDemoScenario(appHelpers.getState()), true);
+});
+
+test('demo removal clears only the active month, preserves other months and allows refilling', () => {
+  const workspace = appHelpers.createDraftWorkspace();
+  const januaryDemo = appHelpers.createExampleState('2026-01');
+  const februaryUser = appHelpers.createBlankState();
+  let unchangedConfirmationCalled = false;
+
+  februaryUser.selectedMonth = '2026-02';
+  februaryUser.ownerSales = 987654;
+  workspace.selectedMonth = '2026-01';
+  workspace.months['2026-01'] = januaryDemo;
+  workspace.months['2026-02'] = februaryUser;
+  appHelpers.setDraftWorkspace(workspace);
+  appHelpers.setState(januaryDemo);
+
+  assert.equal(appHelpers.getDemoControlState(appHelpers.getState()).label, 'Удалить пример');
+  assert.equal(appHelpers.removeDemoScenario(() => {
+    unchangedConfirmationCalled = true;
+    return false;
+  }), true);
+  assert.equal(unchangedConfirmationCalled, false);
+  assert.equal(appHelpers.getState().selectedMonth, '2026-01');
+  assert.equal(appHelpers.getState().ownerSales, 0);
+  assert.equal(appHelpers.hasDemoScenario(appHelpers.getState()), false);
+  assert.equal(appHelpers.getDraftWorkspace().months['2026-02'].ownerSales, 987654);
+  assert.equal(appHelpers.getDemoControlState(appHelpers.getState()).label, 'Заполнить пример');
+
+  assert.equal(appHelpers.fillDemoScenario(() => {
+    throw new Error('blank form must not ask for replacement confirmation');
+  }), true);
+  assert.equal(appHelpers.getState().agents.length, 7);
+  assert.equal(appHelpers.getDemoControlState(appHelpers.getState()).label, 'Удалить пример');
+});
+
+test('modified demo requires confirmation before removal', () => {
+  const demo = appHelpers.createExampleState('2026-07');
+  let confirmations = 0;
+
+  demo.ownerSales += 1;
+  appHelpers.setState(demo);
+  appHelpers.setDraftWorkspace(appHelpers.createDraftWorkspace());
+  assert.equal(appHelpers.isDemoScenarioModified(demo), true);
+
+  assert.equal(appHelpers.removeDemoScenario(() => {
+    confirmations += 1;
+    return false;
+  }), false);
+  assert.equal(confirmations, 1);
+  assert.equal(appHelpers.getState().ownerSales, 220001);
+  assert.equal(appHelpers.hasDemoScenario(appHelpers.getState()), true);
+
+  assert.equal(appHelpers.removeDemoScenario(() => true), true);
+  assert.equal(appHelpers.getState().ownerSales, 0);
+});
+
+test('saved demo marker restores the Delete example state after reload', () => {
+  const demo = appHelpers.createExampleState('2026-08');
+
+  appHelpers.setState(demo);
+  appHelpers.setDraftWorkspace(appHelpers.createDraftWorkspace());
+  assert.equal(appHelpers.saveDraft('restore-example'), true);
+
+  appHelpers.setState(null);
+  appHelpers.setDraftWorkspace(null);
+  const restored = appHelpers.loadDraftState();
+
+  assert.equal(restored.selectedMonth, '2026-08');
+  assert.equal(restored.agents.length, 7);
+  assert.equal(appHelpers.hasDemoScenario(restored), true);
+  assert.equal(appHelpers.isDemoScenarioModified(restored), false);
+  assert.equal(appHelpers.getDemoControlState(restored).label, 'Удалить пример');
+});
+
 test('restore-example path keeps the demo state separate from the blank starter', () => {
-  assert.match(appSource, /state = createExampleState\(\);/);
+  assert.match(appSource, /state = createExampleState\(selectedMonth\);/);
   assert.match(appSource, /restoredState = loadDraftState\(\);/);
   assert.match(appSource, /state = restoredState \|\| createState\(\);/);
-  assert.match(appSource, /saveDraft\('restore-example'\)/);
+  assert.match(appSource, /saveDraft\(demoWasActive \? 'remove-example' : 'restore-example'\)/);
+  assert.doesNotMatch(appSource, /localStorage\.clear\(/);
 });
 
 test('mandatory congress and star survive off, manual and special payment modes', () => {
@@ -2618,7 +2783,15 @@ test('A4 draft save handlers cover shortcut, unload, clear, restore and destruct
   assert.match(appSource, /saveDraft\('hidden'\)/);
   assert.match(appSource, /window\.addEventListener\('beforeunload'[\s\S]*saveDraft\('beforeunload'\)/);
   assert.match(appSource, /saveDraft\('clear'\)/);
-  assert.match(appSource, /saveDraft\('restore-example'\)/);
+  assert.match(appSource, /saveDraft\(demoWasActive \? 'remove-example' : 'restore-example'\)/);
+  assert.match(appSource, /Демонстрационный пример заполнен/);
+  assert.match(appSource, /Демонстрационный пример удалён/);
+  assert.match(indexSource, /data-action="restore-example"[^>]*>Заполнить пример<\/button>/);
+  assert.match(indexSource, /data-demo-results-link[^>]*hidden>Посмотреть результаты<\/a>/);
+  assert.match(appSource, /active \? 'Удалить пример' : 'Заполнить пример'/);
+  assert.match(appSource, /function getAgentEconomicsSnapshot\(agentId\)[\s\S]*if \(!state \|\| !agentId\)/);
+  assert.match(appSource, /Вклад: ' \+ escapeHtml\(formatSignedMoney\(contribution\)\)/);
+  assert.match(calculatorCssSource, /\.page \.demo-results-link\[hidden\]\s*\{[\s\S]*display:\s*none/);
   assert.match(appSource, /Удалить агента и все его сделки/);
   assert.match(appSource, /Удалить расход\?/);
   assert.match(appSource, /Удалить сделку\?/);
@@ -2629,11 +2802,11 @@ test('A4 draft save handlers cover shortcut, unload, clear, restore and destruct
 });
 
 test('A4 entry page cache-busts the current calculator assets', () => {
-  assert.match(indexSource, /a4-calculator\.css\?v=motivation-compact-20260729/);
-  assert.match(indexSource, /constants\.js\?v=motivation-compact-20260729/);
+  assert.match(indexSource, /a4-calculator\.css\?v=demo-office-20260729/);
+  assert.match(indexSource, /constants\.js\?v=demo-office-20260729/);
   assert.match(indexSource, /calculations\.js\?v=motivation-compact-20260729/);
   assert.match(indexSource, /calendar-policy\.js\?v=motivation-compact-20260729/);
-  assert.match(indexSource, /app\.js\?v=motivation-compact-20260729/);
+  assert.match(indexSource, /app\.js\?v=demo-office-20260729/);
 });
 
 test('exact-deal layout keeps controls aligned and shrinkable on desktop and mobile', () => {

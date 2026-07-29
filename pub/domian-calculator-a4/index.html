@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Домиан — калькулятор экономики офиса</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="assets/css/a4-calculator.css?v=motivation-compact-20260729">
+  <link rel="stylesheet" href="assets/css/a4-calculator.css?v=demo-office-20260729">
   <link rel="stylesheet" href="assets/css/navigation.css">
 </head>
 <body>
@@ -50,7 +50,8 @@
       <button class="button primary" type="button" data-action="save-draft" title="Сохранить текущий ввод локально в этом браузере.">💾 Сохранить</button>
       <span id="draftSaveStatus" class="draft-save-status draft-save-status--clean" data-draft-save-status aria-live="polite">Черновик не сохранён</span>
       <button class="button ghost" type="button" data-action="clear-all" title="Сбросит только текущую форму активного месяца. Другие месяцы останутся сохранены.">Очистить текущую форму</button>
-      <button class="button primary" type="button" data-action="restore-example" title="Заменит текущие данные демонстрационным примером после подтверждения.">Вернуть пример</button>
+      <button class="button primary" type="button" data-action="restore-example" title="Заполнить текущую форму фиксированным демонстрационным сценарием.">Заполнить пример</button>
+      <a class="button ghost demo-results-link" href="#result" data-demo-results-link hidden>Посмотреть результаты</a>
     </section>
 
     <div class="draft-save-panel" aria-live="polite">
@@ -405,13 +406,13 @@
     </footer>
   </main>
 
-  <script src="assets/js/constants.js?v=motivation-compact-20260729"></script>
+  <script src="assets/js/constants.js?v=demo-office-20260729"></script>
   <script src="assets/js/policies/motivation-policy-2026.js"></script>
   <script src="assets/js/domain/benefit-engine.js"></script>
   <script src="assets/js/career-storage.js"></script>
   <script src="assets/js/calculations.js?v=motivation-compact-20260729"></script>
   <script src="assets/js/calendar-policy.js?v=motivation-compact-20260729"></script>
   <script src="assets/js/domain/motivation-calculator-engine.js"></script>
-  <script src="assets/js/app.js?v=motivation-compact-20260729"></script>
+  <script src="assets/js/app.js?v=demo-office-20260729"></script>
 </body>
 </html>
