@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Домиан — калькулятор экономики офиса</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="assets/css/a4-calculator.css?v=a4-ledger-draft-20260706">
+  <link rel="stylesheet" href="assets/css/a4-calculator.css?v=motivation-compact-20260729">
   <link rel="stylesheet" href="assets/css/navigation.css">
 </head>
 <body>
@@ -235,34 +235,41 @@
         </section>
 
         <section class="section-card package-comparison-section" id="packageComparisonSection" aria-labelledby="packageComparisonTitle" hidden>
-          <div class="section-head split">
-            <div>
-              <span class="step-label">Ключевое сравнение</span>
-              <h2 id="packageComparisonTitle">Один агент — все пакеты 2026</h2>
+          <details class="package-comparison-disclosure">
+            <summary class="package-comparison-summary">
+              <span>
+                <span class="step-label">Ключевое сравнение</span>
+                <strong id="packageComparisonTitle">Один агент — все пакеты 2026</strong>
+                <small>Открывайте только тогда, когда нужно сравнить условия пакетов.</small>
+              </span>
+            </summary>
+            <div class="package-comparison-content">
+              <div class="section-head split">
+                <p class="hint" id="packageComparisonContext">Сделки и расходы одинаковы во всех строках.</p>
+                <label class="field package-comparison-agent-field">
+                  <span>Сравнить агента</span>
+                  <select id="packageComparisonAgent"></select>
+                </label>
+              </div>
+              <div class="table-wrap package-comparison-wrap">
+                <table class="scheme-table package-comparison-table">
+                  <thead>
+                    <tr>
+                      <th>Пакет</th>
+                      <th>Минимальный процент агенту</th>
+                      <th>Выплата агенту</th>
+                      <th>Мотивации офиса</th>
+                      <th>Мотивации агента</th>
+                      <th>Остаток офису</th>
+                      <th>Окупится примерно при комиссии от</th>
+                      <th>Итог для офиса</th>
+                    </tr>
+                  </thead>
+                  <tbody id="packageComparisonRows"></tbody>
+                </table>
+              </div>
             </div>
-            <label class="field package-comparison-agent-field">
-              <span>Сравнить агента</span>
-              <select id="packageComparisonAgent"></select>
-            </label>
-          </div>
-          <p class="hint" id="packageComparisonContext">Сделки и расходы одинаковы во всех строках.</p>
-          <div class="table-wrap package-comparison-wrap">
-            <table class="scheme-table package-comparison-table">
-              <thead>
-                <tr>
-                  <th>Пакет</th>
-                  <th>Минимальный процент агенту</th>
-                  <th>Выплата агенту</th>
-                  <th>Мотивации офиса</th>
-                  <th>Мотивации агента</th>
-                  <th>Остаток офису</th>
-                  <th>Окупится примерно при комиссии от</th>
-                  <th>Итог для офиса</th>
-                </tr>
-              </thead>
-              <tbody id="packageComparisonRows"></tbody>
-            </table>
-          </div>
+          </details>
         </section>
 
         <section class="section-card management-card" aria-labelledby="managementTitle">
@@ -398,13 +405,13 @@
     </footer>
   </main>
 
-  <script src="assets/js/constants.js?v=a4-ledger-draft-20260706"></script>
+  <script src="assets/js/constants.js?v=motivation-compact-20260729"></script>
   <script src="assets/js/policies/motivation-policy-2026.js"></script>
   <script src="assets/js/domain/benefit-engine.js"></script>
   <script src="assets/js/career-storage.js"></script>
-  <script src="assets/js/calculations.js?v=a4-ledger-draft-20260706"></script>
-  <script src="assets/js/calendar-policy.js?v=a4-ledger-draft-20260706"></script>
+  <script src="assets/js/calculations.js?v=motivation-compact-20260729"></script>
+  <script src="assets/js/calendar-policy.js?v=motivation-compact-20260729"></script>
   <script src="assets/js/domain/motivation-calculator-engine.js"></script>
-  <script src="assets/js/app.js?v=a4-ledger-draft-20260706"></script>
+  <script src="assets/js/app.js?v=motivation-compact-20260729"></script>
 </body>
 </html>

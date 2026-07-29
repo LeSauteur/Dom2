@@ -2816,10 +2816,81 @@ select:disabled {
 }
 
 .career-motivation-summary {
-  display: grid;
-  gap: 12px;
+  display: block;
+  padding: 0;
+  overflow: hidden;
   border-color: #c7d8ca;
   background: #f2f8f3;
+}
+
+.career-motivation-summary__head,
+.agent-secondary-fields > summary,
+.agent-result-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.career-motivation-summary__head::-webkit-details-marker,
+.agent-secondary-fields > summary::-webkit-details-marker,
+.agent-result-summary::-webkit-details-marker,
+.package-conditions > summary::-webkit-details-marker {
+  display: none;
+}
+
+.career-motivation-summary__head::after,
+.agent-secondary-fields > summary::after,
+.agent-result-summary::after,
+.package-conditions > summary::after {
+  flex: 0 0 auto;
+  color: var(--blue);
+  content: "Развернуть";
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.career-motivation-summary[open] > .career-motivation-summary__head::after,
+.agent-secondary-fields[open] > summary::after,
+.agent-result-details[open] > .agent-result-summary::after,
+.package-conditions[open] > summary::after {
+  content: "Свернуть";
+}
+
+.career-motivation-summary__head > span:first-child,
+.agent-secondary-fields > summary > span:first-child,
+.agent-result-summary > span:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.career-motivation-summary__head small,
+.agent-secondary-fields > summary small,
+.agent-result-summary small,
+.package-conditions > summary small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.career-motivation-summary__amounts {
+  color: #17623e;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.career-motivation-summary__content {
+  display: grid;
+  gap: 12px;
+  padding: 0 16px 16px;
+  border-top: 1px solid #c7d8ca;
+}
+
+.career-motivation-summary__content > p {
+  padding-top: 12px;
 }
 
 .career-motivation-summary ul {
@@ -2850,20 +2921,84 @@ select:disabled {
   background: linear-gradient(135deg, #f7fbff, #edf5fc);
 }
 
+.package-primary-field {
+  margin-top: 4px;
+}
+
 .package-conditions {
   margin-top: 14px;
   border-top: 1px solid #bfd0e2;
 }
 
 .package-conditions > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 13px 0 5px;
   color: var(--blue);
   cursor: pointer;
   font-weight: 800;
+  list-style: none;
+}
+
+.package-conditions > summary > span:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.package-conditions > summary small {
+  display: block;
+  margin-top: 3px;
 }
 
 .package-conditions-grid {
   margin-top: 12px;
+}
+
+.agent-secondary-fields,
+.agent-result-details {
+  margin: 14px 0;
+  overflow: hidden;
+  border: 1px solid #d9e1ea;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.agent-secondary-fields__content,
+.agent-result-details__content {
+  padding: 14px 16px 16px;
+  border-top: 1px solid #d9e1ea;
+}
+
+.agent-secondary-fields .rate-grid {
+  margin: 0 16px 16px;
+}
+
+.agent-result-details {
+  border-color: #c7d8ca;
+  background: #f2f8f3;
+}
+
+.agent-result-quick {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px 18px;
+  color: #17623e;
+  font-size: 13px;
+}
+
+.agent-result-quick span {
+  white-space: nowrap;
+}
+
+.agent-result-details__content {
+  border-color: #c7d8ca;
+}
+
+.agent-result-details__content .agent-summary {
+  margin: 0;
 }
 
 .package-benefit-list li > span {
@@ -2892,6 +3027,61 @@ select:disabled {
 
 .package-comparison-agent-field {
   min-width: min(280px, 100%);
+}
+
+.package-comparison-disclosure > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.package-comparison-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.package-comparison-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.package-comparison-summary > span {
+  display: grid;
+  gap: 4px;
+}
+
+.package-comparison-summary strong {
+  color: var(--text);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(22px, 3vw, 32px);
+  line-height: 1.15;
+}
+
+.package-comparison-summary small {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.package-comparison-summary::after {
+  flex: 0 0 auto;
+  padding: 9px 12px;
+  border: 1px solid rgba(36, 92, 153, .22);
+  border-radius: 10px;
+  color: var(--blue);
+  content: "Сравнить пакеты";
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.package-comparison-disclosure[open] > .package-comparison-summary::after {
+  content: "Скрыть сравнение";
+}
+
+.package-comparison-content {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #d9e1ea;
 }
 
 .package-comparison-table th:first-child {
@@ -2933,5 +3123,24 @@ select:disabled {
 
   .career-motivation-totals {
     justify-content: flex-start;
+  }
+
+  .career-motivation-summary__head,
+  .agent-secondary-fields > summary,
+  .agent-result-summary,
+  .package-conditions > summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .career-motivation-summary__amounts,
+  .agent-result-quick {
+    justify-content: flex-start;
+    white-space: normal;
+  }
+
+  .package-comparison-summary {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

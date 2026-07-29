@@ -1496,20 +1496,45 @@
     return getPartnerSystem(agent) === 'special' ? 'Особые условия' : 'Стандарт';
   }
 
-  function getCardStatusInfo(agent, result) {
+  function getAgentPackageLabel(agent) {
+    var integration;
+
+    if (!IS_MOTIVATION_CALCULATOR) {
+      return '';
+    }
+    integration = getCareerIntegration(agent);
+    return integration ? String(integration.effectivePackageLabel || '') : '';
+  }
+
+  function getAgentEconomicsSnapshot(agentId) {
+    var totals;
+
+    if (!IS_MOTIVATION_CALCULATOR || !state || !agentId) {
+      return null;
+    }
+    totals = calculateOfficeForA4(state);
+    return totals.agentEconomics.find(function (item) {
+      return item.id === agentId;
+    }) || null;
+  }
+
+  function getCardStatusInfo(agent, result, agentEconomicsOverride) {
+    var agentEconomics = agentEconomicsOverride || getAgentEconomicsSnapshot(agent.id);
+    var calculationStatus = agentEconomics ? agentEconomics.status : result.status;
+
     if (isAgentDraft(agent, result)) {
       return {
         label: 'черновик',
         className: 'draft'
       };
     }
-    if (result.status === 'Окупается') {
+    if (calculationStatus === 'Окупается') {
       return {
         label: 'окупается',
         className: 'positive'
       };
     }
-    if (result.status === 'На грани') {
+    if (calculationStatus === 'На грани') {
       return {
         label: 'на грани',
         className: 'warning'
@@ -1526,10 +1551,12 @@
     return (amount > 0 ? '+' : '') + money(amount);
   }
 
-  function renderAgentHeaderMeta(agent, index, result) {
-    var statusInfo = getCardStatusInfo(agent, result);
+  function renderAgentHeaderMeta(agent, index, result, agentEconomicsOverride) {
+    var statusInfo = getCardStatusInfo(agent, result, agentEconomicsOverride);
     var parts = ['Агент ' + (index + 1), getAgentDisplayName(agent), getAgentRoleLabel(agent)];
-    var systemLabel = getAgentSystemLabel(agent);
+    var systemLabel = IS_MOTIVATION_CALCULATOR ? getAgentPackageLabel(agent) : getAgentSystemLabel(agent);
+    var agentEconomics = agentEconomicsOverride || getAgentEconomicsSnapshot(agent.id);
+    var contribution = agentEconomics ? agentEconomics.contribution : result.contribution;
 
     if (systemLabel) {
       parts.push(systemLabel);
@@ -1537,18 +1564,21 @@
     if (!isAgentDraft(agent, result) && positiveNumber(result.commission) > 0) {
       parts.push(money(result.commission));
     }
-    if (!isAgentDraft(agent, result) && roundMoney(result.contribution) !== 0) {
-      parts.push(formatSignedMoney(result.contribution));
+    if (!isAgentDraft(agent, result) && roundMoney(contribution) !== 0) {
+      parts.push(formatSignedMoney(contribution));
     }
     parts.push(statusInfo.label);
 
     return parts.join(' · ');
   }
 
-  function renderCollapsedSummary(agent, result) {
+  function renderCollapsedSummary(agent, result, agentEconomicsOverride) {
     var topLine = [getAgentDisplayName(agent), getAgentRoleLabel(agent)];
-    var statusInfo = getCardStatusInfo(agent, result);
-    var systemLabel = getAgentSystemLabel(agent);
+    var statusInfo = getCardStatusInfo(agent, result, agentEconomicsOverride);
+    var systemLabel = IS_MOTIVATION_CALCULATOR ? getAgentPackageLabel(agent) : getAgentSystemLabel(agent);
+    var integration = IS_MOTIVATION_CALCULATOR ? getCareerIntegration(agent) : null;
+    var agentEconomics = agentEconomicsOverride || getAgentEconomicsSnapshot(agent.id);
+    var contribution = agentEconomics ? agentEconomics.contribution : result.contribution;
 
     if (systemLabel) {
       topLine.push(systemLabel);
@@ -1558,6 +1588,16 @@
       return '<p class="agent-collapsed-line agent-collapsed-line--title">' + escapeHtml(topLine.join(' · ')) + '</p>'
         + '<p class="agent-collapsed-line agent-collapsed-line--status">Статус: ' + escapeHtml(statusInfo.label) + '</p>'
         + '<p class="agent-collapsed-hint">Заполните сделки или комиссию, чтобы увидеть расчёт.</p>';
+    }
+
+    if (IS_MOTIVATION_CALCULATOR && integration) {
+      return '<p class="agent-collapsed-line agent-collapsed-line--title">' + escapeHtml(topLine.join(' · ')) + '</p>'
+        + '<p class="agent-collapsed-line">Комиссия: ' + escapeHtml(money(result.commission))
+        + ' · Агенту: ' + escapeHtml(money(result.payout))
+        + ' · Офису: ' + escapeHtml(formatSignedMoney(contribution)) + '</p>'
+        + '<p class="agent-collapsed-line">Мотивации: офис ' + escapeHtml(money(integration.motivationReserveMonthly))
+        + ' · агент ' + escapeHtml(money(integration.motivationAgentCost)) + '</p>'
+        + '<p class="agent-collapsed-line agent-collapsed-line--status">Статус: ' + escapeHtml(statusInfo.label) + '</p>';
     }
 
     return '<p class="agent-collapsed-line agent-collapsed-line--title">' + escapeHtml(topLine.join(' · ')) + '</p>'
@@ -1574,19 +1614,21 @@
     var toggleButtons = document.querySelectorAll('[data-action="toggle-agent-collapse"][data-agent-id="' + agentId + '"]');
     var result;
     var statusInfo;
+    var agentEconomics;
 
     if (!agent) {
       return;
     }
 
     result = calculateAgentForA4(agent);
-    statusInfo = getCardStatusInfo(agent, result);
+    agentEconomics = getAgentEconomicsSnapshot(agent.id);
+    statusInfo = getCardStatusInfo(agent, result, agentEconomics);
 
     if (headerMetaNode) {
-      headerMetaNode.textContent = renderAgentHeaderMeta(agent, getAgentIndex(agentId), result);
+      headerMetaNode.textContent = renderAgentHeaderMeta(agent, getAgentIndex(agentId), result, agentEconomics);
     }
     if (collapsedSummaryNode) {
-      collapsedSummaryNode.innerHTML = renderCollapsedSummary(agent, result);
+      collapsedSummaryNode.innerHTML = renderCollapsedSummary(agent, result, agentEconomics);
     }
     if (cardNode) {
       cardNode.className = 'agent-card agent-card--' + statusInfo.className + (isAgentCollapsed(agentId) ? ' is-collapsed' : '');
@@ -1707,14 +1749,21 @@
   }
 
   function collapsePreviousAgentIfReady() {
-    var previousAgent = state.agents[state.agents.length - 1];
-
-    if (previousAgent && previousAgent.commissionMode === 'exact') {
-      syncAgentTotalsFromDeals(previousAgent);
-    }
-    if (previousAgent) {
+    state.agents.forEach(function (previousAgent) {
+      if (previousAgent.commissionMode === 'exact') {
+        syncAgentTotalsFromDeals(previousAgent);
+      }
       setAgentCollapsed(previousAgent.id, true);
+    });
+  }
+
+  function collapseInactiveAgentCards() {
+    if (!state || !Array.isArray(state.agents) || state.agents.length < 2) {
+      return;
     }
+    state.agents.slice(0, -1).forEach(function (agent) {
+      setAgentCollapsed(agent.id, true);
+    });
   }
 
   function addAgentCard() {
@@ -2005,24 +2054,18 @@
       + '<div class="career-link-card__head"><div><strong>Пакет мотивации 2026</strong>'
       + '<p>Выберите пакет для агента. Профиль сотрудника создавать не нужно.</p></div>'
       + '<a href="career.html">Подобрать пакет по стажу и результатам</a></div>'
-      + '<div class="form-grid compact-grid">'
-      + '<label class="field"><span>Пакет</span>'
+      + '<label class="field wide-field package-primary-field"><span>Пакет</span>'
       + '<select data-agent-id="' + agent.id + '" data-agent-field="careerPackageId" data-structural="true">'
       + packageOptions + '</select>'
       + '<small>Пакет задаёт минимальный процент агента и показывает, кто оплачивает каждую мотивацию.</small></label>'
-      + '<label class="field"><span>Минимальный процент по договору, %</span>'
-      + '<input type="number" min="0" max="100" step="1" data-agent-id="' + agent.id
-      + '" data-agent-field="contractualFloorRate" data-structural="true" value="' + positiveNumber(agent.contractualFloorRate) + '">'
-      + '<small>Заполните только тогда, когда в договоре указан процент выше минимального процента пакета. Фиксированный процент выбирается ниже, в поле «Как платить агенту?».</small></label>'
-      + '</div>'
       + (integration
         ? '<div class="career-link-card__result"><b>' + escapeHtml(integration.effectivePackageLabel)
           + ' · агенту не меньше ' + escapeHtml(integration.effectiveFloorRate) + '%</b>'
           + '<span>Мотивации: офис оплачивает ' + money(integration.motivationReserveMonthly)
           + ', агент оплачивает ' + money(integration.motivationAgentCost) + '.</span></div>'
         : '')
-      + '<details class="package-conditions" open>'
-      + '<summary>Что нужно для каждой мотивации и сколько она стоит</summary>'
+      + '<details class="package-conditions" data-agent-id="' + agent.id + '">'
+      + '<summary><span>Условия получения мотиваций</span><small>Результаты за квартал и полугодие, участие в программах</small></summary>'
       + '<div class="form-grid compact-grid package-conditions-grid">'
       + '<label class="field"><span>Задатки за квартал, ₽</span>'
       + moneyInput('data-agent-id="' + agent.id + '" data-agent-field="quarterlyDeposits" data-structural="true"', agent.quarterlyDeposits)
@@ -2045,6 +2088,14 @@
       + '<label class="check-field"><input type="checkbox" data-agent-id="' + agent.id
       + '" data-agent-field="travelQuarterPartnershipConfirmed" data-structural="true"' + checked(agent.travelQuarterPartnershipConfirmed)
       + '><span>Партнёрство подтверждено перед поездкой</span></label>'
+      + '</div></details>'
+      + '<details class="package-conditions package-overrides" data-agent-id="' + agent.id + '">'
+      + '<summary><span>Дополнительные параметры</span><small>Договорный процент и нестандартная стоимость программ</small></summary>'
+      + '<div class="form-grid compact-grid package-conditions-grid">'
+      + '<label class="field"><span>Минимальный процент по договору, %</span>'
+      + '<input type="number" min="0" max="100" step="1" data-agent-id="' + agent.id
+      + '" data-agent-field="contractualFloorRate" data-structural="true" value="' + positiveNumber(agent.contractualFloorRate) + '">'
+      + '<small>Заполните только тогда, когда в договоре указан процент выше минимального процента пакета.</small></label>'
       + '<label class="field"><span>Стоимость «Горы / Море» в этом расчёте, ₽</span>'
       + moneyInput('data-agent-id="' + agent.id + '" data-agent-field="careerMountainSeaCost" data-structural="true"', agent.careerMountainSeaCost)
       + '</label>'
@@ -2058,15 +2109,21 @@
       + '</section>';
   }
 
-  function renderCareerMotivationSummary(integration) {
+  function renderCareerMotivationSummary(agent, integration) {
     var benefits = integration.benefits && Array.isArray(integration.benefits.items)
       ? integration.benefits.items
       : [];
     var officeItems = Array.isArray(integration.motivationCosts) ? integration.motivationCosts : [];
     var agentItems = Array.isArray(integration.agentMotivationCosts) ? integration.agentMotivationCosts : [];
-    return '<section class="career-motivation-summary">'
-      + '<div><strong>' + (IS_MOTIVATION_CALCULATOR ? 'Кто оплачивает мотивации' : 'Мотивации из выбранного пакета') + '</strong>'
-      + '<p>Из прибыли офиса вычитаются только суммы с пометкой «Оплачивает офис». Суммы агента показаны отдельно и прибыль офиса не уменьшают.</p></div>'
+    var availableCount = benefits.filter(function (item) { return item.available; }).length;
+    return '<details class="career-motivation-summary" data-agent-id="' + agent.id + '">'
+      + '<summary class="career-motivation-summary__head"><span><strong>'
+      + (IS_MOTIVATION_CALCULATOR ? 'Кто оплачивает мотивации' : 'Мотивации из выбранного пакета')
+      + '</strong><small>' + (benefits.length ? 'Доступно ' + availableCount + ' из ' + benefits.length : 'Подробная расшифровка')
+      + '</small></span><span class="career-motivation-summary__amounts">Офис: <b>' + money(integration.motivationReserveMonthly)
+      + '</b> · Агент: <b>' + money(integration.motivationAgentCost) + '</b></span></summary>'
+      + '<div class="career-motivation-summary__content">'
+      + '<p>Из прибыли офиса вычитаются только суммы с пометкой «Оплачивает офис». Суммы агента показаны отдельно и прибыль офиса не уменьшают.</p>'
       + (benefits.length
         ? '<ul class="package-benefit-list">' + benefits.map(function (item) {
           var payer = item.payer === 'office'
@@ -2087,7 +2144,41 @@
       + '<span>Оплачивает офис: <b>' + money(integration.motivationReserveMonthly) + '</b></span>'
       + '<span>Оплачивает агент: <b>' + money(integration.motivationAgentCost) + '</b></span>'
       + '</div>'
-      + '</section>';
+      + '</div></details>';
+  }
+
+  function renderAgentFinancialSummary(agent, result, careerIntegration, agentEconomics, breakEvenCommission) {
+    var details = '<dl class="agent-summary">'
+      + '<div><dt>Выплата агенту</dt><dd data-agent-summary="payout" data-agent-id="' + agent.id + '">' + money(result.payout) + '</dd></div>'
+      + '<div><dt>Реферал</dt><dd data-agent-summary="referral" data-agent-id="' + agent.id + '">' + money(result.referral) + '</dd></div>'
+      + '<div><dt>' + (IS_MOTIVATION_CALCULATOR ? 'Мотивации, которые оплачивает офис' : 'Мотивационный резерв') + '</dt><dd data-agent-summary="motivation" data-agent-id="' + agent.id + '">' + money(result.motivationReserve) + '</dd></div>'
+      + '<div><dt>Остаток до роялти и общих расходов</dt><dd data-agent-summary="office" data-agent-id="' + agent.id + '">' + money(result.officeBeforeRoyaltyAndReserve) + '</dd></div>'
+      + (IS_MOTIVATION_CALCULATOR && careerIntegration
+        ? '<div><dt>Мотивации, которые оплачивает агент</dt><dd>' + money(careerIntegration.motivationAgentCost) + '</dd></div>'
+          + (agentEconomics
+            ? '<div><dt>Примерная доля роялти</dt><dd>' + money(agentEconomics.royaltyShare) + '</dd></div>'
+              + '<div><dt>Часть общих расходов офиса</dt><dd>' + money(agentEconomics.expenseShare) + '</dd></div>'
+              + '<div><dt>Сколько остаётся офису от агента</dt><dd class="' + resultClass(agentEconomics.contribution) + '">'
+              + money(agentEconomics.contribution) + ' · ' + escapeHtml(agentEconomics.status) + '</dd></div>'
+              + '<div><dt>Примерно окупится при комиссии от</dt><dd>'
+              + (breakEvenCommission === null ? 'выше 10 млн ₽' : money(breakEvenCommission)) + '</dd></div>'
+            : '')
+        : '')
+      + '</dl>';
+
+    if (!IS_MOTIVATION_CALCULATOR) {
+      return details;
+    }
+
+    return '<details class="agent-result-details" data-agent-id="' + agent.id + '">'
+      + '<summary class="agent-result-summary"><span><strong>Результат агента</strong><small>Основные суммы видны сразу, подробности — по нажатию</small></span>'
+      + '<span class="agent-result-quick">'
+      + '<span>Агенту <b data-agent-summary="payout" data-agent-id="' + agent.id + '">' + money(result.payout) + '</b></span>'
+      + '<span>Мотивации офиса <b data-agent-summary="motivation" data-agent-id="' + agent.id + '">' + money(result.motivationReserve) + '</b></span>'
+      + '<span>Офису до общих расходов <b data-agent-summary="office" data-agent-id="' + agent.id + '">' + money(result.officeBeforeRoyaltyAndReserve) + '</b></span>'
+      + '</span></summary>'
+      + '<div class="agent-result-details__content">' + details + '</div>'
+      + '</details>';
   }
 
   function renderAgents() {
@@ -2110,6 +2201,12 @@
       var boostedControls = '';
       var fixedControl = '';
       var partnerSystemControl = '';
+      var specialPaymentControl = '';
+      var introducedControl = '';
+      var nameControl = '';
+      var dealModeControl = '';
+      var primaryControls = '';
+      var secondaryControls = '';
       var statusControl = '<label class="field"><span>Статус агента</span><select data-agent-id="' + agent.id + '" data-agent-field="status" data-structural="true">'
         + option('trainee', 'Стажёр', agent.status)
         + option('partner', 'Партнёр', agent.status)
@@ -2138,55 +2235,63 @@
             : 'Особые условия — повышенная выплата, которую нужно проверить на окупаемость.') + '</small></label>';
       }
 
+      if (agent.status === 'partner' && getPartnerSystem(agent) === 'special') {
+        specialPaymentControl = '<label class="field agent-main-field"><span>Тип особых условий</span><select data-agent-id="' + agent.id + '" data-agent-field="paymentType" data-structural="true">'
+          + option('boosted', 'Повышенная стартовая шкала', agent.paymentType)
+          + option('fixed', 'Фиксированный процент', agent.paymentType)
+          + '</select><small>Повышенная шкала мягче. Фиксированный процент рискованнее, если комиссия агента нестабильна.</small></label>';
+      }
+
+      nameControl = '<label class="field agent-main-field"><span>Имя</span><input type="text" data-agent-id="' + agent.id + '" data-agent-field="name" value="' + escapeHtml(agent.name || '') + '" placeholder="Новый агент"></label>';
+      dealModeControl = '<label class="field agent-main-field"><span>Как считать сделки?</span><select data-agent-id="' + agent.id + '" data-agent-field="commissionMode" data-structural="true">'
+        + option('exact', 'Точно: ввести каждую сделку отдельно', agent.commissionMode || 'exact')
+        + option('quick', 'Быстро: общая комиссия и количество сделок', agent.commissionMode || 'exact')
+        + '</select><small>Точный режим нужен для сделок разного размера. Быстрый подходит для прикидки, но может отличаться от точного расчёта.</small></label>';
+      introducedControl = '<label class="field"><span>Приведённый агент</span><select data-agent-id="' + agent.id + '" data-agent-field="introduced">'
+        + option('false', 'Нет', String(agent.introduced))
+        + option('true', 'Да', String(agent.introduced))
+        + '</select><small>Если выбрать “Да”, офис дополнительно платит 2,5% от комиссии этого агента.</small></label>';
+
+      if (IS_MOTIVATION_CALCULATOR) {
+        primaryControls = nameControl
+          + renderManualPackageControl(agent, careerIntegration)
+          + dealModeControl
+          + renderDealInputs(agent, result);
+        secondaryControls = '<details class="agent-secondary-fields" data-agent-id="' + agent.id + '">'
+          + '<summary><span><strong>Дополнительные настройки агента</strong><small>Статус, особые условия и реферальная выплата</small></span></summary>'
+          + '<div class="form-grid compact-grid agent-secondary-fields__content">'
+          + statusControl
+          + renderStandardScaleNote(agent)
+          + partnerSystemControl
+          + specialPaymentControl
+          + fixedControl
+          + introducedControl
+          + '</div>'
+          + (agent.status === 'partner' && getPartnerSystem(agent) === 'special' ? boostedControls : '')
+          + '</details>';
+      } else {
+        primaryControls = nameControl
+          + statusControl
+          + renderCareerProfileControl(agent, careerIntegration)
+          + renderStandardScaleNote(agent)
+          + partnerSystemControl
+          + dealModeControl
+          + renderDealInputs(agent, result)
+          + specialPaymentControl
+          + fixedControl
+          + introducedControl;
+        secondaryControls = agent.status === 'partner' && getPartnerSystem(agent) === 'special' ? boostedControls : '';
+      }
+
       return '<article class="agent-card">'
         + '<div class="agent-head">'
         + '<h3>Агент ' + (index + 1) + '</h3>'
         + '<button class="button ghost" type="button" data-action="remove-agent" data-agent-id="' + agent.id + '"' + (state.agents.length === 1 ? ' disabled' : '') + '>Удалить</button>'
         + '</div>'
-        + '<div class="form-grid">'
-        + '<label class="field agent-main-field"><span>Имя</span><input type="text" data-agent-id="' + agent.id + '" data-agent-field="name" value="' + escapeHtml(agent.name || '') + '" placeholder="Новый агент"></label>'
-        + statusControl
-        + (IS_MOTIVATION_CALCULATOR
-          ? renderManualPackageControl(agent, careerIntegration)
-          : renderCareerProfileControl(agent, careerIntegration))
-        + renderStandardScaleNote(agent)
-        + partnerSystemControl
-        + '<label class="field agent-main-field"><span>Как считать сделки?</span><select data-agent-id="' + agent.id + '" data-agent-field="commissionMode" data-structural="true">'
-        + option('exact', 'Точно: ввести каждую сделку отдельно', agent.commissionMode || 'exact')
-        + option('quick', 'Быстро: общая комиссия и количество сделок', agent.commissionMode || 'exact')
-        + '</select><small>Точный режим нужен для сделок разного размера. Быстрый подходит для прикидки, но может отличаться от точного расчёта.</small></label>'
-        + renderDealInputs(agent, result)
-        + (agent.status === 'partner' && getPartnerSystem(agent) === 'special'
-          ? '<label class="field agent-main-field"><span>Тип особых условий</span><select data-agent-id="' + agent.id + '" data-agent-field="paymentType" data-structural="true">'
-            + option('boosted', 'Повышенная стартовая шкала', agent.paymentType)
-            + option('fixed', 'Фиксированный процент', agent.paymentType)
-            + '</select><small>Повышенная шкала мягче. Фиксированный процент рискованнее, если комиссия агента нестабильна.</small></label>'
-          : '')
-        + fixedControl
-        + '<label class="field"><span>Приведённый агент</span><select data-agent-id="' + agent.id + '" data-agent-field="introduced">'
-        + option('false', 'Нет', String(agent.introduced))
-        + option('true', 'Да', String(agent.introduced))
-        + '</select><small>Если выбрать “Да”, офис дополнительно платит 2,5% от комиссии этого агента.</small></label>'
-        + '</div>'
-        + (agent.status === 'partner' && getPartnerSystem(agent) === 'special' ? boostedControls : '')
-        + (careerIntegration ? renderCareerMotivationSummary(careerIntegration) : renderMotivationControls(agent))
-        + '<dl class="agent-summary">'
-        + '<div><dt>Выплата агенту</dt><dd data-agent-summary="payout" data-agent-id="' + agent.id + '">' + money(result.payout) + '</dd></div>'
-        + '<div><dt>Реферал</dt><dd data-agent-summary="referral" data-agent-id="' + agent.id + '">' + money(result.referral) + '</dd></div>'
-        + '<div><dt>' + (IS_MOTIVATION_CALCULATOR ? 'Мотивации, которые оплачивает офис' : 'Мотивационный резерв') + '</dt><dd data-agent-summary="motivation" data-agent-id="' + agent.id + '">' + money(result.motivationReserve) + '</dd></div>'
-        + '<div><dt>Остаток до роялти и общих расходов</dt><dd data-agent-summary="office" data-agent-id="' + agent.id + '">' + money(result.officeBeforeRoyaltyAndReserve) + '</dd></div>'
-        + (IS_MOTIVATION_CALCULATOR && careerIntegration
-          ? '<div><dt>Мотивации, которые оплачивает агент</dt><dd>' + money(careerIntegration.motivationAgentCost) + '</dd></div>'
-            + (agentEconomics
-              ? '<div><dt>Примерная доля роялти</dt><dd>' + money(agentEconomics.royaltyShare) + '</dd></div>'
-                + '<div><dt>Часть общих расходов офиса</dt><dd>' + money(agentEconomics.expenseShare) + '</dd></div>'
-                + '<div><dt>Сколько остаётся офису от агента</dt><dd class="' + resultClass(agentEconomics.contribution) + '">'
-                + money(agentEconomics.contribution) + ' · ' + escapeHtml(agentEconomics.status) + '</dd></div>'
-                + '<div><dt>Примерно окупится при комиссии от</dt><dd>'
-                + (breakEvenCommission === null ? 'выше 10 млн ₽' : money(breakEvenCommission)) + '</dd></div>'
-              : '')
-          : '')
-        + '</dl>'
+        + '<div class="form-grid' + (IS_MOTIVATION_CALCULATOR ? ' motivation-agent-primary' : '') + '">' + primaryControls + '</div>'
+        + secondaryControls
+        + (careerIntegration ? renderCareerMotivationSummary(agent, careerIntegration) : renderMotivationControls(agent))
+        + renderAgentFinancialSummary(agent, result, careerIntegration, agentEconomics, breakEvenCommission)
         + '</article>';
     }).join('');
     enhanceAgentCards();
@@ -2505,10 +2610,12 @@
         ['motivationInline', agent.motivationReserve],
         ['office', agent.officeBeforeRoyaltyAndReserve]
       ].forEach(function (item) {
-        var node = document.querySelector('[data-agent-summary="' + item[0] + '"][data-agent-id="' + agent.id + '"]');
-        if (node) {
-          node.textContent = money(item[1]);
-        }
+        Array.prototype.forEach.call(
+          document.querySelectorAll('[data-agent-summary="' + item[0] + '"][data-agent-id="' + agent.id + '"]'),
+          function (node) {
+            node.textContent = money(item[1]);
+          }
+        );
       });
       if (agent.commissionMode === 'exact') {
         var commissionInput = document.querySelector('[data-agent-field="commission"][data-agent-id="' + agent.id + '"]');
@@ -2963,6 +3070,7 @@
       var calendarContext;
       activateMonth(nextMonth);
       uiState = createUiState();
+      collapseInactiveAgentCards();
       render();
       saveDraft('month');
       calendarContext = window.buildCalendarContext ? window.buildCalendarContext(nextMonth) : null;
@@ -3362,6 +3470,7 @@
       markStateDirty();
       state = createExampleState();
       uiState = createUiState();
+      collapseInactiveAgentCards();
       syncCountersFromState(state);
       window.domianA4State = state;
       render();
@@ -3608,6 +3717,7 @@
     }
     syncCountersFromState(state);
     uiState = createUiState();
+    collapseInactiveAgentCards();
     if (!lastDraftStatusType) {
       setDraftStatus('clean', 'Черновик не сохранён');
     }
