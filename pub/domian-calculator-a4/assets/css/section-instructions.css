@@ -1,0 +1,283 @@
+.section-instructions {
+  width: 100%;
+  margin: 0 0 20px;
+  border: 1px solid #cbd9e8;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--ink, #172033);
+  box-shadow: 0 10px 28px rgba(31, 55, 82, 0.07);
+  font-family: "Trebuchet MS", "Segoe UI", Arial, sans-serif;
+}
+
+.section-instructions > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 58px;
+  padding: 14px 18px;
+  border-radius: 13px;
+  color: var(--blue, #245c99);
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 900;
+  list-style: none;
+}
+
+.section-instructions > summary::-webkit-details-marker,
+.instruction-inner-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.section-instructions > summary::after,
+.instruction-inner-details > summary::after {
+  content: "+";
+  flex: 0 0 auto;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.section-instructions[open] > summary {
+  border-bottom: 1px solid #d9e3ef;
+  border-radius: 13px 13px 0 0;
+  background: #f5f9fd;
+}
+
+.section-instructions[open] > summary::after,
+.instruction-inner-details[open] > summary::after {
+  content: "−";
+}
+
+.section-instructions > summary:hover,
+.instruction-inner-details > summary:hover {
+  background: #eef5fc;
+}
+
+.section-instructions > summary:focus-visible,
+.instruction-inner-details > summary:focus-visible,
+.instruction-doc-link:focus-visible {
+  outline: 3px solid rgba(36, 92, 153, 0.28);
+  outline-offset: 3px;
+}
+
+.section-instructions__content {
+  display: grid;
+  gap: 20px;
+  padding: 20px;
+  line-height: 1.55;
+}
+
+.section-instructions__lead,
+.instruction-block p,
+.instruction-note p,
+.instruction-documents p {
+  margin: 0;
+}
+
+.section-instructions__lead {
+  max-width: 980px;
+  color: var(--muted, #667085);
+  font-size: 15px;
+}
+
+.instruction-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.instruction-block,
+.instruction-note,
+.instruction-documents,
+.instruction-inner-details {
+  min-width: 0;
+  border: 1px solid #d9e3ef;
+  border-radius: 12px;
+  background: #fbfdff;
+}
+
+.instruction-block,
+.instruction-note,
+.instruction-documents {
+  padding: 16px;
+}
+
+.instruction-block h3,
+.instruction-block h4,
+.instruction-note h3,
+.instruction-documents h3,
+.instruction-inner-details h3 {
+  margin: 0 0 8px;
+  color: #172033;
+  font-size: 17px;
+}
+
+.instruction-block h4 {
+  margin-top: 14px;
+  font-size: 15px;
+}
+
+.instruction-block ul,
+.instruction-block ol,
+.instruction-note ul,
+.instruction-point-list {
+  margin: 8px 0 0;
+  padding-left: 22px;
+}
+
+.instruction-block li + li,
+.instruction-note li + li,
+.instruction-point-list li + li {
+  margin-top: 6px;
+}
+
+.instruction-note {
+  border-color: #efd18a;
+  background: #fff9e9;
+}
+
+.instruction-package-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.instruction-package-card {
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid #d9e3ef;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.instruction-package-card h4 {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 7px;
+  font-size: 15px;
+}
+
+.instruction-package-card p {
+  margin: 4px 0 0;
+  color: var(--muted, #667085);
+  font-size: 13px;
+}
+
+.instruction-package-card ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  font-size: 13px;
+}
+
+.instruction-package-card li + li {
+  margin-top: 4px;
+}
+
+.instruction-inner-details {
+  overflow: clip;
+  background: #fff;
+}
+
+.instruction-inner-details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 12px 16px;
+  color: var(--blue, #245c99);
+  cursor: pointer;
+  font-weight: 850;
+  list-style: none;
+}
+
+.instruction-inner-details__content {
+  padding: 0 16px 16px;
+}
+
+.instruction-level-grid,
+.instruction-point-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 14px;
+  margin: 12px 0 0;
+}
+
+.instruction-level-grid div,
+.instruction-point-grid div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f2f6fb;
+  font-size: 13px;
+}
+
+.instruction-level-grid b,
+.instruction-point-grid b {
+  white-space: nowrap;
+}
+
+.instruction-documents {
+  background: #f5f9fd;
+}
+
+.instruction-doc-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.instruction-doc-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 1px solid var(--blue, #245c99);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--blue, #245c99);
+  font-weight: 850;
+  text-align: center;
+  text-decoration: none;
+}
+
+.instruction-doc-link:hover {
+  background: var(--blue, #245c99);
+  color: #fff;
+}
+
+@media (max-width: 760px) {
+  .section-instructions > summary {
+    align-items: flex-start;
+    padding: 13px 14px;
+    font-size: 15px;
+  }
+
+  .section-instructions__content {
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .instruction-grid,
+  .instruction-package-grid,
+  .instruction-level-grid,
+  .instruction-point-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .instruction-doc-links {
+    display: grid;
+  }
+
+  .instruction-doc-link {
+    width: 100%;
+  }
+}
