@@ -92,6 +92,7 @@
       effectivePackage: packageItem.id,
       effectivePackageLabel: packageItem.label,
       packageFloorRate: packageItem.floorRate,
+      packageMaxRate: packageItem.maxRate,
       contractualFloorRate: contractualFloorRate,
       effectiveFloorRate: Math.max(packageItem.floorRate, contractualFloorRate),
       motivationReserveMonthly: benefits.officeCostTotal,
@@ -112,6 +113,7 @@
     source.status = packageItem.status;
     source.careerPackageId = packageItem.id;
     source.packageFloorRate = integration.packageFloorRate;
+    source.packageMaxRate = integration.packageMaxRate;
     source.contractualFloorRate = integration.contractualFloorRate;
     source.careerIntegration = integration;
     return source;

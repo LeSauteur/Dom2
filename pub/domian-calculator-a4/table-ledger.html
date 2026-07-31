@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Домиан — ведомость сделок офиса</title>
-  <link rel="stylesheet" href="assets/css/table-ledger.css?v=a4-ledger-draft-20260706">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="assets/css/table-ledger.css?v=ledger-2026-20260731">
   <link rel="stylesheet" href="assets/css/navigation.css">
 </head>
 <body>
@@ -14,32 +15,23 @@
         <div>
           <p class="mode-header__project">Домиан — калькулятор офиса</p>
           <h1 class="mode-header__title">Ведомость сделок</h1>
-          <p class="mode-header__subtitle">Сделки строками, итоги агента и общий результат офиса.</p>
+          <p class="mode-header__subtitle">Введите исходные данные — ставки и итоги рассчитаются автоматически.</p>
+        </div>
+        <div class="hero-actions">
+          <button class="primary" type="button" data-action="load-a4">Загрузить из A4</button>
+          <button type="button" data-action="clear-ledger">Очистить</button>
         </div>
       </div>
       <nav class="mode-nav" aria-label="Навигация по режимам">
         <a href="start.html">На старт</a>
         <a href="index.html">A4</a>
-        <a href="table.html" aria-current="page">Ведомость</a>
+        <a href="table-ledger.html" aria-current="page">Ведомость</a>
         <a href="simple.html">Простой</a>
         <a href="extended.html">Расширенный</a>
         <a href="motivation-calculator.html">Мотивация 2026</a>
         <a href="career.html">Карьера</a>
       </nav>
     </header>
-    <header class="ledger-hero">
-      <div>
-        <h2 class="ledger-hero__title">Домиан — ведомость сделок офиса</h2>
-        <p class="hero-note">Таблица для собственника: каждая сделка находится в отдельной строке, а процент и выплата видны сразу.</p>
-      </div>
-      <div class="hero-actions">
-        <button class="primary" type="button" data-action="load-a4">Загрузить из A4</button>
-        <button type="button" data-action="clear-ledger">Очистить</button>
-        <button type="button" data-action="add-agent">+ Агент</button>
-        <button type="button" data-action="add-deal">+ Сделка</button>
-      </div>
-    </header>
-
     <section class="notice" id="ledgerNotice">Заполните ведомость вручную или загрузите ранее сохранённые данные из A4.</section>
     <section class="ledger-lifecycle" aria-label="Состояние ведомости">
       <span id="ledgerSelectedMonth">Месяц: не указан</span>
@@ -47,7 +39,7 @@
       <span id="ledgerSaveStatus" aria-live="polite">Изменения сохраняются автоматически</span>
     </section>
 
-    <section class="top-grid" aria-label="Быстрые показатели офиса">
+    <section class="top-grid office-inputs" aria-label="Параметры офиса">
       <article class="panel expenses-panel">
         <div class="panel-title-row">
           <div>
@@ -61,7 +53,7 @@
 
       <article class="panel compact-panel">
         <p class="panel-kicker">Личные сделки собственника</p>
-        <input class="money-cell" inputmode="numeric" autocomplete="off" data-office-field="ownerSales" value="0">
+        <input id="ledgerOwnerSales" class="money-cell" inputmode="numeric" autocomplete="off" data-office-field="ownerSales" value="0">
         <small>Учитываются отдельно: видно итог с собственником и без него.</small>
       </article>
 
@@ -76,44 +68,37 @@
       <div class="table-toolbar">
         <div>
           <h2>Реестр сделок</h2>
-          <p>Каждая строка — сделка активного месяца. Конгресс и звезда считаются один раз на агента, а не на каждую сделку.</p>
+          <p>Белые ячейки — ввод. Серые ячейки — защищённые расчётные формулы.</p>
         </div>
         <div class="ledger-toolbar-actions">
           <button class="small primary" type="button" data-action="add-agent">+ Агент</button>
           <button class="small" type="button" data-action="add-deal">+ Сделка</button>
-          <span class="badge">Строка итога агента</span>
-          <span class="badge badge-office">Строка итога офиса</span>
         </div>
       </div>
       <div class="table-scroll">
         <table class="ledger-table">
           <thead>
             <tr>
-              <th class="col-agent">Агент / условия</th>
+              <th class="col-agent">Агент</th>
+              <th>Пакет</th>
               <th>№</th>
-              <th>Комиссия</th>
+              <th>Сделка</th>
               <th>%</th>
               <th>Агенту</th>
-              <th>Реферальная выплата 2,5%</th>
-              <th>Примерная доля роялти*</th>
-              <th>Мотивации за счёт офиса</th>
-              <th>Конгресс</th>
-              <th>Звезда</th>
+              <th>Реферал</th>
+              <th>Мотивации офиса</th>
+              <th>Мотивации агента</th>
+              <th>Роялти</th>
               <th>Расходы</th>
-              <th>Остаток офису</th>
+              <th>Остаётся офису</th>
               <th>Комментарий</th>
-              <th></th>
             </tr>
           </thead>
           <tbody id="ledgerBody"></tbody>
           <tfoot id="ledgerFoot"></tfoot>
         </table>
       </div>
-      <p class="footnote">* Точное роялти офиса считается от общего оборота и показано в итоговой строке. В строке агента указана только примерная часть общего роялти.</p>
-      <div class="ledger-bottom-actions">
-        <button class="primary" type="button" data-action="add-agent">+ Добавить агента</button>
-        <button type="button" data-action="add-deal">+ Добавить сделку к последнему агенту</button>
-      </div>
+      <p class="footnote">Роялти и постоянные расходы распределяются по агентам так, чтобы сумма долей точно совпадала с итогом офиса.</p>
     </section>
 
     <section class="summary-panel" id="summaryPanel" aria-label="Итоговая сводка"></section>
@@ -122,7 +107,7 @@
       <nav class="mode-footer__links" aria-label="Нижняя навигация">
         <a href="start.html">На старт</a>
         <a href="index.html">Основной A4</a>
-        <a href="table.html" aria-current="page">Ведомость сделок</a>
+        <a href="table-ledger.html" aria-current="page">Ведомость сделок</a>
         <a href="simple.html">Простой режим</a>
         <a href="extended.html">Расширенный режим</a>
         <a href="motivation-calculator.html">Мотивация 2026</a>
@@ -131,8 +116,11 @@
     </footer>
   </main>
 
-  <script src="assets/js/constants.js?v=a4-ledger-draft-20260706"></script>
-  <script src="assets/js/calculations.js?v=a4-ledger-draft-20260706"></script>
-  <script src="assets/js/table-ledger.js?v=a4-ledger-caret-20260706"></script>
+  <script src="assets/js/constants.js?v=ledger-2026-20260731"></script>
+  <script src="assets/js/calculations.js?v=ledger-2026-20260731"></script>
+  <script src="assets/js/policies/motivation-policy-2026.js?v=ledger-2026-20260731"></script>
+  <script src="assets/js/domain/benefit-engine.js?v=ledger-2026-20260731"></script>
+  <script src="assets/js/domain/motivation-calculator-engine.js?v=ledger-2026-20260731"></script>
+  <script src="assets/js/table-ledger.js?v=ledger-2026-20260731"></script>
 </body>
 </html>

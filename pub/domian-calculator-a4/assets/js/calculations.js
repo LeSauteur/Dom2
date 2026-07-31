@@ -46,6 +46,41 @@
     return Math.round(toNumber(value) * 100) / 100;
   }
 
+  function distributeMoney(total, weights) {
+    var normalizedTotal = roundMoney(total);
+    var normalizedWeights = (weights || []).map(positiveNumber);
+    var weightTotal = normalizedWeights.reduce(function (sum, weight) {
+      return sum + weight;
+    }, 0);
+    var distributed = 0;
+    var lastWeightedIndex = -1;
+
+    if (weightTotal > 0) {
+      normalizedWeights.forEach(function (weight, index) {
+        if (weight > 0) {
+          lastWeightedIndex = index;
+        }
+      });
+    } else {
+      lastWeightedIndex = normalizedWeights.length - 1;
+    }
+
+    return normalizedWeights.map(function (weight, index) {
+      var share;
+      if (index === lastWeightedIndex) {
+        return roundMoney(normalizedTotal - distributed);
+      }
+      if (weightTotal > 0 && weight === 0) {
+        return 0;
+      }
+      share = weightTotal > 0
+        ? roundMoney(normalizedTotal * weight / weightTotal)
+        : roundMoney(normalizedTotal / Math.max(1, normalizedWeights.length));
+      distributed = roundMoney(distributed + share);
+      return share;
+    });
+  }
+
   function getRoyaltyRate(turnover) {
     var amount = positiveNumber(turnover);
     for (var i = 0; i < ROYALTY_RATES.length; i += 1) {
@@ -712,6 +747,7 @@
     var qualifyingThreshold = positiveNumber(window.QUALIFYING_DEAL_COMMISSION_THRESHOLD || 50000);
     var packageFloorRate = percentageOrNull(agent.packageFloorRate);
     var contractualFloorRate = percentageOrNull(agent.contractualFloorRate);
+    var packageMaxRate = percentageOrNull(agent.packageMaxRate);
 
     for (var i = 0; i < dealCount; i += 1) {
       var row = exactMode
@@ -773,6 +809,15 @@
         }
       }
 
+      if (packageMaxRate !== null) {
+        rate = Math.min(rate, packageMaxRate / 100);
+        if (rate === packageMaxRate / 100
+          && row.manualRateOverride !== null
+          && row.manualRateOverride > packageMaxRate) {
+          rateSource = 'packageMaximum';
+        }
+      }
+
       var dealPayout = currentDealCommission * rate;
       if (isQualifiedDeposit) {
         qualifiedDealCount += 1;
@@ -828,6 +873,7 @@
       careerProfileId: String(agent.careerProfileId || ''),
       careerIntegration: careerIntegration,
       packageFloorRate: packageFloorRate === null ? 0 : packageFloorRate,
+      packageMaxRate: packageMaxRate === null ? 100 : packageMaxRate,
       contractualFloorRate: contractualFloorRate === null ? 0 : contractualFloorRate,
       introduced: Boolean(agent.introduced),
       deals: deals,
@@ -839,6 +885,9 @@
       referral: referral,
       motivation: motivation,
       motivationReserve: motivation.total,
+      motivationAgentCost: careerIntegration
+        ? positiveNumber(careerIntegration.motivationAgentCost)
+        : 0,
       officeBeforeRoyalty: commission - payout - referral,
       officeBeforeRoyaltyAndReserve: commission - payout - referral - motivation.total
     };
@@ -860,14 +909,32 @@
     return 'Окупается';
   }
 
-  function calculateAgentEconomics(agents, expenses, sources) {
+  function calculateAgentEconomics(agents, expenses, sources, allocationMode) {
     var activeAgents = agents.filter(function (agent, index) {
       return isMeaningfulAgentSource(sources && sources[index], agent);
     });
-    var expenseShare = activeAgents.length ? expenses / activeAgents.length : 0;
+    var useExactOfficeAllocation = allocationMode === 'officeExact';
+    var royaltyShares = useExactOfficeAllocation
+      ? distributeMoney(calculateRoyalty(activeAgents.reduce(function (sum, agent) {
+        return sum + agent.commission;
+      }, 0)), activeAgents.map(function (agent) {
+        return agent.commission;
+      }))
+      : [];
+    var expenseShares = useExactOfficeAllocation
+      ? distributeMoney(expenses, activeAgents.map(function () {
+        return 1;
+      }))
+      : [];
+    var equalExpenseShare = activeAgents.length ? expenses / activeAgents.length : 0;
 
-    return activeAgents.map(function (agent) {
-      var royaltyShare = calculateRoyalty(agent.commission);
+    return activeAgents.map(function (agent, index) {
+      var royaltyShare = useExactOfficeAllocation
+        ? (royaltyShares[index] || 0)
+        : calculateRoyalty(agent.commission);
+      var expenseShare = useExactOfficeAllocation
+        ? (expenseShares[index] || 0)
+        : equalExpenseShare;
       var contribution = roundMoney(agent.commission
         - agent.payout
         - agent.referral
@@ -924,7 +991,12 @@
       resultWithOwnerBeforeReserves: resultWithOwnerBeforeReserves,
       resultWithoutOwner: resultWithoutOwner,
       resultWithOwner: resultWithOwner,
-      agentEconomics: calculateAgentEconomics(agents, expenses, normalizedAgents),
+      agentEconomics: calculateAgentEconomics(
+        agents,
+        expenses,
+        normalizedAgents,
+        state.agentEconomicsAllocation
+      ),
       warningOwnerDependency: resultWithoutOwner < -0.5 && resultWithOwner > 0.5
     };
   }
@@ -1155,6 +1227,7 @@
   window.roundMoney = roundMoney;
   window.getRoyaltyRate = getRoyaltyRate;
   window.calculateRoyalty = calculateRoyalty;
+  window.distributeMoney = distributeMoney;
   window.getDealRate = getDealRate;
   window.getEffectiveDealRate = getEffectiveDealRate;
   window.getStipendLevel = getStipendLevel;
