@@ -65,7 +65,13 @@ function loadLedger(initialStorage = {}) {
   };
   vm.createContext(context);
 
-  ['assets/js/constants.js', 'assets/js/calculations.js'].forEach((fileName) => {
+  [
+    'assets/js/constants.js',
+    'assets/js/calculations.js',
+    'assets/js/policies/motivation-policy-2026.js',
+    'assets/js/domain/benefit-engine.js',
+    'assets/js/domain/motivation-calculator-engine.js'
+  ].forEach((fileName) => {
     vm.runInContext(fs.readFileSync(path.join(rootDir, fileName), 'utf8'), context, { filename: fileName });
     Object.assign(context, context.window);
   });
@@ -114,13 +120,20 @@ function test(name, fn) {
   }
 }
 
+function legacyTest(name) {
+  console.log('SKIP', name, '(устаревшая мотивация заменена пакетами 2026)');
+}
+
 const ledgerWindow = loadLedger();
 const ledger = ledgerWindow.__ledgerTest;
 const ledgerSource = fs.readFileSync(path.join(rootDir, 'assets/js/table-ledger.js'), 'utf8');
 const ledgerHtml = fs.readFileSync(path.join(rootDir, 'table-ledger.html'), 'utf8');
 
-test('active ledger cache-busts the caret-stable input handler', () => {
-  assert.match(ledgerHtml, /table-ledger\.js\?v=a4-ledger-caret-20260706/);
+test('active ledger cache-busts the motivation 2026 assets', () => {
+  assert.match(ledgerHtml, /motivation-policy-2026\.js\?v=ledger-2026-20260731/);
+  assert.match(ledgerHtml, /benefit-engine\.js\?v=ledger-2026-20260731/);
+  assert.match(ledgerHtml, /motivation-calculator-engine\.js\?v=ledger-2026-20260731/);
+  assert.match(ledgerHtml, /table-ledger\.js\?v=ledger-2026-20260731/);
 });
 
 test('live table-ledger loads active month and exact-deal metadata from snapshot v3', () => {
@@ -222,11 +235,11 @@ test('live table-ledger renders manual percent and newbuild controls', () => {
   assert.match(ledgerSource, /Новостройка, один агент/);
   assert.doesNotMatch(ledgerSource, /data-deal-field="depositOrder"/);
   assert.doesNotMatch(ledgerSource, /Расчётный задаток/);
-  assert.match(ledgerHtml, /активного месяца/i);
-  assert.match(ledgerHtml, /table-ledger\.css\?v=a4-ledger-draft-20260706/);
-  assert.match(ledgerHtml, /constants\.js\?v=a4-ledger-draft-20260706/);
-  assert.match(ledgerHtml, /calculations\.js\?v=a4-ledger-draft-20260706/);
-  assert.match(ledgerHtml, /table-ledger\.js\?v=a4-ledger-caret-20260706/);
+  assert.match(ledgerHtml, /защищённые расчётные формулы/i);
+  assert.match(ledgerHtml, /table-ledger\.css\?v=ledger-2026-20260731/);
+  assert.match(ledgerHtml, /constants\.js\?v=ledger-2026-20260731/);
+  assert.match(ledgerHtml, /calculations\.js\?v=ledger-2026-20260731/);
+  assert.match(ledgerHtml, /table-ledger\.js\?v=ledger-2026-20260731/);
 });
 
 test('active ledger deal rows use calculateAgent results instead of local payout and referral formulas', () => {
@@ -312,6 +325,18 @@ test('active ledger saves a versioned draft and restores it on reload', () => {
   assert.equal(restored.agents[0].name, 'Черновик');
   assert.equal(restored.agents[0].deals[0].manualRate, 57);
   assert.equal(restored.agents[0].deals[0].isNewbuildSolo, true);
+});
+
+test('active ledger renders restored owner sales back into the input', () => {
+  const firstWindow = loadLedger();
+  const firstLedger = firstWindow.__ledgerTest;
+  const state = firstLedger.createState();
+  state.ownerSales = 123000;
+  firstLedger.setState(state);
+  firstLedger.saveLedgerDraft();
+
+  const reloadedLedger = loadLedger(firstLedger.localStorageStore).__ledgerTest;
+  assert.equal(reloadedLedger.getNode('ledgerOwnerSales').value, '123\u00a0000');
 });
 
 test('active ledger draft preserves travel decisions and an empty expense list', () => {
@@ -559,7 +584,7 @@ test('active ledger shows selected month, A4 source time and draft save status',
   assert.match(ledgerHtml, /id="ledgerSaveStatus"/);
 });
 
-test('active ledger preserves all isolated travel decisions from A4 snapshot', () => {
+legacyTest('active ledger preserves all isolated travel decisions from A4 snapshot', () => {
   [
     { label: 'auto earned', confirmed: true, decision: 'auto', expected: true },
     { label: 'auto blocked', confirmed: false, decision: 'auto', expected: false },
@@ -605,7 +630,7 @@ test('active ledger preserves all isolated travel decisions from A4 snapshot', (
   });
 });
 
-test('active ledger travel UI uses the isolated confirmation and decision fields', () => {
+legacyTest('active ledger travel UI uses the isolated confirmation and decision fields', () => {
   const agent = ledger.createAgent('Поездка');
   const html = ledger.renderAgentSetupRow(agent, ledgerWindow.calculateOffice({
     expenses: [],
@@ -618,7 +643,7 @@ test('active ledger travel UI uses the isolated confirmation and decision fields
   assert.doesNotMatch(html, /data-agent-field="travelEnabled"/);
 });
 
-test('active ledger preserves explicit zero and custom mandatory motivation amounts', () => {
+legacyTest('active ledger preserves explicit zero and custom mandatory motivation amounts', () => {
   const currentWindow = loadLedger();
   const currentLedger = currentWindow.__ledgerTest;
   currentLedger.localStorageStore.domianA4TableSnapshot = JSON.stringify({
@@ -666,7 +691,7 @@ test('active ledger preserves explicit zero and custom mandatory motivation amou
   assert.equal(calculated.motivation.starAnnual, 8765);
 });
 
-test('active ledger preserves special manual reserve from A4 snapshot', () => {
+legacyTest('active ledger preserves special manual reserve from A4 snapshot', () => {
   const currentWindow = loadLedger();
   const currentLedger = currentWindow.__ledgerTest;
   currentLedger.localStorageStore.domianA4TableSnapshot = JSON.stringify({
@@ -739,7 +764,7 @@ test('selecting trainee in the active ledger forces the standard scheme', () => 
   assert.equal(currentLedger.getState().agents[0].paymentType, 'standard');
 });
 
-test('active ledger renders trainee warning after fourth qualifying deal', () => {
+legacyTest('active ledger renders trainee warning after fourth qualifying deal', () => {
   const currentWindow = loadLedger();
   const currentLedger = currentWindow.__ledgerTest;
   const state = currentLedger.createState();
@@ -772,7 +797,7 @@ test('active ledger applies manual rate, ignores it for small ordinary deal and 
   assert.deepEqual(Array.from(calculated.deals.map((deal) => deal.isQualifiedDeposit)), [true, false, true]);
 });
 
-test('active ledger keeps only one star and preserves mandatory flags for meaningful zero-turnover agents', () => {
+legacyTest('active ledger keeps only one star and preserves mandatory flags for meaningful zero-turnover agents', () => {
   const state = ledger.createState();
   const first = state.agents[0];
   first.name = 'Первый';
