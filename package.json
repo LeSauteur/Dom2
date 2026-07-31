@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "Static Domian calculator application and dependency-free validation scripts.",
   "scripts": {
-    "test": "node --test tests/a4-calculations.test.js tests/calendar-policy.test.js tests/table-ledger.test.js tests/table-ledger-2026.test.js tests/career-engine.test.js tests/motivation-calculator.test.js",
+    "test": "node --test tests/a4-calculations.test.js tests/calendar-policy.test.js tests/table-ledger.test.js tests/table-ledger-2026.test.js tests/career-engine.test.js tests/motivation-calculator.test.js tests/portal-access.test.js",
     "test:known-failures": "node --test tests/known-failures/independent-oracle.test.js tests/known-failures/storage-resilience.test.js",
     "check:syntax": "node tests/check-syntax.js",
     "check:links": "node tests/check-links.js",

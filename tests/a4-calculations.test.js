@@ -152,7 +152,7 @@ function closeTo(actual, expected) {
 const calculator = loadCalculator();
 const appHelpers = loadAppHelpers();
 const appSource = fs.readFileSync(path.join(rootDir, 'assets/js/app.js'), 'utf8');
-const indexSource = fs.readFileSync(path.join(rootDir, 'index.html'), 'utf8');
+const indexSource = fs.readFileSync(path.join(rootDir, 'calculator.html'), 'utf8');
 const calculatorCssSource = fs.readFileSync(path.join(rootDir, 'assets/css/a4-calculator.css'), 'utf8');
 
 test('A4 money parser accepts regular, non-breaking and narrow non-breaking spaces', () => {

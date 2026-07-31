@@ -143,6 +143,10 @@ button:disabled, input:disabled { opacity: .55; cursor: not-allowed; }
   margin-bottom: 14px;
 }
 
+.top-grid > * {
+  min-width: 0;
+}
+
 .panel {
   border: 1px solid var(--line);
   border-radius: 4px;
@@ -496,5 +500,13 @@ input[aria-invalid="true"] {
   .motivation-ledger-grid { grid-template-columns: repeat(2, minmax(150px, 1fr)); }
 }
 @media (max-width: 720px) {
+  .panel-title-row {
+    flex-wrap: wrap;
+  }
+
+  .expense-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .motivation-ledger-grid { grid-template-columns: 1fr; }
 }

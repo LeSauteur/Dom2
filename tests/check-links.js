@@ -101,8 +101,8 @@ const motivationEntry = fs.readFileSync(
   path.join(appRoot, 'motivation-calculator.html'),
   'utf8'
 );
-if (!/index\.html\?mode=motivation2026/.test(motivationEntry)) {
-  errors.push('motivation-calculator.html: expected index.html?mode=motivation2026 target');
+if (!/calculator\.html\?mode=motivation2026/.test(motivationEntry)) {
+  errors.push('motivation-calculator.html: expected calculator.html?mode=motivation2026 target');
 }
 
 if (errors.length > 0) {

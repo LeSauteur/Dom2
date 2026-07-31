@@ -56,7 +56,9 @@
 }
 
 .mode-nav a,
+.mode-nav button,
 .mode-footer__links a,
+.mode-footer__links button,
 .return-actions a {
   display: inline-flex;
   align-items: center;
@@ -68,11 +70,14 @@
   border-radius: 6px;
   background: #fff;
   color: var(--blue);
+  cursor: pointer;
   font-weight: 800;
   text-decoration: none;
 }
 
 .mode-nav a[aria-current="page"],
+.mode-nav button[aria-current="page"],
+.mode-footer__links a[aria-current="page"],
 .return-actions a.primary {
   border-color: var(--blue);
   background: var(--blue);
@@ -104,7 +109,9 @@
   }
 
   .mode-nav a,
+  .mode-nav button,
   .mode-footer__links a,
+  .mode-footer__links button,
   .return-actions a {
     flex: 1 1 132px;
   }
