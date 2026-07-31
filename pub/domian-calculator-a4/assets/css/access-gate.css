@@ -1,0 +1,111 @@
+html.access-pending body {
+  visibility: hidden;
+}
+
+html.access-pending .access-noscript {
+  visibility: visible;
+}
+
+.access-noscript {
+  display: block;
+  max-width: 720px;
+  margin: 48px auto;
+  padding: 18px 22px;
+  border: 1px solid #d5dae4;
+  border-radius: 12px;
+  background: #fff;
+  color: #172033;
+  font: 700 16px/1.5 "Trebuchet MS", "Segoe UI", sans-serif;
+  text-align: center;
+}
+
+.access-gate {
+  min-height: 100vh;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(36, 92, 153, 0.12), transparent 36%),
+    #f4f6f9;
+  color: #172033;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+}
+
+.access-gate[hidden] {
+  display: none;
+}
+
+.access-gate__card {
+  width: min(100%, 440px);
+  box-sizing: border-box;
+  padding: clamp(26px, 6vw, 42px);
+  border: 1px solid #d9dee8;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(23, 32, 51, 0.12);
+}
+
+.access-gate__eyebrow {
+  margin: 0 0 8px;
+  color: #245c99;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.access-gate h1 {
+  margin: 0;
+  font-size: clamp(28px, 6vw, 40px);
+  line-height: 1.08;
+}
+
+.access-gate p {
+  color: #667085;
+  line-height: 1.55;
+}
+
+.access-gate label {
+  display: block;
+  margin: 24px 0 8px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.access-gate input {
+  width: 100%;
+  min-height: 48px;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid #aeb8c7;
+  border-radius: 8px;
+  background: #fff;
+  color: #172033;
+  font: inherit;
+}
+
+.access-gate input:focus {
+  outline: 3px solid rgba(36, 92, 153, 0.2);
+  border-color: #245c99;
+}
+
+.access-gate button {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 14px;
+  border: 1px solid #245c99;
+  border-radius: 8px;
+  background: #245c99;
+  color: #fff;
+  cursor: pointer;
+  font: 800 16px "Trebuchet MS", "Segoe UI", sans-serif;
+}
+
+.access-gate__message {
+  min-height: 24px;
+  margin: 12px 0 0;
+  color: #b42318 !important;
+  font-size: 14px;
+  font-weight: 700;
+}

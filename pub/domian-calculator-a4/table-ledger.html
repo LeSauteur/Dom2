@@ -1,14 +1,20 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="access-pending" data-access-page="protected">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Домиан — ведомость сделок офиса</title>
   <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="assets/css/access-gate.css?v=portal-20260731">
   <link rel="stylesheet" href="assets/css/table-ledger.css?v=ledger-2026-20260731">
   <link rel="stylesheet" href="assets/css/navigation.css">
+  <script src="assets/js/site-config.js?v=portal-20260731"></script>
+  <script src="assets/js/access-gate.js?v=portal-20260731"></script>
 </head>
 <body>
+  <noscript class="access-noscript">
+    <span>Для работы портала необходимо включить JavaScript</span>
+  </noscript>
   <main class="ledger-page">
     <header class="mode-header">
       <div class="mode-header__top">
@@ -23,13 +29,12 @@
         </div>
       </div>
       <nav class="mode-nav" aria-label="Навигация по режимам">
-        <a href="start.html">На старт</a>
-        <a href="index.html">A4</a>
-        <a href="table-ledger.html" aria-current="page">Ведомость</a>
-        <a href="simple.html">Простой</a>
-        <a href="extended.html">Расширенный</a>
-        <a href="motivation-calculator.html">Мотивация 2026</a>
-        <a href="career.html">Карьера</a>
+        <a href="index.html" data-nav-route="home">Главная</a>
+        <a href="calculator.html" data-nav-route="calculator">Калькулятор</a>
+        <a href="motivation-calculator.html" data-nav-route="motivation">Мотивация 2026</a>
+        <a href="table.html" data-nav-route="table">Табличный</a>
+        <a href="career.html" data-nav-route="career">Карьера</a>
+        <button type="button" data-access-logout>Выйти</button>
       </nav>
     </header>
     <section class="notice" id="ledgerNotice">Заполните ведомость вручную или загрузите ранее сохранённые данные из A4.</section>
@@ -105,13 +110,12 @@
     <footer class="mode-footer">
       <p>Калькулятор показывает примерный финансовый результат офиса по введённым данным.</p>
       <nav class="mode-footer__links" aria-label="Нижняя навигация">
-        <a href="start.html">На старт</a>
-        <a href="index.html">Основной A4</a>
-        <a href="table-ledger.html" aria-current="page">Ведомость сделок</a>
-        <a href="simple.html">Простой режим</a>
-        <a href="extended.html">Расширенный режим</a>
-        <a href="motivation-calculator.html">Мотивация 2026</a>
-        <a href="career.html">Карьерные профили</a>
+        <a href="index.html" data-nav-route="home">Главная</a>
+        <a href="calculator.html" data-nav-route="calculator">Калькулятор</a>
+        <a href="motivation-calculator.html" data-nav-route="motivation">Мотивация 2026</a>
+        <a href="table.html" data-nav-route="table">Табличный</a>
+        <a href="career.html" data-nav-route="career">Карьера</a>
+        <button type="button" data-access-logout>Выйти</button>
       </nav>
     </footer>
   </main>

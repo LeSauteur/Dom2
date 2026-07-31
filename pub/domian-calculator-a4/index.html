@@ -1,418 +1,156 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="access-pending" data-access-page="portal">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Домиан — калькулятор экономики офиса</title>
+  <title>Домиан — центр управления офисом</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="assets/css/a4-calculator.css?v=demo-office-20260729">
-  <link rel="stylesheet" href="assets/css/navigation.css">
+  <link rel="stylesheet" href="assets/css/access-gate.css?v=portal-20260731">
+  <link rel="stylesheet" href="assets/css/portal.css?v=portal-20260731">
+  <script src="assets/js/site-config.js?v=portal-20260731"></script>
+  <script src="assets/js/access-gate.js?v=portal-20260731"></script>
 </head>
-<body>
-  <main class="page">
-    <header class="mode-header">
-      <div class="mode-header__top">
-        <div>
-          <p class="mode-header__project">Домиан — калькулятор офиса</p>
-          <h1 class="mode-header__title">Калькулятор экономики офиса</h1>
-          <p class="mode-header__subtitle">Текущий месяц: агенты, сделки, расходы, роялти, мотивации и итог собственнику.</p>
-        </div>
-        <div class="return-actions">
-          <a href="start.html">← На старт</a>
-          <a class="primary" href="table.html">Ведомость сделок</a>
-        </div>
-      </div>
-      <nav class="mode-nav" aria-label="Навигация по режимам">
-        <a href="start.html">На старт</a>
-        <a href="index.html" aria-current="page">Калькулятор</a>
-        <a href="motivation-calculator.html">Мотивация 2026</a>
-        <a href="table.html">Ведомость</a>
-        <a href="simple.html">Простой</a>
-        <a href="extended.html">Расширенный</a>
-        <a href="career.html">Профили</a>
-      </nav>
-    </header>
-    <header class="hero">
+<body class="portal-body">
+  <noscript class="access-noscript">
+    <span>Для работы портала необходимо включить JavaScript</span>
+  </noscript>
+
+  <section class="access-gate" data-access-gate hidden aria-labelledby="accessGateTitle">
+    <form class="access-gate__card" data-access-form>
+      <p class="access-gate__eyebrow">Закрытый портал собственника</p>
+      <h1 id="accessGateTitle">Доступ к центру управления</h1>
+      <p>Введите действующий код доступа. Авторизация сохраняется до начала следующего месяца.</p>
+      <label for="accessCode">Пароль</label>
+      <input
+        id="accessCode"
+        name="accessCode"
+        type="password"
+        autocomplete="current-password"
+        data-access-input
+        required
+      >
+      <button type="submit">Войти</button>
+      <p class="access-gate__message" data-access-message aria-live="polite"></p>
+    </form>
+  </section>
+
+  <main class="portal" data-portal-content hidden>
+    <header class="portal-hero">
       <div>
-        <p class="small-label">Основной калькулятор</p>
-        <h1>Экономика офиса Домиан</h1>
-        <p class="lead">Начните с расходов, затем добавьте агентов и личные сделки собственника. Калькулятор покажет, окупается ли офис сам или плюс появляется только благодаря собственнику.</p>
+        <p class="portal-hero__eyebrow">Портал собственника</p>
+        <h1>Домиан — центр управления офисом</h1>
+        <p>Ключевые инструменты и календарь важных событий</p>
       </div>
-      <aside class="hero-note">
-        <strong>Главное правило</strong>
-        <span>Роялти не добавляйте в расходы — калькулятор считает его автоматически.</span>
-      </aside>
+      <button class="portal-logout" type="button" data-access-logout>Выйти</button>
     </header>
 
-    <section class="toolbar" aria-label="Управление примером">
-      <a class="button ghost" href="start.html" title="Открыть экран выбора режима расчёта. Основной калькулятор остаётся доступным отдельно.">Выбор режима</a>
-      <button class="button ghost" type="button" data-action="open-table-mode" title="Дополнительный формат просмотра. Основной расчёт можно пройти и без него.">Табличный режим</button>
-      <button class="button primary" type="button" data-action="save-draft" title="Сохранить текущий ввод локально в этом браузере.">💾 Сохранить</button>
-      <span id="draftSaveStatus" class="draft-save-status draft-save-status--clean" data-draft-save-status aria-live="polite">Черновик не сохранён</span>
-      <button class="button ghost" type="button" data-action="clear-all" title="Сбросит только текущую форму активного месяца. Другие месяцы останутся сохранены.">Очистить текущую форму</button>
-      <button class="button primary" type="button" data-action="restore-example" title="Заполнить текущую форму фиксированным демонстрационным сценарием.">Заполнить пример</button>
-      <a class="button ghost demo-results-link" href="#result" data-demo-results-link hidden>Посмотреть результаты</a>
-    </section>
-
-    <div class="draft-save-panel" aria-live="polite">
-      <button class="button primary" type="button" data-action="save-draft" title="Сохранить текущий ввод локально в этом браузере.">💾 Сохранить</button>
-      <span class="draft-save-status draft-save-status--clean" data-draft-save-status>Черновик не сохранён</span>
-    </div>
-
-    <section class="calendar-panel" aria-labelledby="calendarTitle">
-      <div class="calendar-panel-head">
+    <section class="tools-section tools-section--primary" aria-labelledby="primaryToolsTitle">
+      <div class="section-heading">
         <div>
-          <span class="small-label">Правила выбранного месяца</span>
-          <h2 id="calendarTitle">Месяц расчёта</h2>
-          <p>Каждый месяц хранится отдельно. Переключение месяца не удаляет заполненные данные.</p>
+          <p class="section-heading__eyebrow">Основные сервисы</p>
+          <h2 id="primaryToolsTitle">Калькуляторы и рабочие разделы</h2>
         </div>
-        <label class="field calendar-month-field">
-          <span>Месяц</span>
-          <input id="selectedMonthInput" type="month" autocomplete="off">
-        </label>
       </div>
-      <div class="notice info calendar-phase-note">Итог считается по активному месяцу. Календарные статусы показывают обязательства выбранного периода.</div>
-      <div id="calendarStatusList" class="calendar-status-list" aria-live="polite"></div>
-    </section>
-
-    <section class="route-note" aria-labelledby="routeTitle">
-      <div class="route-note-head">
-        <span class="small-label">Маршрут расчёта</span>
-        <h2 id="routeTitle">Как пользоваться калькулятором</h2>
-        <p>Заполняйте сверху вниз, как бумажный бланк. Ведомость сделок нужна только тогда, когда удобнее работать с одной общей таблицей.</p>
-      </div>
-      <ol class="route-list">
-        <li><a href="#expenses">Расходы</a></li>
-        <li><a href="#agents">Агенты</a></li>
-        <li><a href="#ownerDeals">Личные сделки</a></li>
-        <li><a href="#result">Итог</a></li>
-        <li><a href="#profitability">Анализ</a></li>
-        <li data-motivation-only hidden><a href="#packageComparisonSection">Пакеты</a></li>
-        <li><a href="#forecast">Прогноз</a></li>
-      </ol>
-    </section>
-
-    <details class="help-panel">
-      <summary>
-        <span class="summary-label summary-closed">Показать короткие пояснения простыми словами</span>
-        <span class="summary-label summary-open">Скрыть короткие пояснения</span>
-        <span class="summary-action"><span class="summary-closed">Раскрыть ↓</span><span class="summary-open">Скрыть ↑</span></span>
-      </summary>
-      <div class="help-grid">
-        <p><strong>Оборот</strong> — вся комиссия офиса за месяц: агенты плюс личные сделки собственника.</p>
-        <p><strong>Комиссия агента</strong> — сколько агент принёс за месяц до выплаты ему.</p>
-        <p><strong>Роялти</strong> — автоматическая выплата по сетке Домиан, её не нужно добавлять в расходы вручную.</p>
-        <p><strong>Мотивации за счёт офиса</strong> — деньги, которые офис планирует потратить на стипендии, поездки, корпоративы и конгресс.</p>
-        <p><strong>Офис держится на собственнике</strong> — без личных сделок офис в минусе, а с ними выходит в плюс.</p>
-        <p><strong>Повышенная шкала</strong> — выбранный стартовый процент становится минимальным. Если обычная шкала даёт больший процент, применяется больший.</p>
-      </div>
-    </details>
-
-    <section class="sheet-grid">
-      <div class="main-column">
-        <section class="section-card workflow-section" id="expenses" aria-labelledby="expensesTitle" data-workflow-section="expenses">
-          <div class="section-head">
-            <div>
-              <span class="step-label">Шаг 1</span>
-              <h2 id="expensesTitle">Сколько офис съедает каждый месяц</h2>
-            </div>
-          <p class="hint">Сюда вводятся только постоянные расходы офиса. Роялти, выплаты агентам, рефералы и мотивации калькулятор считает отдельно, чтобы не было двойного учёта.</p>
-          </div>
-          <div class="workflow-summary" data-workflow-summary="expenses" hidden></div>
-          <div class="workflow-body" data-workflow-body="expenses">
-            <div id="expensesList" class="expense-list"></div>
-            <div class="paper-total">
-              <span>Итого расходов офиса</span>
-              <strong id="expensesInlineTotal">0 ₽</strong>
-            </div>
-            <div class="section-actions bottom-actions">
-              <button class="button add-action-button" type="button" data-action="add-expense">+ Добавить еще расход</button>
-            </div>
-            <div class="workflow-next-action">
-              <button class="button workflow-next-button" type="button" data-action="collapse-section" data-section-key="expenses">
-                <span class="workflow-next-kicker">✓ Расходы заполнены</span>
-                <span class="workflow-next-label">Перейти к агентам →</span>
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <section class="section-card workflow-section" id="agents" aria-labelledby="agentsTitle" data-workflow-section="agents">
-          <div class="section-head split">
-            <div>
-              <span class="step-label">Шаг 2</span>
-              <h2 id="agentsTitle">Кто приносит деньги</h2>
-            </div>
-            <button class="button add-action-button" id="addAgentBtn" type="button" data-workflow-body-control="agents">Добавить агента</button>
-          </div>
-          <div class="workflow-summary" data-workflow-summary="agents" hidden></div>
-          <div class="workflow-body" data-workflow-body="agents">
-            <p class="hint">Сначала выберите статус агента и способ ввода сделок. Комиссия агента — это вся сумма за месяц до выплаты агенту. Если точных сделок нет, можно использовать быстрый режим для грубой оценки.</p>
-            <div id="agentsList" class="agents-list"></div>
-            <div class="section-actions bottom-actions">
-              <button class="button add-action-button" id="addAgentBottomBtn" type="button">Добавить агента</button>
-            </div>
-            <div class="workflow-next-action">
-              <button class="button workflow-next-button" type="button" data-action="collapse-section" data-section-key="agents">
-                <span class="workflow-next-kicker">✓ Агенты заполнены</span>
-                <span class="workflow-next-label">Перейти к личным сделкам →</span>
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <section class="section-card workflow-section" id="ownerDeals" aria-labelledby="ownerTitle" data-workflow-section="ownerDeals">
-          <div class="section-head">
-            <div>
-              <span class="step-label">Шаг 3</span>
-              <h2 id="ownerTitle">Личные сделки собственника</h2>
-            </div>
-            <p class="hint">Этот блок показывает, держится ли офис сам или плюс появляется только благодаря личным продажам собственника. По этим сделкам агентская выплата равна 0, но роялти считается.</p>
-          </div>
-          <div class="workflow-summary" data-workflow-summary="ownerDeals" hidden></div>
-          <div class="workflow-body" data-workflow-body="ownerDeals">
-            <label class="field">
-              <span>Комиссия личных сделок за месяц</span>
-              <input id="ownerSalesInput" type="text" inputmode="numeric" autocomplete="off" data-money-input="true">
-            </label>
-            <div class="workflow-next-action">
-              <button class="button workflow-next-button" type="button" data-action="collapse-section" data-section-key="ownerDeals">
-                <span class="workflow-next-kicker">✓ Личные сделки заполнены</span>
-                <span class="workflow-next-label">Перейти к итогам →</span>
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <section class="section-card result-card" id="result" aria-labelledby="resultTitle">
-          <div class="section-head">
-            <div>
-              <span class="step-label">Результат 1</span>
-              <h2 id="resultTitle">Что осталось собственнику</h2>
-            </div>
-            <p class="hint">Сначала смотрите итог без личных сделок собственника, а потом с ними. Разница между этими двумя строками показывает, насколько офис зависит от собственника.</p>
-          </div>
-          <div id="resultStatus" class="result-status">Офис около нуля</div>
-          <dl class="totals">
-            <div><dt>Агенты продали</dt><dd id="agentTurnover">0 ₽</dd></div>
-            <div><dt>Личные сделки собственника</dt><dd id="ownerSales">0 ₽</dd></div>
-            <div><dt>Общий оборот</dt><dd id="totalTurnover">0 ₽</dd></div>
-            <div><dt>Выплаты агентам</dt><dd id="agentPayouts">0 ₽</dd></div>
-            <div><dt>Рефералы</dt><dd id="referrals">0 ₽</dd></div>
-            <div><dt>Мотивации за счёт офиса</dt><dd id="motivationReserves">0 ₽</dd></div>
-            <div><dt>Роялти</dt><dd id="royalty">0 ₽</dd></div>
-            <div><dt>Расходы офиса</dt><dd id="officeExpenses">0 ₽</dd></div>
-            <div><dt>Без личных сделок до вычета мотиваций офиса</dt><dd id="resultWithoutOwnerBeforeReserves">0 ₽</dd></div>
-            <div><dt>Итог без личных сделок</dt><dd id="resultWithoutOwner">0 ₽</dd></div>
-            <div><dt>С личными сделками до вычета мотиваций офиса</dt><dd id="resultWithOwnerBeforeReserves">0 ₽</dd></div>
-            <div class="total-line"><dt>Итог с личными сделками</dt><dd id="resultWithOwner">0 ₽</dd></div>
-          </dl>
-        </section>
-
-        <section class="section-card warning-card" aria-labelledby="warningsTitle">
-          <div class="section-head">
-            <div>
-              <span class="step-label">Контроль</span>
-              <h2 id="warningsTitle">Опасные места</h2>
-            </div>
-          </div>
-          <div id="warningsList" class="warnings-list"></div>
-        </section>
-
-        <section class="section-card" id="profitability" aria-labelledby="profitabilityTitle">
-          <div class="section-head">
-            <div>
-              <span class="step-label">Результат 2</span>
-              <h2 id="profitabilityTitle">Сколько каждый агент оставляет офису</h2>
-            </div>
-            <p class="hint">Из комиссии агента вычитаются выплата агенту, реферал, мотивации за счёт офиса, примерная доля роялти и часть общих расходов. Если остаток отрицательный, офис теряет деньги на этих условиях.</p>
-          </div>
-          <div class="term-grid">
-            <p><strong>Примерная доля роялти</strong> — сколько роялти условно приходится на этого агента. Точная ставка зависит от общего оборота офиса.</p>
-            <p><strong>Часть общих расходов офиса</strong> — расходы офиса, разделённые между агентами для оценки.</p>
-            <p><strong>Остаток офису</strong> — комиссия агента минус выплата агенту, реферал, примерная доля роялти, мотивации за счёт офиса и его часть общих расходов.</p>
-          </div>
-          <div id="profitabilityList" class="profitability-list"></div>
-        </section>
-
-        <section class="section-card package-comparison-section" id="packageComparisonSection" aria-labelledby="packageComparisonTitle" hidden>
-          <details class="package-comparison-disclosure">
-            <summary class="package-comparison-summary">
-              <span>
-                <span class="step-label">Ключевое сравнение</span>
-                <strong id="packageComparisonTitle">Один агент — все пакеты 2026</strong>
-                <small>Открывайте только тогда, когда нужно сравнить условия пакетов.</small>
-              </span>
-            </summary>
-            <div class="package-comparison-content">
-              <div class="section-head split">
-                <p class="hint" id="packageComparisonContext">Сделки и расходы одинаковы во всех строках.</p>
-                <label class="field package-comparison-agent-field">
-                  <span>Сравнить агента</span>
-                  <select id="packageComparisonAgent"></select>
-                </label>
-              </div>
-              <div class="table-wrap package-comparison-wrap">
-                <table class="scheme-table package-comparison-table">
-                  <thead>
-                    <tr>
-                      <th>Пакет</th>
-                      <th>Минимальный процент агенту</th>
-                      <th>Выплата агенту</th>
-                      <th>Мотивации офиса</th>
-                      <th>Мотивации агента</th>
-                      <th>Остаток офису</th>
-                      <th>Окупится примерно при комиссии от</th>
-                      <th>Итог для офиса</th>
-                    </tr>
-                  </thead>
-                  <tbody id="packageComparisonRows"></tbody>
-                </table>
-              </div>
-            </div>
-          </details>
-        </section>
-
-        <section class="section-card management-card" aria-labelledby="managementTitle">
-          <div class="section-head">
-            <div>
-              <span class="step-label">Итог</span>
-              <h2 id="managementTitle">Короткий вывод для собственника</h2>
-            </div>
-            <p class="hint">Здесь простыми словами показано, приносит ли офис прибыль, какие агенты не покрывают расходы и что проверить в первую очередь.</p>
-          </div>
-          <div id="managementSummary" class="management-summary"></div>
-        </section>
-
-        <section class="section-card forecast-card" id="forecast" aria-labelledby="forecastTitle">
-          <div class="section-head">
-            <div>
-              <span class="step-label">Прогноз</span>
-              <h2 id="forecastTitle">Прогноз при текущих показателях</h2>
-            </div>
-            <p class="hint">Калькулятор умножает текущий месяц на 3, 6 или 12. Это пример, а не сумма фактически сохранённых месяцев.</p>
-          </div>
-          <div class="notice info">В прогнозе роялти считается как сумма одинаковых месяцев. Если в реальности оборот по месяцам будет отличаться, ставка роялти может измениться.</div>
-          <div class="table-wrap forecast-wrap">
-            <table class="forecast-table">
-              <thead>
-                <tr>
-                  <th>Период</th>
-                  <th>Оборот</th>
-                  <th>Выплаты агентам</th>
-                  <th>Рефералы</th>
-                  <th>Мотивации за счёт офиса</th>
-                  <th>Роялти</th>
-                  <th>Расходы</th>
-                  <th>Итог без собственника</th>
-                  <th>Итог с собственником</th>
-                </tr>
-              </thead>
-              <tbody id="forecastRows"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <section class="section-card" id="scheme" aria-labelledby="schemeTitle">
-          <div class="section-head">
-            <div>
-              <span class="step-label">Дополнительно</span>
-              <h2 id="schemeTitle">Проверка процента агенту</h2>
-            </div>
-            <p class="hint">Это дополнительная проверка условий. Если в колонке «Остаток офису» сумма со знаком минус, агент не покрывает свою часть расходов.</p>
-          </div>
-
-          <div class="form-grid checker-grid">
-            <label class="field">
-              <span>Комиссия агента в месяц</span>
-              <input id="schemeCommission" type="text" inputmode="numeric" autocomplete="off" data-money-input="true" data-scheme-field="commission">
-            </label>
-            <label class="field">
-              <span>Количество сделок</span>
-              <input id="schemeDealCount" type="number" min="1" step="1" data-scheme-field="dealCount">
-            </label>
-            <label class="field">
-              <span>Приведённый агент</span>
-              <select id="schemeIntroduced" data-scheme-field="introduced">
-                <option value="false">Нет</option>
-                <option value="true">Да</option>
-              </select>
-            </label>
-            <label class="field">
-              <span>Доля расходов агента</span>
-              <select id="schemeExpenseShareMode" data-scheme-field="expenseShareMode">
-                <option value="auto">Авто из офиса</option>
-                <option value="manual">Ручная сумма</option>
-              </select>
-            </label>
-            <label class="field">
-              <span>Ручная доля расходов</span>
-              <input id="schemeManualExpenseShare" type="text" inputmode="numeric" autocomplete="off" data-money-input="true" data-scheme-field="manualExpenseShare">
-              <small>Это доля офисных расходов, которую вы временно проверяете на одном агенте. Сейчас в расчёте используется: <b id="schemeExpenseShare">0 ₽</b></small>
-            </label>
-            <label class="field">
-              <span>Мотивации учитывать</span>
-              <input id="schemeMotivationReserve" type="text" inputmode="numeric" autocomplete="off" data-money-input="true" data-scheme-field="motivationReserve">
-              <small>Заполните только для проверки варианта, в котором офис одновременно платит высокий процент и оплачивает мотивации.</small>
-            </label>
-            <label class="field">
-              <span>Свой процент на все сделки, %</span>
-              <input id="schemeManualRate" type="number" min="0" max="100" step="1" data-scheme-field="manualRate">
-            </label>
-          </div>
-
-          <div class="table-wrap">
-            <table class="scheme-table">
-              <thead>
-                <tr>
-                  <th>Вариант</th>
-                  <th>Выплата</th>
-                  <th>Реферал</th>
-                  <th>Роялти</th>
-                  <th>До расходов</th>
-                  <th>Остаток офису</th>
-                  <th>Окупится примерно при комиссии от</th>
-                  <th>Вывод</th>
-                </tr>
-              </thead>
-              <tbody id="schemeResults"></tbody>
-            </table>
-          </div>
-          <p class="hint scheme-hint">Если в колонке «Остаток офису» сумма со знаком минус, агент не покрывает свою часть расходов. Соседняя колонка показывает примерную комиссию, при которой остаток станет неотрицательным.</p>
-          <div id="schemeAdvice" class="scheme-advice"></div>
-        </section>
+      <div class="tool-grid">
+        <a class="tool-card" href="calculator.html">
+          <span>01</span>
+          <h3>Калькулятор A4</h3>
+          <p>Экономика офиса, сделки, расходы и итог собственнику.</p>
+          <strong>Открыть калькулятор →</strong>
+        </a>
+        <a class="tool-card" href="motivation-calculator.html">
+          <span>02</span>
+          <h3>Мотивация 2026</h3>
+          <p>Пакеты, выплаты агентам и мотивационные расходы.</p>
+          <strong>Открыть мотивацию →</strong>
+        </a>
+        <a class="tool-card" href="table.html">
+          <span>03</span>
+          <h3>Табличный режим</h3>
+          <p>Ведомость сделок и итоговая таблица по агентам.</p>
+          <strong>Открыть ведомость →</strong>
+        </a>
+        <a class="tool-card" href="career.html">
+          <span>04</span>
+          <h3>Карьера</h3>
+          <p>Профили сотрудников, пакеты и история решений.</p>
+          <strong>Открыть карьеру →</strong>
+        </a>
       </div>
     </section>
-    <section class="danger-service-panel" aria-labelledby="dangerServiceTitle">
-      <div>
-        <span class="small-label">Сервисная операция</span>
-        <h2 id="dangerServiceTitle">Полный сброс калькулятора</h2>
-        <p>Удалит все сохранённые месяцы, текущий черновик и данные для ведомости из этого браузера. После обновления страница откроется чистой.</p>
+
+    <section class="calendar-card" aria-labelledby="calendarTitle">
+      <div class="section-heading">
+        <div>
+          <p class="section-heading__eyebrow">Главное</p>
+          <h2 id="calendarTitle">Календарь важных событий</h2>
+          <p>Общие события франшизы отображаются по московскому времени.</p>
+        </div>
+        <div class="calendar-actions">
+          <a
+            class="portal-button portal-button--secondary"
+            href="https://calendar.google.com/calendar/embed?src=5b4b93c7f9aa9b97340a1b7858163771ac5e518814556cf6e1b4d8c2bfb155f7%40group.calendar.google.com&amp;ctz=Europe%2FMoscow"
+            target="_blank"
+            rel="noopener"
+          >Открыть календарь</a>
+          <a
+            class="portal-button"
+            href="https://calendar.google.com/calendar/ical/5b4b93c7f9aa9b97340a1b7858163771ac5e518814556cf6e1b4d8c2bfb155f7%40group.calendar.google.com/public/basic.ics"
+          >Подписаться через iCal</a>
+        </div>
       </div>
-      <button class="button danger" type="button" data-action="hard-reset">Удалить все сохранённые данные</button>
+      <div class="calendar-frame">
+        <iframe
+          data-calendar-frame
+          data-src="https://calendar.google.com/calendar/embed?src=5b4b93c7f9aa9b97340a1b7858163771ac5e518814556cf6e1b4d8c2bfb155f7%40group.calendar.google.com&amp;ctz=Europe%2FMoscow"
+          title="Календарь важных событий франшизы Домиан"
+          loading="lazy"
+          frameborder="0"
+          scrolling="no"
+        ></iframe>
+      </div>
+      <p class="calendar-help">Если встроенный календарь не открылся, используйте кнопки выше.</p>
     </section>
 
-    <footer class="mode-footer">
-      <p>Калькулятор показывает примерный финансовый результат офиса по введённым данным.</p>
-      <nav class="mode-footer__links" aria-label="Нижняя навигация">
-        <a href="start.html">На старт</a>
-        <a href="index.html" aria-current="page">Калькулятор</a>
-        <a href="motivation-calculator.html">Мотивация 2026</a>
-        <a href="table.html">Ведомость сделок</a>
-        <a href="simple.html">Простой режим</a>
-        <a href="extended.html">Расширенный режим</a>
-        <a href="career.html">Карьерные профили</a>
-      </nav>
+    <section class="tools-section" aria-labelledby="toolsTitle">
+      <div class="section-heading">
+        <div>
+          <p class="section-heading__eyebrow">Рабочие разделы</p>
+          <h2 id="toolsTitle">Инструменты собственника</h2>
+        </div>
+      </div>
+      <div class="tool-grid">
+        <a class="tool-card" href="calculator.html">
+          <span>01</span>
+          <h3>Калькулятор A4</h3>
+          <p>Экономика офиса, сделки, расходы и итог собственнику.</p>
+          <strong>Открыть калькулятор →</strong>
+        </a>
+        <a class="tool-card" href="motivation-calculator.html">
+          <span>02</span>
+          <h3>Мотивация 2026</h3>
+          <p>Пакеты, выплаты агентам и мотивационные расходы.</p>
+          <strong>Открыть мотивацию →</strong>
+        </a>
+        <a class="tool-card" href="table.html">
+          <span>03</span>
+          <h3>Табличный режим</h3>
+          <p>Ведомость сделок и итоговая таблица по агентам.</p>
+          <strong>Открыть ведомость →</strong>
+        </a>
+        <a class="tool-card" href="career.html">
+          <span>04</span>
+          <h3>Карьера</h3>
+          <p>Профили сотрудников, пакеты и история решений.</p>
+          <strong>Открыть карьеру →</strong>
+        </a>
+      </div>
+    </section>
+
+    <footer class="portal-footer">
+      <p>Доступ действует до начала следующего месяца по московскому времени.</p>
+      <button type="button" data-access-logout>Выйти</button>
     </footer>
   </main>
-
-  <script src="assets/js/constants.js?v=demo-office-20260729"></script>
-  <script src="assets/js/policies/motivation-policy-2026.js"></script>
-  <script src="assets/js/domain/benefit-engine.js"></script>
-  <script src="assets/js/career-storage.js"></script>
-  <script src="assets/js/calculations.js?v=motivation-compact-20260729"></script>
-  <script src="assets/js/calendar-policy.js?v=motivation-compact-20260729"></script>
-  <script src="assets/js/domain/motivation-calculator-engine.js"></script>
-  <script src="assets/js/app.js?v=demo-office-20260729"></script>
 </body>
 </html>
