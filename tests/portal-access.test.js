@@ -247,3 +247,47 @@ test('table office inputs stack without page overflow on mobile', () => {
     /@media \(max-width: 720px\) \{[\s\S]*?\.expense-row \{\s*grid-template-columns: minmax\(0, 1fr\);/
   );
 });
+
+test('context instructions are shared, closed by default and placed before working controls', () => {
+  const pages = {
+    'career.html': ['data-section-instructions="career" hidden', 'class="career-layout"'],
+    'calculator.html': ['data-section-instructions="motivation" hidden', 'class="hero"'],
+    'table-ledger.html': ['data-section-instructions="ledger" hidden', 'class="ledger-lifecycle"']
+  };
+
+  Object.entries(pages).forEach(([fileName, markers]) => {
+    const html = read(fileName);
+    assert.match(html, /assets\/css\/section-instructions\.css/);
+    assert.match(html, /assets\/js\/section-instructions\.js/);
+    assert.ok(html.indexOf(markers[0]) < html.indexOf(markers[1]), fileName);
+  });
+
+  const component = read('assets/js/section-instructions.js');
+  assert.match(component, /<details class="section-instructions">/);
+  assert.match(component, /<summary>Как пользоваться разделом и действующими правилами<\/summary>/);
+  assert.doesNotMatch(component, /<details class="section-instructions" open/);
+  assert.match(component, /target="_blank" rel="noopener noreferrer"/);
+});
+
+test('instruction document links and advertising point value are centralized', () => {
+  assert.equal(config.ADVERTISING_POINT_RUBLES, 350);
+  assert.match(config.DOCUMENTS.advertising.url, /^https:\/\/docs\.yandex\.ru\/docs\/view\?/);
+  assert.match(config.DOCUMENTS.motivation2026.url, /^https:\/\/docs\.yandex\.ru\/docs\/view\?/);
+
+  ['calculator.html', 'career.html', 'table-ledger.html', 'assets/js/section-instructions.js'].forEach((fileName) => {
+    assert.doesNotMatch(read(fileName), /docs\.yandex\.ru\/docs\/view/);
+  });
+});
+
+test('instructions cover current controls without restoring the removed reporting step', () => {
+  const component = read('assets/js/section-instructions.js');
+
+  assert.match(component, /Загрузить из A4/);
+  assert.match(component, /автоматически сохраняются/);
+  assert.match(component, /Пакет и минимальный процент, достигнутые по стажу, гарантированы/);
+  assert.match(component, /Базовая и расширенная модели дополняют друг друга/);
+  assert.match(component, /зарегистрированным в CRM рабочим номером/);
+  assert.match(component, /Технический отдел/);
+  assert.doesNotMatch(component, /переда(?:е|ё)т[^.]{0,100}франшизн/i);
+  assert.doesNotMatch(component, /франшизн[^.]{0,100}отдел/i);
+});
