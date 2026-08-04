@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="assets/css/access-gate.css?v=portal-20260731">
   <link rel="stylesheet" href="assets/css/navigation.css">
   <link rel="stylesheet" href="assets/css/career-mode.css">
+  <link rel="stylesheet" href="assets/css/section-instructions.css?v=instructions-20260731">
   <script src="assets/js/site-config.js?v=portal-20260731"></script>
   <script src="assets/js/access-gate.js?v=portal-20260731"></script>
 </head>
@@ -48,7 +49,14 @@
       </div>
     </section>
 
-    <div class="career-layout">
+    <div data-section-instructions="career" hidden></div>
+
+    <div class="career-view-switch" role="tablist" aria-label="Представление раздела Карьера">
+      <button class="career-view-switch__button is-active" type="button" role="tab" aria-selected="true" data-career-view-button="card">Карточка сотрудника</button>
+      <button class="career-view-switch__button" type="button" role="tab" aria-selected="false" data-career-view-button="report">Сводная таблица</button>
+    </div>
+
+    <div class="career-layout" data-career-view="card">
       <aside class="profile-panel">
         <div class="section-head">
           <div>
@@ -247,6 +255,86 @@
       </div>
     </div>
 
+    <section class="career-report" data-career-view="report" hidden>
+      <div class="career-report-toolbar panel">
+        <div class="career-report-period">
+          <label class="field">
+            <span>Год</span>
+            <input id="reportYear" type="number" min="2020" max="2100" step="1">
+          </label>
+          <label class="field">
+            <span>Полугодие</span>
+            <select id="reportHalfYear">
+              <option value="1">Первое</option>
+              <option value="2">Второе</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Дата оценки стажа</span>
+            <input id="reportAsOfDate" type="date">
+          </label>
+          <label class="field">
+            <span>Условия действуют с</span>
+            <input id="reportEffectivePeriod" type="month" readonly>
+          </label>
+        </div>
+        <div class="career-report-actions">
+          <button class="button" type="button" data-report-action="add">Добавить сотрудника</button>
+          <button class="button button--primary" type="button" data-report-action="calculate">Рассчитать всех</button>
+          <button class="button" type="button" data-report-action="save">Сохранить</button>
+          <button class="button" type="button" data-report-action="print">Печать / PDF</button>
+        </div>
+        <div class="career-report-heading">
+          <div>
+            <span class="eyebrow">Сводная ведомость</span>
+            <h2 id="careerReportTitle">НА 1 ПОЛУГОДИЕ 2026 ГОДА</h2>
+          </div>
+          <span id="careerReportStatus" class="career-report-status career-report-status--clean" aria-live="polite">Текущий период ещё не сохранён</span>
+        </div>
+      </div>
+
+      <div id="careerReportNotice" class="career-report-notice" aria-live="polite" hidden></div>
+      <div class="career-report-table-wrap">
+        <table class="career-report-table">
+          <thead>
+            <tr>
+              <th>№</th>
+              <th class="career-report-name-column">Ф. И. О. сотрудника</th>
+              <th>Дата начала непрерывной работы</th>
+              <th>Стаж</th>
+              <th>Доход за полугодие, ₽</th>
+              <th>Уровень</th>
+              <th>Итоговый пакет</th>
+              <th>% зарплаты</th>
+              <th>Море / горы</th>
+              <th>Заграница</th>
+              <th>Реклама</th>
+              <th>Корпоратив</th>
+              <th>Стипендия</th>
+              <th class="career-report-actions-column">Действия</th>
+            </tr>
+          </thead>
+          <tbody id="careerReportRows"></tbody>
+        </table>
+      </div>
+
+      <div class="career-print-report" aria-hidden="true">
+        <header>
+          <h1 id="careerPrintTitle"></h1>
+          <p>Дата расчёта: <span id="careerPrintDate"></span> · Версия правил: <span id="careerPrintPolicy"></span></p>
+        </header>
+        <table>
+          <thead>
+            <tr>
+              <th>№</th><th>Ф. И. О.</th><th>Дата начала работы</th><th>Стаж</th><th>Доход за полугодие</th><th>% з/п</th><th>Море / горы</th><th>Заграница</th><th>Реклама</th><th>Корпоратив</th><th>Стипендия</th>
+            </tr>
+          </thead>
+          <tbody id="careerPrintRows"></tbody>
+        </table>
+        <p class="career-print-signature">Ответственный: ____________________ / ____________________</p>
+      </div>
+    </section>
+
     <footer class="mode-footer">
       <p>Профили сотрудников хранятся отдельно и не перезаписывают сохранённые месяцы A4.</p>
       <nav class="mode-footer__links" aria-label="Нижняя навигация">
@@ -263,7 +351,10 @@
   <script src="assets/js/policies/motivation-policy-2026.js"></script>
   <script src="assets/js/domain/career-engine.js"></script>
   <script src="assets/js/domain/benefit-engine.js"></script>
+  <script src="assets/js/domain/career-report-engine.js"></script>
   <script src="assets/js/career-storage.js"></script>
   <script src="assets/js/career-mode.js"></script>
+  <script src="assets/js/career-report.js"></script>
+  <script src="assets/js/section-instructions.js?v=instructions-20260731"></script>
 </body>
 </html>

@@ -203,6 +203,31 @@
     return candidates.length ? clone(candidates[0]) : null;
   }
 
+  function getDecision(profileId, period) {
+    var selectedProfileId = String(profileId || '').trim();
+    var selectedPeriod = String(period || '').trim();
+    var decision = read().decisions.find(function (item) {
+      return item.profileId === selectedProfileId
+        && item.effectivePeriod === selectedPeriod;
+    });
+    return decision ? clone(decision) : null;
+  }
+
+  function getPreviousDecision(profileId, period) {
+    var selectedProfileId = String(profileId || '').trim();
+    var selectedPeriod = String(period || '').trim();
+    var candidates = read().decisions.filter(function (item) {
+      return item.profileId === selectedProfileId
+        && (!selectedPeriod || (item.effectivePeriod && item.effectivePeriod < selectedPeriod));
+    });
+    candidates.sort(function (left, right) {
+      var leftKey = (left.effectivePeriod || '') + '|' + (left.calculatedAt || '');
+      var rightKey = (right.effectivePeriod || '') + '|' + (right.calculatedAt || '');
+      return rightKey.localeCompare(leftKey);
+    });
+    return candidates.length ? clone(candidates[0]) : null;
+  }
+
   function getA4Integration(a4AgentId, directProfileId, period) {
     var store = read();
     var profileId = String(directProfileId || '').trim();
@@ -272,6 +297,8 @@
     deleteProfile: deleteProfile,
     saveDecision: saveDecision,
     linkProfileToA4: linkProfileToA4,
+    getDecision: getDecision,
+    getPreviousDecision: getPreviousDecision,
     getLatestDecision: getLatestDecision,
     getA4Integration: getA4Integration
   };
