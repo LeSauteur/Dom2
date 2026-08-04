@@ -197,6 +197,20 @@ textarea {
   color: var(--green);
 }
 
+.career-report-status--error {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.career-report-notice {
+  padding: 12px 14px;
+  border: 1px solid #edb9bd;
+  border-radius: 10px;
+  background: var(--red-soft);
+  color: var(--red);
+  font-weight: 700;
+}
+
 .career-report-table-wrap {
   max-width: 100%;
   overflow-x: auto;

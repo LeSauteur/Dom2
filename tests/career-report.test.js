@@ -156,3 +156,80 @@ test('печатное представление отделено от упра
   assert.match(script, /escapeHtml\(row\.profile\.name/);
   assert.match(script, /escapeHtml\(row\.profile\.notes/);
 });
+
+test('старое решение без дохода сохраняет выбранный уровень и пакет', () => {
+  const { CareerReportEngine } = createContext();
+  const legacyDecision = {
+    input: {
+      asOfDate: '2026-01-15',
+      previousPerformancePackage: 'standard',
+      halfYearResult: { confirmed: true, level: 5 },
+      halfYearLevel: 5
+    },
+    result: { performancePackage: 'premium' }
+  };
+  const reportValues = CareerReportEngine.valuesForPeriod(legacyDecision, null, '2026-08-04');
+  const recalculated = CareerReportEngine.calculateRow(profile(), reportValues, '2026-01', null);
+
+  assert.equal(reportValues.asOfDate, '2026-01-15');
+  assert.equal(reportValues.halfYearCommission, 0);
+  assert.equal(reportValues.halfYearCommissionAvailable, false);
+  assert.equal(reportValues.legacyHalfYearLevel, 5);
+  assert.equal(recalculated.level, 5);
+  assert.equal(recalculated.result.performancePackage, 'premium');
+});
+
+test('новое полугодие переносит только предыдущий пакет и стандартные стоимости', () => {
+  const { CareerReportEngine } = createContext();
+  const previousDecision = {
+    input: {
+      asOfDate: '2026-01-15',
+      halfYearCommission: 3000000,
+      quarterDeposits: 900000,
+      quarterlyCommission: 1200000,
+      previousMonthDeposits: 400000,
+      officePlanCompleted: true,
+      agentParticipated: true,
+      travelQuarterPartnershipConfirmed: true,
+      mountainSeaCost: 99000,
+      travelCost: 990000,
+      corporateCost: 88000
+    },
+    result: { performancePackage: 'premiumPlus' }
+  };
+  const nextPeriodValues = CareerReportEngine.valuesForPeriod(null, previousDecision, '2026-07-15');
+
+  assert.equal(nextPeriodValues.asOfDate, '2026-07-15');
+  assert.equal(nextPeriodValues.previousPerformancePackage, 'premiumPlus');
+  assert.equal(nextPeriodValues.halfYearCommission, 0);
+  assert.equal(nextPeriodValues.quarterDeposits, 0);
+  assert.equal(nextPeriodValues.quarterlyCommission, 0);
+  assert.equal(nextPeriodValues.previousMonthDeposits, 0);
+  assert.equal(nextPeriodValues.officePlanCompleted, false);
+  assert.equal(nextPeriodValues.agentParticipated, false);
+  assert.equal(nextPeriodValues.travelQuarterPartnershipConfirmed, false);
+  assert.equal(nextPeriodValues.mountainSeaCost, 15000);
+  assert.equal(nextPeriodValues.travelCost, 100000);
+  assert.equal(nextPeriodValues.corporateCost, 20000);
+});
+
+test('сохранение профиля требует непустое Ф. И. О.', () => {
+  const { CareerStorage } = createContext();
+  assert.throws(
+    () => CareerStorage.saveProfile(profile({ name: '   ' })),
+    /Ф\. И\. О\./
+  );
+});
+
+test('ведомость предупреждает о потере изменений и обновляет список карточек', () => {
+  const reportScript = fs.readFileSync(path.join(projectRoot, 'assets/js/career-report.js'), 'utf8');
+  const cardScript = fs.readFileSync(path.join(projectRoot, 'assets/js/career-mode.js'), 'utf8');
+  const html = fs.readFileSync(path.join(projectRoot, 'career.html'), 'utf8');
+
+  assert.match(reportScript, /function confirmDiscard\(\)/);
+  assert.match(reportScript, /window\.addEventListener\('beforeunload'/);
+  assert.match(reportScript, /new Event\('career-storage-changed'\)/);
+  assert.match(reportScript, /data-report-field="name" required/);
+  assert.match(cardScript, /addEventListener\('career-storage-changed'/);
+  assert.match(html, /Дата оценки стажа: <span id="careerPrintDate"/);
+});

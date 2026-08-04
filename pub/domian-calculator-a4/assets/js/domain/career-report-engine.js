@@ -25,6 +25,75 @@
     return level;
   }
 
+  function hasOwn(source, key) {
+    return Boolean(source && Object.prototype.hasOwnProperty.call(source, key));
+  }
+
+  function normalizedLevel(value) {
+    var level = Math.floor(Number(value) || 0);
+    return level >= 1 && level <= 7 ? level : 0;
+  }
+
+  function savedHalfYearLevel(input) {
+    var source = input && typeof input === 'object' ? input : {};
+    var savedResult = source.halfYearResult && typeof source.halfYearResult === 'object'
+      ? source.halfYearResult
+      : {};
+
+    if (source.halfYearCommissionAvailable !== false && hasOwn(source, 'halfYearCommission')) {
+      return halfYearLevel(source.halfYearCommission);
+    }
+    return normalizedLevel(savedResult.level || source.halfYearLevel);
+  }
+
+  function levelFromValues(values) {
+    var source = values && typeof values === 'object' ? values : {};
+    return source.halfYearCommissionAvailable === false
+      ? normalizedLevel(source.legacyHalfYearLevel)
+      : halfYearLevel(source.halfYearCommission);
+  }
+
+  function valuesForPeriod(exactDecision, previousDecision, fallbackDate) {
+    var exact = exactDecision && typeof exactDecision === 'object' ? exactDecision : null;
+    var exactInput = exact && exact.input && typeof exact.input === 'object' ? exact.input : {};
+    var exactResult = exact && exact.result && typeof exact.result === 'object' ? exact.result : {};
+    var previousResult = previousDecision && previousDecision.result && typeof previousDecision.result === 'object'
+      ? previousDecision.result
+      : {};
+    var commissionAvailable = !exact
+      || (exactInput.halfYearCommissionAvailable !== false && hasOwn(exactInput, 'halfYearCommission'));
+
+    return {
+      asOfDate: exactInput.asOfDate || fallbackDate || '',
+      halfYearCommission: exact ? positiveNumber(exactInput.halfYearCommission) : 0,
+      halfYearCommissionAvailable: commissionAvailable,
+      legacyHalfYearLevel: exact && !commissionAvailable ? savedHalfYearLevel(exactInput) : 0,
+      halfYearResultConfirmed: exact
+        ? Boolean(exactInput.halfYearResult && exactInput.halfYearResult.confirmed === true)
+        : true,
+      previousPerformancePackage: exact
+        ? (exactInput.previousPerformancePackage || exactResult.performancePackage || previousResult.performancePackage || 'standard')
+        : (previousResult.performancePackage || 'standard'),
+      quarterDeposits: exact ? positiveNumber(exactInput.quarterDeposits) : 0,
+      quarterlyCommission: exact ? positiveNumber(exactInput.quarterlyCommission) : 0,
+      previousMonthDeposits: exact ? positiveNumber(exactInput.previousMonthDeposits) : 0,
+      officePlanCompleted: exact ? exactInput.officePlanCompleted === true : false,
+      agentParticipated: exact ? exactInput.agentParticipated === true : false,
+      travelQuarterPartnershipConfirmed: exact
+        ? exactInput.travelQuarterPartnershipConfirmed === true
+        : false,
+      mountainSeaCost: exact && exactInput.mountainSeaCost !== undefined
+        ? positiveNumber(exactInput.mountainSeaCost)
+        : 15000,
+      travelCost: exact && exactInput.travelCost !== undefined
+        ? positiveNumber(exactInput.travelCost)
+        : 100000,
+      corporateCost: exact && exactInput.corporateCost !== undefined
+        ? positiveNumber(exactInput.corporateCost)
+        : 20000
+    };
+  }
+
   function periodFromSelection(year, half) {
     var normalizedYear = Math.max(2000, Math.min(2100, Math.floor(Number(year) || new Date().getFullYear())));
     return normalizedYear + (String(half) === '2' ? '-07' : '-01');
@@ -86,7 +155,7 @@
   }
 
   function buildInput(profile, values, period, previousDecision) {
-    var level = halfYearLevel(values.halfYearCommission);
+    var level = levelFromValues(values);
     var confirmed = values.halfYearResultConfirmed === true;
     var previousPackage = values.previousPerformancePackage
       || (previousDecision && previousDecision.result && previousDecision.result.performancePackage)
@@ -100,6 +169,7 @@
       effectivePeriod: period,
       previousPerformancePackage: previousPackage,
       halfYearCommission: positiveNumber(values.halfYearCommission),
+      halfYearCommissionAvailable: values.halfYearCommissionAvailable !== false,
       halfYearResult: { confirmed: confirmed, level: confirmed ? level : null },
       halfYearLevel: confirmed ? level : 0,
       quarterDeposits: positiveNumber(values.quarterDeposits),
@@ -127,7 +197,7 @@
       input: input,
       result: decision,
       benefits: benefits,
-      level: halfYearLevel(input.halfYearCommission),
+      level: savedHalfYearLevel(input),
       tenureLabel: fullYearsMonths(decision.tenureMonths, Boolean(profile.employmentStartDate)),
       motivation: {
         mountainSea: benefitLabel(findBenefit(benefits, 'mountainSea')),
@@ -144,6 +214,9 @@
   root.CareerReportEngine = {
     positiveNumber: positiveNumber,
     halfYearLevel: halfYearLevel,
+    savedHalfYearLevel: savedHalfYearLevel,
+    levelFromValues: levelFromValues,
+    valuesForPeriod: valuesForPeriod,
     periodFromSelection: periodFromSelection,
     reportTitle: reportTitle,
     fullYearsMonths: fullYearsMonths,

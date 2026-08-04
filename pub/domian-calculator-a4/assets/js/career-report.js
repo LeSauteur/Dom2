@@ -5,7 +5,8 @@
     rows: [],
     period: '',
     calculated: false,
-    saved: false
+    saved: false,
+    hasUnsavedChanges: false
   };
   var elements = {};
 
@@ -47,46 +48,37 @@
     return CareerReportEngine.periodFromSelection(elements.year.value, elements.half.value);
   }
 
-  function defaultValues(profile, source) {
-    var input = source && source.input ? source.input : {};
-    var result = source && source.result ? source.result : {};
-    return {
-      asOfDate: input.asOfDate || elements.asOf.value || localDate(),
-      halfYearCommission: number(input.halfYearCommission),
-      halfYearResultConfirmed: input.halfYearResult ? input.halfYearResult.confirmed === true : true,
-      previousPerformancePackage: input.previousPerformancePackage || result.performancePackage || 'standard',
-      quarterDeposits: number(input.quarterDeposits),
-      quarterlyCommission: number(input.quarterlyCommission),
-      previousMonthDeposits: number(input.previousMonthDeposits),
-      officePlanCompleted: input.officePlanCompleted === true,
-      agentParticipated: input.agentParticipated === true,
-      travelQuarterPartnershipConfirmed: input.travelQuarterPartnershipConfirmed === true,
-      mountainSeaCost: input.mountainSeaCost === undefined ? 15000 : number(input.mountainSeaCost),
-      travelCost: input.travelCost === undefined ? 100000 : number(input.travelCost),
-      corporateCost: input.corporateCost === undefined ? 20000 : number(input.corporateCost)
-    };
+  function defaultValues(exact, previous) {
+    return CareerReportEngine.valuesForPeriod(exact, previous, elements.asOf.value || localDate());
   }
 
   function loadRows() {
     var store = CareerStorage.read();
     var period = selectedPeriod();
+    var exactDecisions = store.profiles.map(function (profile) {
+      return CareerStorage.getDecision(profile.id, period);
+    });
+    var savedDateDecision = exactDecisions.find(function (decision) {
+      return decision && decision.input && /^\d{4}-\d{2}-\d{2}$/.test(String(decision.input.asOfDate || ''));
+    });
     var hasSaved = false;
+
+    elements.asOf.value = savedDateDecision ? savedDateDecision.input.asOfDate : localDate();
     state.period = period;
-    state.rows = store.profiles.map(function (profile) {
-      var exact = CareerStorage.getDecision(profile.id, period);
+    state.rows = store.profiles.map(function (profile, index) {
+      var exact = exactDecisions[index];
       var previous = CareerStorage.getPreviousDecision(profile.id, period);
-      var source = exact || previous;
       hasSaved = hasSaved || Boolean(exact);
       return {
         id: profile.id,
         profile: Object.assign({}, profile),
-        values: defaultValues(profile, source),
+        values: defaultValues(exact, previous),
         calculation: exact ? {
           profile: profile,
           input: exact.input,
           result: exact.result,
           benefits: exact.benefits,
-          level: CareerReportEngine.halfYearLevel(exact.input && exact.input.halfYearCommission),
+          level: CareerReportEngine.savedHalfYearLevel(exact.input),
           tenureLabel: CareerReportEngine.fullYearsMonths(exact.result && exact.result.tenureMonths, Boolean(profile.employmentStartDate)),
           motivation: motivationLabels(exact.benefits)
         } : null,
@@ -97,6 +89,8 @@
     });
     state.calculated = state.rows.length > 0 && state.rows.every(function (row) { return row.calculation; });
     state.saved = state.rows.length > 0 && state.rows.every(function (row) { return row.savedForPeriod; });
+    state.hasUnsavedChanges = false;
+    clearNotice();
     render();
     setStatus(hasSaved ? (state.saved ? 'Данные сохранены' : 'Для части сотрудников период ещё не сохранён') : 'Текущий период ещё не сохранён', state.saved ? 'saved' : 'clean');
   }
@@ -134,13 +128,13 @@
     var calculation = row.calculation;
     var result = calculation && calculation.result;
     var motivation = calculation && calculation.motivation;
-    var level = calculation ? calculation.level : CareerReportEngine.halfYearLevel(row.values.halfYearCommission);
+    var level = calculation ? calculation.level : CareerReportEngine.levelFromValues(row.values);
     var warning = result && result.performanceStatus === 'unconfirmed'
       ? '<p class="career-report-row-warning">Доход и уровень показаны справочно: неподтверждённый результат не меняет пакет по результатам.</p>'
       : '';
     return '<tr class="career-report-main-row" data-report-row="' + escapeHtml(row.id) + '">'
       + '<td>' + (index + 1) + '</td>'
-      + '<td class="career-report-name-column"><input aria-label="Ф. И. О. сотрудника" data-report-field="name" value="' + escapeHtml(row.profile.name) + '"></td>'
+      + '<td class="career-report-name-column"><input aria-label="Ф. И. О. сотрудника" data-report-field="name" required value="' + escapeHtml(row.profile.name) + '"></td>'
       + '<td><input aria-label="Дата начала работы" data-report-field="employmentStartDate" type="date" value="' + escapeHtml(row.profile.employmentStartDate) + '"></td>'
       + '<td>' + escapeHtml(calculation ? calculation.tenureLabel : 'Не рассчитано') + '</td>'
       + '<td><input aria-label="Доход за полугодие" data-report-field="halfYearCommission" type="number" min="0" step="1000" value="' + (row.values.halfYearCommission || '') + '"></td>'
@@ -192,7 +186,7 @@
       var motivation = calc && calc.motivation;
       return '<tr><td>' + (index + 1) + '</td><td>' + escapeHtml(row.profile.name || 'Без имени') + '</td>'
         + '<td>' + displayDate(row.profile.employmentStartDate) + '</td><td>' + escapeHtml(calc ? calc.tenureLabel : 'Не рассчитано') + '</td>'
-        + '<td>' + money(row.values.halfYearCommission) + '</td><td>' + (result ? result.effectiveFloorRate + '%<small>' + escapeHtml(result.effectivePackageLabel) + '</small>' : '—') + '</td>'
+        + '<td>' + (row.values.halfYearCommissionAvailable === false ? '—' : money(row.values.halfYearCommission)) + '</td><td>' + (result ? result.effectiveFloorRate + '%<small>' + escapeHtml(result.effectivePackageLabel) + '</small>' : '—') + '</td>'
         + '<td>' + escapeHtml(motivation ? motivation.mountainSea : '—') + '</td><td>' + escapeHtml(motivation ? motivation.travel : '—') + '</td>'
         + '<td>' + escapeHtml(motivation ? motivation.advertising : '—') + '</td><td>' + escapeHtml(motivation ? motivation.corporate : '—') + '</td><td>' + escapeHtml(motivation ? motivation.stipend : '—') + '</td></tr>';
     }).join('');
@@ -216,9 +210,51 @@
     elements.status.className = 'career-report-status career-report-status--' + type;
   }
 
+  function clearNotice() {
+    if (!elements.notice) {
+      return;
+    }
+    elements.notice.textContent = '';
+    elements.notice.hidden = true;
+  }
+
+  function showNotice(message) {
+    if (!elements.notice) {
+      return;
+    }
+    elements.notice.textContent = message;
+    elements.notice.hidden = false;
+  }
+
+  function validateRows() {
+    var invalidRow = state.rows.find(function (row) {
+      return !String(row.profile.name || '').trim();
+    });
+    var input;
+
+    if (!invalidRow) {
+      clearNotice();
+      return true;
+    }
+    input = elements.rows.querySelector('[data-report-row="' + invalidRow.id + '"] [data-report-field="name"]');
+    showNotice('Укажите Ф. И. О. каждого сотрудника перед сохранением.');
+    setStatus('Не заполнено Ф. И. О. сотрудника', 'error');
+    if (input) {
+      input.setCustomValidity('Укажите Ф. И. О. сотрудника.');
+      input.reportValidity();
+      input.focus();
+    }
+    return false;
+  }
+
+  function notifyStorageChanged() {
+    document.dispatchEvent(new Event('career-storage-changed'));
+  }
+
   function markDirty() {
     state.saved = false;
     state.calculated = false;
+    state.hasUnsavedChanges = true;
     setStatus('Есть несохранённые изменения', 'dirty');
   }
 
@@ -229,11 +265,15 @@
     });
     state.calculated = true;
     state.saved = false;
+    state.hasUnsavedChanges = true;
     render();
     setStatus('Рассчитано, но не сохранено', 'calculated');
   }
 
   function saveAll() {
+    if (!validateRows()) {
+      return false;
+    }
     if (!state.calculated) {
       calculateAll();
     }
@@ -253,8 +293,12 @@
       row.isNew = false;
     });
     state.saved = true;
+    state.hasUnsavedChanges = false;
+    notifyStorageChanged();
+    clearNotice();
     render();
     setStatus('Данные сохранены', 'saved');
+    return true;
   }
 
   function addRow() {
@@ -262,7 +306,7 @@
     state.rows.push({
       id: id,
       profile: { id: id, name: '', status: 'partner', employmentStartDate: '', partnerStartDate: '', contractualFloorRate: 0, notes: '' },
-      values: defaultValues({}, null),
+      values: defaultValues(null, null),
       calculation: null,
       previousDecision: null,
       savedForPeriod: false,
@@ -290,18 +334,46 @@
     if (!row || !field) {
       return;
     }
+    if (field === 'name') {
+      target.setCustomValidity('');
+      clearNotice();
+    }
     value = target.type === 'checkbox' ? target.checked : target.value;
     if (['name', 'employmentStartDate', 'status', 'contractualFloorRate', 'notes'].indexOf(field) >= 0) {
       row.profile[field] = field === 'contractualFloorRate' ? number(value) : value;
     } else {
       row.values[field] = target.type === 'number' ? number(value) : value;
+      if (field === 'halfYearCommission') {
+        row.values.halfYearCommissionAvailable = true;
+        row.values.legacyHalfYearLevel = 0;
+      }
     }
     row.calculation = null;
     row.savedForPeriod = false;
     markDirty();
   }
 
+  function currentView() {
+    var report = document.querySelector('[data-career-view="report"]');
+    return report && !report.hidden ? 'report' : 'card';
+  }
+
+  function confirmDiscard() {
+    return !state.hasUnsavedChanges
+      || window.confirm('Есть несохранённые изменения в сводной таблице. Продолжить без сохранения?');
+  }
+
   function switchView(view) {
+    var previousView = currentView();
+    if (previousView === view) {
+      return true;
+    }
+    if (previousView === 'report' && !confirmDiscard()) {
+      return false;
+    }
+    if (previousView === 'report') {
+      state.hasUnsavedChanges = false;
+    }
     document.querySelectorAll('[data-career-view]').forEach(function (panel) {
       panel.hidden = panel.dataset.careerView !== view;
     });
@@ -313,6 +385,29 @@
     if (view === 'report') {
       loadRows();
     }
+    return true;
+  }
+
+  function restorePeriodControls() {
+    var parts = String(state.period || '').split('-');
+    if (parts.length !== 2) {
+      return;
+    }
+    elements.year.value = parts[0];
+    elements.half.value = parts[1] === '07' ? '2' : '1';
+    render();
+  }
+
+  function periodChanged() {
+    if (selectedPeriod() === state.period) {
+      return;
+    }
+    if (!confirmDiscard()) {
+      restorePeriodControls();
+      return;
+    }
+    state.hasUnsavedChanges = false;
+    loadRows();
   }
 
   function actionClicked(target) {
@@ -338,7 +433,9 @@
         target.setAttribute('aria-expanded', detail.hidden ? 'false' : 'true');
       }
     } else if (action === 'open-card') {
-      switchView('card');
+      if (!switchView('card')) {
+        return;
+      }
       target = document.querySelector('[data-profile-id="' + id + '"]');
       if (target) {
         target.click();
@@ -349,6 +446,7 @@
       if (row && window.confirm('Удалить сотрудника и всю историю его карьерных решений?')) {
         if (!row.isNew) {
           CareerStorage.deleteProfile(id);
+          notifyStorageChanged();
         }
         state.rows = state.rows.filter(function (item) { return item.id !== id; });
         render();
@@ -365,6 +463,7 @@
     elements.effective = element('reportEffectivePeriod');
     elements.title = element('careerReportTitle');
     elements.status = element('careerReportStatus');
+    elements.notice = element('careerReportNotice');
     elements.rows = element('careerReportRows');
     elements.printRows = element('careerPrintRows');
     elements.printTitle = element('careerPrintTitle');
@@ -395,12 +494,19 @@
       fieldChanged(event.target);
     });
     [elements.year, elements.half].forEach(function (control) {
-      control.addEventListener('change', loadRows);
+      control.addEventListener('change', periodChanged);
     });
     elements.asOf.addEventListener('change', function () {
       state.rows.forEach(function (row) { row.values.asOfDate = elements.asOf.value; row.calculation = null; });
       markDirty();
       render();
+    });
+    window.addEventListener('beforeunload', function (event) {
+      if (!state.hasUnsavedChanges) {
+        return;
+      }
+      event.preventDefault();
+      event.returnValue = '';
     });
   }
 

@@ -120,6 +120,9 @@
     var store = read();
     var normalized = normalizeProfile(profile);
     var index = store.profiles.findIndex(function (item) { return item.id === normalized.id; });
+    if (!normalized.name) {
+      throw new Error('Укажите Ф. И. О. сотрудника.');
+    }
     if (index >= 0) {
       normalized.createdAt = store.profiles[index].createdAt;
       normalized.updatedAt = new Date().toISOString();

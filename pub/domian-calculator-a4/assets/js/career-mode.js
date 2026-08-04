@@ -164,7 +164,18 @@
   }
 
   function saveProfile(showStatus) {
-    var profile = CareerStorage.saveProfile(readProfileForm());
+    var profileData = readProfileForm();
+    var nameInput = element('profileName');
+    var profile;
+    if (!profileData.name) {
+      nameInput.setCustomValidity('Укажите Ф. И. О. сотрудника.');
+      nameInput.reportValidity();
+      nameInput.focus();
+      setStatus('Не заполнено Ф. И. О. сотрудника.', 'dirty');
+      return null;
+    }
+    nameInput.setCustomValidity('');
+    profile = CareerStorage.saveProfile(profileData);
     currentProfileId = profile.id;
     renderProfiles();
     if (showStatus !== false) {
@@ -272,6 +283,9 @@
 
   function saveDecision() {
     var profile = saveProfile(false);
+    if (!profile) {
+      return;
+    }
     var input = readDecisionInput(profile);
     var decision = CareerEngine.calculateDecision(input);
     var benefits = BenefitEngine.calculateBenefits(Object.assign({}, input, {
@@ -354,8 +368,9 @@
     if (target.dataset.action === 'new-profile') {
       createProfile();
     } else if (target.dataset.action === 'save-profile') {
-      saveProfile(true);
-      calculatePreview();
+      if (saveProfile(true)) {
+        calculatePreview();
+      }
     } else if (target.dataset.action === 'save-decision') {
       saveDecision();
     } else if (target.dataset.action === 'delete-profile') {
@@ -388,6 +403,9 @@
         calculatePreview();
         setStatus('Есть несохранённые изменения.', 'dirty');
       }
+    });
+    document.addEventListener('career-storage-changed', function () {
+      renderProfiles();
     });
 
     var profiles = getStore().profiles;
