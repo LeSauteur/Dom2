@@ -53,6 +53,17 @@
       : halfYearLevel(source.halfYearCommission);
   }
 
+  function savedAsOfDates(decisions) {
+    var dates = [];
+    (Array.isArray(decisions) ? decisions : []).forEach(function (decision) {
+      var value = decision && decision.input ? String(decision.input.asOfDate || '') : '';
+      if (/^\d{4}-\d{2}-\d{2}$/.test(value) && dates.indexOf(value) < 0) {
+        dates.push(value);
+      }
+    });
+    return dates.sort();
+  }
+
   function valuesForPeriod(exactDecision, previousDecision, fallbackDate) {
     var exact = exactDecision && typeof exactDecision === 'object' ? exactDecision : null;
     var exactInput = exact && exact.input && typeof exact.input === 'object' ? exact.input : {};
@@ -216,6 +227,7 @@
     halfYearLevel: halfYearLevel,
     savedHalfYearLevel: savedHalfYearLevel,
     levelFromValues: levelFromValues,
+    savedAsOfDates: savedAsOfDates,
     valuesForPeriod: valuesForPeriod,
     periodFromSelection: periodFromSelection,
     reportTitle: reportTitle,

@@ -3,6 +3,7 @@
 
   var currentProfileId = '';
   var latestPreview = null;
+  var hasUnsavedChanges = false;
   var elements = {};
 
   function element(id) {
@@ -131,6 +132,53 @@
     renderProfiles();
     renderHistory();
     calculatePreview();
+    hasUnsavedChanges = false;
+  }
+
+  function resetProfileEditor() {
+    var emptyProfile = {
+      id: '',
+      name: '',
+      status: 'partner',
+      employmentStartDate: '',
+      partnerStartDate: '',
+      contractualFloorRate: 0,
+      notes: ''
+    };
+    currentProfileId = '';
+    setProfileForm(emptyProfile);
+    setDecisionForm(emptyProfile);
+    renderProfiles();
+    renderHistory();
+    calculatePreview();
+    hasUnsavedChanges = false;
+    setStatus('Выберите существующий профиль или создайте новый.', 'info');
+  }
+
+  function refreshFromStorage() {
+    var store = getStore();
+    var currentExists = store.profiles.some(function (profile) {
+      return profile.id === currentProfileId;
+    });
+    if (currentExists) {
+      loadProfile(currentProfileId);
+    } else if (store.profiles.length) {
+      loadProfile(store.profiles[0].id);
+    } else {
+      resetProfileEditor();
+    }
+  }
+
+  function confirmDiscardChanges() {
+    if (!hasUnsavedChanges) {
+      return true;
+    }
+    if (!window.confirm('Есть несохранённые изменения в карточке сотрудника. Продолжить без сохранения?')) {
+      return false;
+    }
+    hasUnsavedChanges = false;
+    refreshFromStorage();
+    return true;
   }
 
   function createProfile() {
@@ -177,6 +225,7 @@
     nameInput.setCustomValidity('');
     profile = CareerStorage.saveProfile(profileData);
     currentProfileId = profile.id;
+    hasUnsavedChanges = false;
     renderProfiles();
     if (showStatus !== false) {
       setStatus('Профиль сохранён.', 'saved');
@@ -394,19 +443,25 @@
     document.addEventListener('click', onClick);
     document.addEventListener('input', function (event) {
       if (event.target.closest('#careerEditor')) {
+        hasUnsavedChanges = true;
         calculatePreview();
         setStatus('Есть несохранённые изменения.', 'dirty');
       }
     });
     document.addEventListener('change', function (event) {
       if (event.target.closest('#careerEditor')) {
+        hasUnsavedChanges = true;
         calculatePreview();
         setStatus('Есть несохранённые изменения.', 'dirty');
       }
     });
     document.addEventListener('career-storage-changed', function () {
-      renderProfiles();
+      refreshFromStorage();
     });
+    window.CareerCardView = {
+      confirmDiscardChanges: confirmDiscardChanges,
+      refreshFromStorage: refreshFromStorage
+    };
 
     var profiles = getStore().profiles;
     if (profiles.length) {

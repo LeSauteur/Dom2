@@ -213,6 +213,18 @@ test('новое полугодие переносит только предыд
   assert.equal(nextPeriodValues.corporateCost, 20000);
 });
 
+test('ведомость обнаруживает разные даты оценки сохранённых строк', () => {
+  const { CareerReportEngine } = createContext();
+  const dates = CareerReportEngine.savedAsOfDates([
+    { input: { asOfDate: '2026-07-20' } },
+    { input: { asOfDate: '2026-07-15' } },
+    { input: { asOfDate: '2026-07-20' } },
+    { input: { asOfDate: '' } }
+  ]);
+
+  assert.deepEqual(Array.from(dates), ['2026-07-15', '2026-07-20']);
+});
+
 test('сохранение профиля требует непустое Ф. И. О.', () => {
   const { CareerStorage } = createContext();
   assert.throws(
@@ -230,6 +242,21 @@ test('ведомость предупреждает о потере измене
   assert.match(reportScript, /window\.addEventListener\('beforeunload'/);
   assert.match(reportScript, /new Event\('career-storage-changed'\)/);
   assert.match(reportScript, /data-report-field="name" required/);
-  assert.match(cardScript, /addEventListener\('career-storage-changed'/);
+  assert.match(cardScript, /addEventListener\('career-storage-changed'[\s\S]*refreshFromStorage\(\)/);
+  assert.match(reportScript, /window\.CareerCardView\.refreshFromStorage\(\)/);
   assert.match(html, /Дата оценки стажа: <span id="careerPrintDate"/);
+});
+
+test('смешанные даты блокируют печать, а удаление применяется только при сохранении', () => {
+  const reportScript = fs.readFileSync(path.join(projectRoot, 'assets/js/career-report.js'), 'utf8');
+  const deleteBranch = reportScript.slice(
+    reportScript.indexOf("} else if (action === 'delete')"),
+    reportScript.indexOf('function initialize()')
+  );
+
+  assert.match(reportScript, /elements\.asOf\.value = dateConflict \? ''/);
+  assert.match(reportScript, /if \(!state\.calculated && !calculateAll\(\)\)/);
+  assert.match(reportScript, /state\.deletedProfileIds\.push\(id\)/);
+  assert.match(reportScript, /state\.deletedProfileIds\.forEach\([\s\S]*CareerStorage\.deleteProfile\(profileId\)/);
+  assert.doesNotMatch(deleteBranch, /CareerStorage\.deleteProfile\(id\)/);
 });

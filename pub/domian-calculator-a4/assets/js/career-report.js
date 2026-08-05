@@ -6,7 +6,9 @@
     period: '',
     calculated: false,
     saved: false,
-    hasUnsavedChanges: false
+    hasUnsavedChanges: false,
+    dateConflict: false,
+    deletedProfileIds: []
   };
   var elements = {};
 
@@ -58,13 +60,19 @@
     var exactDecisions = store.profiles.map(function (profile) {
       return CareerStorage.getDecision(profile.id, period);
     });
-    var savedDateDecision = exactDecisions.find(function (decision) {
+    var savedDates = CareerReportEngine.savedAsOfDates(exactDecisions);
+    var savedDecisionCount = exactDecisions.filter(Boolean).length;
+    var datedDecisionCount = exactDecisions.filter(function (decision) {
       return decision && decision.input && /^\d{4}-\d{2}-\d{2}$/.test(String(decision.input.asOfDate || ''));
-    });
+    }).length;
+    var dateConflict = savedDates.length > 1
+      || (savedDecisionCount > 0 && datedDecisionCount !== savedDecisionCount);
     var hasSaved = false;
 
-    elements.asOf.value = savedDateDecision ? savedDateDecision.input.asOfDate : localDate();
+    elements.asOf.value = dateConflict ? '' : (savedDates[0] || localDate());
     state.period = period;
+    state.dateConflict = dateConflict;
+    state.deletedProfileIds = [];
     state.rows = store.profiles.map(function (profile, index) {
       var exact = exactDecisions[index];
       var previous = CareerStorage.getPreviousDecision(profile.id, period);
@@ -87,12 +95,19 @@
         isNew: false
       };
     });
-    state.calculated = state.rows.length > 0 && state.rows.every(function (row) { return row.calculation; });
+    state.calculated = !dateConflict
+      && state.rows.length > 0
+      && state.rows.every(function (row) { return row.calculation; });
     state.saved = state.rows.length > 0 && state.rows.every(function (row) { return row.savedForPeriod; });
     state.hasUnsavedChanges = false;
     clearNotice();
     render();
-    setStatus(hasSaved ? (state.saved ? 'Данные сохранены' : 'Для части сотрудников период ещё не сохранён') : 'Текущий период ещё не сохранён', state.saved ? 'saved' : 'clean');
+    if (dateConflict) {
+      showNotice('У сохранённых строк разные или отсутствующие даты оценки. Выберите единую дату и нажмите «Рассчитать всех» перед печатью или сохранением.');
+      setStatus('Требуется единая дата оценки', 'error');
+    } else {
+      setStatus(hasSaved ? (state.saved ? 'Данные сохранены' : 'Для части сотрудников период ещё не сохранён') : 'Текущий период ещё не сохранён', state.saved ? 'saved' : 'clean');
+    }
   }
 
   function benefit(id, benefits) {
@@ -180,6 +195,10 @@
   }
 
   function renderPrintRows() {
+    if (!state.calculated) {
+      elements.printRows.innerHTML = '<tr><td colspan="11">Перед печатью выберите единую дату оценки и нажмите «Рассчитать всех».</td></tr>';
+      return;
+    }
     elements.printRows.innerHTML = state.rows.map(function (row, index) {
       var calc = row.calculation;
       var result = calc && calc.result;
@@ -226,6 +245,17 @@
     elements.notice.hidden = false;
   }
 
+  function validateAsOfDate() {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(String(elements.asOf.value || ''))) {
+      return true;
+    }
+    showNotice('Выберите единую дату оценки стажа для всей ведомости.');
+    setStatus('Не выбрана дата оценки', 'error');
+    elements.asOf.focus();
+    elements.asOf.reportValidity();
+    return false;
+  }
+
   function validateRows() {
     var invalidRow = state.rows.find(function (row) {
       return !String(row.profile.name || '').trim();
@@ -255,19 +285,28 @@
     state.saved = false;
     state.calculated = false;
     state.hasUnsavedChanges = true;
+    if (elements.printRows) {
+      renderPrintRows();
+    }
     setStatus('Есть несохранённые изменения', 'dirty');
   }
 
   function calculateAll() {
+    if (!validateAsOfDate()) {
+      return false;
+    }
     state.rows.forEach(function (row) {
       row.values.asOfDate = elements.asOf.value || localDate();
       row.calculation = CareerReportEngine.calculateRow(row.profile, row.values, state.period, row.previousDecision);
     });
+    state.dateConflict = false;
     state.calculated = true;
     state.saved = false;
     state.hasUnsavedChanges = true;
+    clearNotice();
     render();
     setStatus('Рассчитано, но не сохранено', 'calculated');
+    return true;
   }
 
   function saveAll() {
@@ -275,7 +314,9 @@
       return false;
     }
     if (!state.calculated) {
-      calculateAll();
+      if (!calculateAll()) {
+        return false;
+      }
     }
     state.rows.forEach(function (row) {
       var profile = CareerStorage.saveProfile(row.profile);
@@ -292,6 +333,10 @@
       row.savedForPeriod = true;
       row.isNew = false;
     });
+    state.deletedProfileIds.forEach(function (profileId) {
+      CareerStorage.deleteProfile(profileId);
+    });
+    state.deletedProfileIds = [];
     state.saved = true;
     state.hasUnsavedChanges = false;
     notifyStorageChanged();
@@ -368,6 +413,12 @@
     if (previousView === view) {
       return true;
     }
+    if (previousView === 'card'
+      && view === 'report'
+      && window.CareerCardView
+      && !window.CareerCardView.confirmDiscardChanges()) {
+      return false;
+    }
     if (previousView === 'report' && !confirmDiscard()) {
       return false;
     }
@@ -384,6 +435,8 @@
     });
     if (view === 'report') {
       loadRows();
+    } else if (window.CareerCardView) {
+      window.CareerCardView.refreshFromStorage();
     }
     return true;
   }
@@ -422,8 +475,8 @@
     } else if (action === 'save') {
       saveAll();
     } else if (action === 'print') {
-      if (!state.calculated) {
-        calculateAll();
+      if (!state.calculated && !calculateAll()) {
+        return;
       }
       window.print();
     } else if (action === 'toggle') {
@@ -444,13 +497,15 @@
     } else if (action === 'delete') {
       row = rowById(id);
       if (row && window.confirm('Удалить сотрудника и всю историю его карьерных решений?')) {
-        if (!row.isNew) {
-          CareerStorage.deleteProfile(id);
-          notifyStorageChanged();
+        if (!row.isNew && state.deletedProfileIds.indexOf(id) < 0) {
+          state.deletedProfileIds.push(id);
         }
         state.rows = state.rows.filter(function (item) { return item.id !== id; });
         render();
         markDirty();
+        state.calculated = state.rows.length === 0
+          || (!state.dateConflict && state.rows.every(function (item) { return item.calculation; }));
+        renderPrintRows();
       }
     }
   }
@@ -497,6 +552,8 @@
       control.addEventListener('change', periodChanged);
     });
     elements.asOf.addEventListener('change', function () {
+      state.dateConflict = false;
+      clearNotice();
       state.rows.forEach(function (row) { row.values.asOfDate = elements.asOf.value; row.calculation = null; });
       markDirty();
       render();
